@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Giám Thị Số - Exam Guard",
+  "description": "Giám sát tính toàn vẹn trình duyệt trong phiên thi có sự đồng ý của thí sinh.",
+  "version": "1.0.0",
+  "permissions": [
+    "alarms",
+    "identity",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_title": "Mở Giám Thị Số"
+  },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; object-src 'none'; base-uri 'self'"
+  }
+}

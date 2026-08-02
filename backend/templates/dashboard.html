@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Dashboard giám thị · Giám Thị Số{% endblock %}
+{% block content %}
+<section class="card" id="dashboard-root" data-exam-id="{{ exam_id }}">
+  <p><a href="/ui/exams">&larr; Danh sách kỳ thi</a></p>
+  <h1>Dashboard giám thị</h1>
+  <p class="muted">Risk CV và cảnh báo toàn vẹn trình duyệt được hiển thị riêng; sự kiện trình duyệt là dấu hiệu cần giám thị xem xét, không phải kết luận gian lận tự động.</p>
+  <p id="ws-status" class="muted"></p>
+
+  <div id="kpi-row" class="kpi-row"></div>
+
+  <table id="sessions-table" class="data-table">
+    <thead>
+      <tr><th>Thí sinh</th><th>Mã/Email</th><th>Xác thực · Client</th><th>Trạng thái</th><th>Risk CV</th><th>Trình duyệt</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr class="loading-row"><td colspan="7">Đang tải...</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/dashboard.js"></script>
+{% endblock %}

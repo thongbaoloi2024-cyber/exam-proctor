@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Đăng ký tổ chức · Giám Thị Số{% endblock %}
+{% block content %}
+<section class="card auth-card">
+  <div class="sidebar-brand" style="justify-content:center; margin-bottom:6px;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2 12C4.5 7 8 4.5 12 4.5S19.5 7 22 12C19.5 17 16 19.5 12 19.5S4.5 17 2 12Z" stroke="currentColor" stroke-width="1.6"/>
+      <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
+    </svg>
+    <span>Giám Thị Số</span>
+  </div>
+  <h1>Đăng ký tổ chức mới</h1>
+  <p class="muted">Tạo tài khoản admin đầu tiên cho trường/trung tâm khảo thí của bạn.</p>
+  <form id="register-form">
+    <label>Tên tổ chức
+      <input type="text" id="organization_name" required>
+    </label>
+    <label>Email admin
+      <input type="email" id="admin_email" required>
+    </label>
+    <label>Mật khẩu
+      <input type="password" id="admin_password" minlength="6" required>
+    </label>
+    <button type="submit">Đăng ký</button>
+  </form>
+  <p id="error-message" class="error" hidden></p>
+  <p class="muted">Đã có tài khoản? <a href="/ui/login">Đăng nhập</a></p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/register.js"></script>
+{% endblock %}

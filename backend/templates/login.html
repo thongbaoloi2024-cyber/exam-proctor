@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập · Giám Thị Số{% endblock %}
+{% block content %}
+<section class="card auth-card">
+  <div class="sidebar-brand" style="justify-content:center; margin-bottom:6px;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2 12C4.5 7 8 4.5 12 4.5S19.5 7 22 12C19.5 17 16 19.5 12 19.5S4.5 17 2 12Z" stroke="currentColor" stroke-width="1.6"/>
+      <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
+    </svg>
+    <span>Giám Thị Số</span>
+  </div>
+  <p class="muted" style="text-align:center; margin-top:0;">Giám sát thi trực tuyến bằng AI</p>
+  <h1>Đăng nhập</h1>
+  <form id="login-form">
+    <label>Email
+      <input type="email" id="email" required>
+    </label>
+    <label>Mật khẩu
+      <input type="password" id="password" required>
+    </label>
+    <button type="submit">Đăng nhập</button>
+  </form>
+  <p id="error-message" class="error" hidden></p>
+  <p class="muted">Chưa có tài khoản tổ chức? <a href="/ui/register">Đăng ký mới</a></p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/login.js"></script>
+{% endblock %}

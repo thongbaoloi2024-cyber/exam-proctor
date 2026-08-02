@@ -1,0 +1,45 @@
+# Demo "cloud" local cho bao ve do an - xem docs/KE_HOACH_PLATFORM.md.
+# Chay: docker compose up --build, sau do mo http://localhost:8000/docs
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: datt
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: datt
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      APP_ENV: production
+      DB_HOST: db
+      DB_USER: datt
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      DB_NAME: datt
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      FORCE_HTTPS: ${FORCE_HTTPS:-false}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      GOOGLE_OAUTH_CALLBACK_URL: ${GOOGLE_OAUTH_CALLBACK_URL:-}
+      OAUTH_EXTENSION_REDIRECT_URIS: ${OAUTH_EXTENSION_REDIRECT_URIS:-}
+      EXTENSION_ALLOWED_ORIGINS: ${EXTENSION_ALLOWED_ORIGINS:-}
+      CANDIDATE_TOKEN_TTL_DAYS: ${CANDIDATE_TOKEN_TTL_DAYS:-90}
+      SESSIONS_ROOT: /app/sessions
+    depends_on:
+      - db
+    volumes:
+      - sessions_data:/app/sessions
+    ports:
+      - "8000:8000"
+
+volumes:
+  db_data:
+  sessions_data:

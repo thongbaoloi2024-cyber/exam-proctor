@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Kỳ thi · Giám Thị Số{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Kỳ thi của tổ chức</h1>
+  <form id="create-exam-form" class="policy-form">
+    <div class="form-grid">
+      <label>Tên kỳ thi
+        <input type="text" id="exam-name" required>
+      </label>
+      <label>URL bài thi
+        <input type="url" id="exam-url" placeholder="https://exam.example/..." required>
+      </label>
+      <label>Chế độ xác thực
+        <select id="candidate-auth-mode">
+          <option value="manual">Họ tên + mã thí sinh</option>
+          <option value="google">Tài khoản Google</option>
+        </select>
+      </label>
+      <label id="google-domain-wrap" class="hidden">Google Workspace domain (tùy chọn)
+        <input type="text" id="google-domain" placeholder="school.edu.vn">
+      </label>
+      <label>Phiên bản extension tối thiểu
+        <input type="text" id="min-extension-version" value="1.0.0" pattern="\d+\.\d+\.\d+" required>
+      </label>
+      <label>Cho phép rời cửa sổ tối đa (giây)
+        <input type="number" id="max-focus-loss" min="0" max="300" step="0.5" value="5">
+      </label>
+    </div>
+    <div class="checkbox-grid">
+      <label><input type="checkbox" id="require-extension" checked> Bắt buộc browser extension</label>
+      <label><input type="checkbox" id="require-fullscreen" checked> Bắt buộc toàn màn hình</label>
+      <label><input type="checkbox" id="require-camera" checked> Bắt buộc camera</label>
+      <label><input type="checkbox" id="require-microphone"> Bắt buộc microphone</label>
+      <label><input type="checkbox" id="require-screen-share"> Bắt buộc chia sẻ toàn màn hình</label>
+      <label><input type="checkbox" id="block-clipboard" checked> Chặn copy/paste/menu chuột phải</label>
+    </div>
+    <button type="submit">Tạo kỳ thi</button>
+  </form>
+  <table id="exams-table" class="data-table">
+    <thead>
+      <tr><th>Tên kỳ thi</th><th>Xác thực</th><th>Mã tham gia</th><th>Trạng thái</th><th>Hết hạn</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr class="loading-row"><td colspan="6">Đang tải...</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Phát mã cho thí sinh. Extension sẽ đọc chính sách của kỳ thi và chỉ hiển thị đúng chế độ xác thực đã chọn ở đây.</p>
+</section>
+
+<section class="card" id="proctor-card">
+  <h2>Thêm tài khoản giám thị</h2>
+  <form id="create-proctor-form" class="inline-form">
+    <input type="email" id="proctor-email" placeholder="Email giám thị" required>
+    <input type="password" id="proctor-password" placeholder="Mật khẩu" minlength="6" required>
+    <button type="submit">Tạo</button>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/exams.js"></script>
+{% endblock %}

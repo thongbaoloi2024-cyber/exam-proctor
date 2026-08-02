@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Chi tiết phiên · Giám Thị Số{% endblock %}
+{% block content %}
+<section
+  class="card"
+  id="session-detail-root"
+  data-exam-id="{{ exam_id }}"
+  data-session-id="{{ session_id }}"
+>
+  <p><a href="/ui/exams/{{ exam_id }}/dashboard">&larr; Quay lại dashboard</a></p>
+  <h1 id="student-name-heading">Chi tiết phiên</h1>
+  <p id="session-summary" class="muted">Đang tải...</p>
+  <p>
+    <a href="#" id="report-html-link">Xem báo cáo HTML</a> ·
+    <a href="#" id="report-pdf-link">Tải báo cáo PDF</a>
+  </p>
+  <h2>Điểm rủi ro theo thời gian</h2>
+  <div id="risk-chart-wrap">
+    <svg id="risk-chart" viewBox="0 0 600 150" preserveAspectRatio="none"></svg>
+    <div class="chart-labels">
+      <span id="chart-time-start">0s</span>
+      <span id="chart-score-max" class="muted"></span>
+      <span id="chart-time-end"></span>
+    </div>
+  </div>
+  <h2>Timeline vi phạm</h2>
+  <table id="violations-table" class="data-table">
+    <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Loại vi phạm chính</th><th>Ảnh chụp</th></tr></thead>
+    <tbody>
+      <tr class="loading-row"><td colspan="4">Đang tải...</td></tr>
+    </tbody>
+  </table>
+  <h2>Sự kiện toàn vẹn trình duyệt</h2>
+  <table id="browser-events-table" class="data-table">
+    <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th><th>Ảnh</th></tr></thead>
+    <tbody>
+      <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/session_detail.js"></script>
+{% endblock %}

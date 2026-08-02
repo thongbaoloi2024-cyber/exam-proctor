@@ -1,0 +1,248 @@
+<!--
+  Template báo cáo giám sát thi (Tuần 11) - tự thiết kế riêng cho đồ án,
+  KHÔNG sao chép từ dự án tham khảo. Dùng Jinja2, render bởi
+  src/reporting/report_generator.py.
+
+  Nguyên tắc thiết kế:
+  - Toàn bộ màu severity (badge, chấm biểu đồ) đọc qua hàm `severity_color()`
+    truyền vào context (nguồn duy nhất, xem src/reporting/severity.py) -
+    KHÔNG hardcode mã màu severity lần thứ 2 trong template này.
+  - Ảnh (biểu đồ, snapshot) nhúng thẳng base64 (data URI) - file HTML/PDF
+    xuất ra tự chứa toàn bộ, không phụ thuộc file ngoài khi mở lại sau này.
+  - KHÔNG dùng CSS custom property (`:root { --x }` / `var(--x)`) - công cụ
+    xuất PDF `xhtml2pdf` dùng bộ phân tích CSS riêng (không phải trình
+    duyệt thật) và không hỗ trợ `var()` (đã xác nhận qua lỗi thật
+    `Invalid color value '<css function: var(--brand)>'` khi thử) - mọi màu
+    lặp lại phải ghi thẳng mã hex ở từng chỗ dùng.
+-->
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    margin: 0;
+    padding: 32px 40px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  h1, h2, h3 { color: #1f2937; margin: 0 0 6px 0; }
+  h1 { font-size: 20px; }
+  h2 { font-size: 15px; margin-top: 28px; border-bottom: 2px solid #1c5cab; padding-bottom: 4px; }
+  .report-header {
+    border-bottom: 3px solid #1c5cab;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+  }
+  .report-header .subtitle { color: #6b7280; font-size: 12px; margin-top: 4px; }
+  .meta-row { display: block; margin-top: 10px; font-size: 11.5px; color: #6b7280; }
+  .meta-row span { margin-right: 22px; }
+  .meta-row b { color: #1f2937; }
+
+  .summary-box {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-left: 5px solid #1c5cab;
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+  }
+  .summary-box .sentence { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  /* xhtml2pdf khong ho tro "display: inline-block" (cac o duoc du dinh nam
+     ngang lai bi xep chong doc, da xac nhan bang cach render thu) - dung
+     <table> cho hang thong ke thay vi div inline-block. */
+  .stat-table { width: auto; border-collapse: separate; border-spacing: 10px 0; margin: 0; }
+  .stat-table td {
+    min-width: 110px;
+    padding: 6px 14px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    vertical-align: top;
+  }
+  .stat-table .num { font-size: 18px; font-weight: 700; }
+  .stat-table .label { font-size: 10.5px; color: #6b7280; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11.5px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+  th { color: #6b7280; font-weight: 600; font-size: 10.5px; text-transform: uppercase; }
+  tr:last-child td { border-bottom: none; }
+
+  /* xhtml2pdf khong ho tro width/max-width dang % tren <img> (khac <table>) -
+     da xac nhan qua canh bao that "getSize: Not a float '100%'" khi thu -
+     nen dung px co dinh khop voi kich thuoc trang/khung chua thay vi %. */
+  .chart-block { text-align: center; margin: 10px 0 4px 0; }
+  .chart-block img { width: 520px; }
+
+  /* Cung ly do voi .stat-table o tren - dung <table> (3 anh/hang) thay vi
+     div inline-block cho luoi snapshot. Dung padding tren <td> de tao
+     khoang cach (KHONG dung border-spacing - da thu va thay khong tao
+     khoang cach dang tin cay trong xhtml2pdf, cac o dinh sat nhau). */
+  .snapshot-table { width: auto; border-collapse: collapse; margin-top: 10px; }
+  .snapshot-table td { width: 210px; vertical-align: top; padding: 0 14px 16px 0; border: none; }
+  .snapshot-card { border: 1px solid #e5e7eb; border-radius: 4px; overflow: hidden; }
+  .snapshot-card img { width: 208px; display: block; border-bottom: 1px solid #e5e7eb; }
+  .snapshot-card .cap { padding: 6px 8px; font-size: 10.5px; }
+  .snapshot-card .cap .time { font-weight: 700; }
+
+  .empty-note { color: #6b7280; font-style: italic; font-size: 12px; }
+
+  .report-footer {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    color: #6b7280;
+    font-size: 10px;
+  }
+</style>
+
+<div class="report-header">
+  <h1>Báo cáo giám sát thi</h1>
+  <div class="subtitle">Sinh tự động từ log Risk Fusion Engine — phiên giám sát {{ summary.session_id }}</div>
+  <div class="meta-row">
+    <span><b>Phiên:</b> {{ summary.session_id }}</span>
+    {% if session_meta.student_name %}<span><b>Thí sinh:</b> {{ session_meta.student_name }}</span>{% endif %}
+    {% if session_meta.candidate_number %}<span><b>Mã:</b> {{ session_meta.candidate_number }}</span>{% endif %}
+    {% if session_meta.candidate_email %}<span><b>Email:</b> {{ session_meta.candidate_email }}</span>{% endif %}
+    {% if session_meta.authentication_method %}<span><b>Xác thực:</b> {{ session_meta.authentication_method }}</span>{% endif %}
+    {% if session_meta.client_type %}<span><b>Client:</b> {{ session_meta.client_type }}</span>{% endif %}
+    {% if session_meta.started_at %}<span><b>Bắt đầu:</b> {{ session_meta.started_at }}</span>{% endif %}
+    {% if session_meta.ended_at %}<span><b>Kết thúc:</b> {{ session_meta.ended_at }}</span>{% endif %}
+    <span><b>Thời lượng:</b> {{ "%.0f"|format(summary.duration_sec / 60) }} phút</span>
+    {% if session_meta.fps_avg %}<span><b>FPS trung bình:</b> {{ session_meta.fps_avg }}</span>{% endif %}
+  </div>
+</div>
+
+<div class="summary-box">
+  <div class="sentence">{{ summary.summary_sentence }}</div>
+  <table class="stat-table"><tr>
+    <td>
+      <div class="num">{{ summary.total_violations }}</div>
+      <div class="label">Tổng số vi phạm</div>
+    </td>
+    <td>
+      <div class="num" style="color: {{ severity_color('HIGH') }};">{{ summary.count_by_severity.get('HIGH', 0) }}</div>
+      <div class="label">Mức cao</div>
+    </td>
+    <td>
+      <div class="num" style="color: {{ severity_color('MEDIUM') }};">{{ summary.count_by_severity.get('MEDIUM', 0) }}</div>
+      <div class="label">Mức trung bình</div>
+    </td>
+    <td>
+      <div class="num">{{ "%.1f"|format(summary.peak_risk_score) }}</div>
+      <div class="label">Risk score cao nhất</div>
+    </td>
+    <td>
+      <div class="num">{{ browser_events|length }}</div>
+      <div class="label">Sự kiện trình duyệt</div>
+    </td>
+  </tr></table>
+</div>
+
+<h2>Risk score theo thời gian</h2>
+{% if risk_timeline_chart %}
+<div class="chart-block"><img src="data:image/png;base64,{{ risk_timeline_chart }}" alt="Risk score theo thoi gian"></div>
+{% else %}
+<p class="empty-note">Không có dữ liệu risk score cho phiên này (thiếu risk_score_timeline.jsonl).</p>
+{% endif %}
+
+<h2>Vi phạm theo loại</h2>
+{% if violation_type_chart %}
+<div class="chart-block"><img src="data:image/png;base64,{{ violation_type_chart }}" alt="So vi pham theo loai"></div>
+{% else %}
+<p class="empty-note">Không phát hiện vi phạm nào trong phiên này.</p>
+{% endif %}
+
+<h2>Danh sách vi phạm chi tiết</h2>
+{% if violations %}
+<table>
+  <thead>
+    <tr>
+      <th>Thời điểm</th>
+      <th>Loại vi phạm</th>
+      <th>Mức độ</th>
+      <th>Risk score</th>
+      <th>Tín hiệu liên quan</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in violations %}
+    <tr>
+      <td>{{ "%02d:%02d"|format((v.video_time_sec // 60)|int, (v.video_time_sec % 60)|int) }}</td>
+      <td>{{ violation_type_label(v.primary_violation) }}</td>
+      <td><span class="badge" style="background: {{ severity_color(v.severity) }};">{{ severity_label(v.severity) }}</span></td>
+      <td>{{ "%.1f"|format(v.risk_score) }}</td>
+      <td>{{ v.contributing_signals | map(attribute="signal_name") | join(", ") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-note">Không có vi phạm nào được ghi nhận.</p>
+{% endif %}
+
+<h2>Sự kiện toàn vẹn trình duyệt</h2>
+{% if browser_events %}
+<table>
+  <thead>
+    <tr>
+      <th>Thời điểm</th>
+      <th>Sự kiện</th>
+      <th>Mức độ</th>
+      <th>Chi tiết</th>
+      <th>Ảnh</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for event in browser_events %}
+    <tr>
+      <td>{{ "%02d:%02d"|format((event.video_time_sec // 60)|int, (event.video_time_sec % 60)|int) }}</td>
+      <td>{{ browser_event_label(event.event_type) }}</td>
+      <td><span class="badge" style="background: {{ severity_color(event.severity) }};">{{ severity_label(event.severity) }}</span></td>
+      <td>
+        {% if event.server_duration_ms is not none %}Vắng {{ "%.1f"|format(event.server_duration_ms / 1000) }} giây{% endif %}
+        {% if event.observed_origin %}{{ event.observed_origin }}{% endif %}
+      </td>
+      <td>{% if event.image_data_uri %}<img src="{{ event.image_data_uri }}" alt="browser evidence" style="width:80px;">{% else %}-{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-note">Không có sự kiện toàn vẹn trình duyệt nào được ghi nhận.</p>
+{% endif %}
+
+<h2>Ảnh chụp kèm mốc thời gian</h2>
+{% if snapshots %}
+<table class="snapshot-table">
+  {% for row in snapshots|batch(3) %}
+  <tr>
+    {% for s in row %}
+    <td>
+      <div class="snapshot-card">
+        {% if s.image_data_uri %}<img src="{{ s.image_data_uri }}" alt="snapshot">{% endif %}
+        <div class="cap">
+          <div class="time">{{ "%02d:%02d"|format((s.video_time_sec // 60)|int, (s.video_time_sec % 60)|int) }}
+            <span class="badge" style="background: {{ severity_color(s.severity) }};">{{ severity_label(s.severity) }}</span>
+          </div>
+          <div>{{ violation_type_label(s.primary_violation) }}</div>
+        </div>
+      </div>
+    </td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty-note">Không có ảnh chụp nào được lưu trong phiên này.</p>
+{% endif %}
+
+<div class="report-footer">
+  Báo cáo sinh tự động lúc {{ generated_at }} · fusion_config_version={{ session_meta.get('fusion_config_version', 'v1') }} · Giám sát CV + Browser Guard
+</div>

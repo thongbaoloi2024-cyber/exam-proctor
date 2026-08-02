@@ -1,0 +1,22 @@
+# Image backend cho platform (Tuan 12 moi) - xem docs/KE_HOACH_PLATFORM.md.
+#
+# Image chi cai requirements-backend.txt. Cac package CV/model nang chi can
+# tren may thi sinh; cac package chung da dung lazy import de backend co the
+# sinh bao cao ma khong khoi tao PyTorch/MediaPipe/Ultralytics.
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements-backend.txt .
+RUN pip install --no-cache-dir -r requirements-backend.txt
+
+COPY backend backend
+COPY src src
+COPY config config
+
+ENV PYTHONPATH=/app
+ENV SESSIONS_ROOT=/app/sessions
+
+EXPOSE 8000
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

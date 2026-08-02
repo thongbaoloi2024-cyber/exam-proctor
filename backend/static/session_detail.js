@@ -1,0 +1,221 @@
+const detailRoot = document.getElementById("session-detail-root");
+const EXAM_ID = detailRoot.dataset.examId;
+const SESSION_ID = detailRoot.dataset.sessionId;
+const SEVERITY_BADGE_CLASS = { LOW: "badge-low", MEDIUM: "badge-medium", HIGH: "badge-high" };
+const snapshotObjectUrls = [];
+const BROWSER_EVENT_LABELS = {
+  CONTENT_MONITOR_READY: "Bộ giám sát trang sẵn sàng",
+  TAB_HIDDEN: "Ẩn tab bài thi",
+  TAB_VISIBLE: "Quay lại tab bài thi",
+  WINDOW_BLUR: "Rời cửa sổ bài thi",
+  WINDOW_FOCUS: "Quay lại cửa sổ bài thi",
+  TAB_SWITCHED: "Chuyển tab",
+  NEW_TAB: "Mở tab mới",
+  NAVIGATION_AWAY: "Điều hướng khỏi miền bài thi",
+  FULLSCREEN_EXIT: "Thoát toàn màn hình",
+  FULLSCREEN_ENTER: "Vào toàn màn hình",
+  CLIPBOARD_COPY: "Copy/Cut",
+  CLIPBOARD_PASTE: "Paste",
+  CONTEXT_MENU: "Menu chuột phải",
+  CAMERA_MUTED: "Camera tạm dừng",
+  CAMERA_ENDED: "Camera dừng",
+  MICROPHONE_MUTED: "Microphone tạm dừng",
+  MICROPHONE_ENDED: "Microphone dừng",
+  SCREEN_SHARE_ENDED: "Chia sẻ màn hình dừng",
+  MONITOR_CLOSED: "Cửa sổ giám sát đóng",
+  PERMISSION_MISSING: "Thiếu quyền bắt buộc",
+};
+
+function numeric(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function showTableMessage(tbody, message, columns = 4) {
+  const row = document.createElement("tr");
+  const cell = document.createElement("td");
+  cell.colSpan = columns;
+  cell.className = "muted";
+  cell.textContent = message;
+  row.appendChild(cell);
+  tbody.replaceChildren(row);
+}
+
+function appendBrowserEventRow(tbody, browserEvent) {
+  const row = document.createElement("tr");
+  const timeCell = document.createElement("td");
+  timeCell.textContent = numeric(browserEvent.video_time_sec).toFixed(1);
+
+  const severityCell = document.createElement("td");
+  const badge = document.createElement("span");
+  const severity = String(browserEvent.severity || "LOW");
+  badge.className = `badge ${SEVERITY_BADGE_CLASS[severity] || "badge-low"}`;
+  badge.textContent = severity;
+  severityCell.appendChild(badge);
+
+  const eventCell = document.createElement("td");
+  eventCell.textContent = BROWSER_EVENT_LABELS[browserEvent.event_type] || String(browserEvent.event_type || "-");
+  const detailCell = document.createElement("td");
+  const details = [];
+  if (browserEvent.server_duration_ms != null) details.push(`${(numeric(browserEvent.server_duration_ms) / 1000).toFixed(1)}s`);
+  if (browserEvent.observed_origin) details.push(String(browserEvent.observed_origin));
+  detailCell.textContent = details.join(" · ") || "-";
+
+  const snapshotCell = document.createElement("td");
+  if (browserEvent.snapshot_path) {
+    const filename = String(browserEvent.snapshot_path).split(/[\\/]/).pop();
+    const img = document.createElement("img");
+    img.className = "snapshot-thumb";
+    img.alt = "Ảnh bằng chứng trình duyệt";
+    snapshotCell.appendChild(img);
+    loadSnapshot(
+      img,
+      `/sessions/${encodeURIComponent(SESSION_ID)}/snapshots/${encodeURIComponent(filename)}`,
+    ).catch(() => {});
+  } else {
+    snapshotCell.textContent = "-";
+  }
+  row.append(timeCell, severityCell, eventCell, detailCell, snapshotCell);
+  tbody.appendChild(row);
+}
+
+function renderRiskChart(riskTimeline) {
+  const svg = document.getElementById("risk-chart");
+  const startLabel = document.getElementById("chart-time-start");
+  const endLabel = document.getElementById("chart-time-end");
+  const maxLabel = document.getElementById("chart-score-max");
+
+  if (!Array.isArray(riskTimeline) || riskTimeline.length === 0) {
+    const note = document.createElement("p");
+    note.className = "muted";
+    note.textContent = "Chưa có dữ liệu risk score cho phiên này.";
+    svg.parentElement.replaceChildren(note);
+    return;
+  }
+
+  const pointsData = riskTimeline.map((point) => ({
+    time: Math.max(0, numeric(point.video_time_sec)),
+    score: Math.max(0, numeric(point.risk_score)),
+  }));
+  const width = 600;
+  const height = 150;
+  const padding = 8;
+  const maxTime = Math.max(...pointsData.map((point) => point.time), 1);
+  const maxScore = Math.max(...pointsData.map((point) => point.score), 1);
+  const points = pointsData.map((point) => {
+    const x = padding + (point.time / maxTime) * (width - 2 * padding);
+    const y = height - padding - (point.score / maxScore) * (height - 2 * padding);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+
+  const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+  polyline.setAttribute("points", points);
+  polyline.setAttribute("fill", "none");
+  polyline.setAttribute("stroke", "#4f8ef7");
+  polyline.setAttribute("stroke-width", "2");
+  svg.replaceChildren(polyline);
+  startLabel.textContent = "0s";
+  endLabel.textContent = `${maxTime.toFixed(0)}s`;
+  maxLabel.textContent = `risk_score cao nhất: ${maxScore.toFixed(1)}`;
+}
+
+async function loadSnapshot(img, url) {
+  const response = await API.request(url);
+  if (!response.ok) return;
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  snapshotObjectUrls.push(objectUrl);
+  img.src = objectUrl;
+  img.addEventListener("click", () => window.open(objectUrl, "_blank", "noopener"));
+}
+
+function appendViolationRow(tbody, violation) {
+  const row = document.createElement("tr");
+  const timeCell = document.createElement("td");
+  timeCell.textContent = numeric(violation.video_time_sec).toFixed(1);
+
+  const severityCell = document.createElement("td");
+  const badge = document.createElement("span");
+  const severity = String(violation.severity || "LOW");
+  badge.className = `badge ${SEVERITY_BADGE_CLASS[severity] || "badge-low"}`;
+  badge.textContent = severity;
+  severityCell.appendChild(badge);
+
+  const typeCell = document.createElement("td");
+  typeCell.textContent = String(violation.primary_violation || "-");
+  const snapshotCell = document.createElement("td");
+
+  if (violation.snapshot_path) {
+    const filename = String(violation.snapshot_path).split(/[\\/]/).pop();
+    const img = document.createElement("img");
+    img.className = "snapshot-thumb";
+    img.alt = "Ảnh chụp bằng chứng";
+    img.title = "Nhấn để xem ảnh đầy đủ";
+    snapshotCell.appendChild(img);
+    const url = `/sessions/${encodeURIComponent(SESSION_ID)}/snapshots/${encodeURIComponent(filename)}`;
+    loadSnapshot(img, url).catch(() => {});
+  } else {
+    const empty = document.createElement("span");
+    empty.className = "muted";
+    empty.textContent = "-";
+    snapshotCell.appendChild(empty);
+  }
+
+  row.append(timeCell, severityCell, typeCell, snapshotCell);
+  tbody.appendChild(row);
+}
+
+async function loadDetail() {
+  const response = await API.request(`/sessions/${encodeURIComponent(SESSION_ID)}/detail`);
+  if (!response.ok) throw new Error("Không tải được chi tiết phiên.");
+  const detail = await response.json();
+
+  document.getElementById("student-name-heading").textContent = `Chi tiết phiên - ${detail.student_name}`;
+  const meta = detail.session_meta || {};
+  const durationLabel = meta.duration_sec != null ? `${numeric(meta.duration_sec).toFixed(1)}s` : "đang diễn ra";
+  const violations = Array.isArray(detail.violations) ? detail.violations : [];
+  document.getElementById("session-summary").textContent =
+    `Trạng thái: ${detail.status} · Xác thực: ${detail.authentication_method} · Client: ${detail.client_type}`
+    + ` · Thời lượng: ${durationLabel} · Vi phạm CV: ${violations.length}`
+    + ` · Sự kiện trình duyệt: ${detail.browser_event_count}`;
+
+  renderRiskChart(detail.risk_timeline);
+  const tbody = document.querySelector("#violations-table tbody");
+  tbody.replaceChildren();
+  if (violations.length === 0) {
+    showTableMessage(tbody, "Không có vi phạm nào được ghi nhận.");
+  } else {
+    violations.forEach((violation) => appendViolationRow(tbody, violation));
+  }
+
+  const browserEvents = Array.isArray(detail.browser_events) ? detail.browser_events : [];
+  const browserTbody = document.querySelector("#browser-events-table tbody");
+  browserTbody.replaceChildren();
+  if (browserEvents.length === 0) {
+    showTableMessage(browserTbody, "Không có sự kiện trình duyệt nào được ghi nhận.", 5);
+  } else {
+    browserEvents.forEach((browserEvent) => appendBrowserEventRow(browserTbody, browserEvent));
+  }
+}
+
+document.getElementById("report-html-link").addEventListener("click", (event) => {
+  event.preventDefault();
+  openAuthenticatedFile(`/sessions/${encodeURIComponent(SESSION_ID)}/report/html`);
+});
+document.getElementById("report-pdf-link").addEventListener("click", (event) => {
+  event.preventDefault();
+  openAuthenticatedFile(`/sessions/${encodeURIComponent(SESSION_ID)}/report/pdf`);
+});
+window.addEventListener("unload", () => snapshotObjectUrls.forEach((url) => URL.revokeObjectURL(url)));
+
+async function initializeDetail() {
+  const user = await API.requireAuth();
+  if (!user) return;
+  try {
+    await loadDetail();
+  } catch (error) {
+    showToast(error.message || "Không tải được chi tiết phiên.", "error");
+  }
+}
+
+initializeDetail();

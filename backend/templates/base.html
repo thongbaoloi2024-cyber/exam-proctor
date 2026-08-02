@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Giám Thị Số{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%81%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="{{ 'no-sidebar' if hide_sidebar else '' }}">
+  {% if not hide_sidebar %}
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2 12C4.5 7 8 4.5 12 4.5S19.5 7 22 12C19.5 17 16 19.5 12 19.5S4.5 17 2 12Z" stroke="currentColor" stroke-width="1.6"/>
+        <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
+      </svg>
+      <span>Giám Thị Số</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/ui/exams" class="nav-item">Kỳ thi</a>
+      <span class="nav-item nav-item-disabled">Cài đặt <span class="badge-soon">Sắp ra mắt</span></span>
+    </nav>
+    <div class="sidebar-footer">
+      <span id="role-badge" class="role-badge"></span>
+      <button id="logout-btn" class="link-button" style="display:none">Đăng xuất</button>
+    </div>
+  </aside>
+  {% endif %}
+  <div class="page">
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <div id="toast-region" aria-live="polite"></div>
+  <script src="/static/api.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
