@@ -1,6 +1,8 @@
 "use strict";
 
 const ext = globalThis.browser || globalThis.chrome;
+const BACKEND_URL = "http://localhost:8000";
+const SETUP_DRAFT_KEY = "dattSetupDraft";
 let currentPolicy = null;
 let googleProfile = null;
 
@@ -10,6 +12,17 @@ function setStatus(id, text, kind = "") {
   const node = element(id);
   node.textContent = text;
   node.className = `status${kind ? ` ${kind}` : ""}`;
+}
+
+async function requestOriginPermissions(urls) {
+  const origins = [...new Set(urls.filter(Boolean).map(DATT.originPattern))];
+  if (!origins.length) return true;
+  if (await ext.permissions.contains({ origins })) return true;
+  return ext.permissions.request({ origins });
+}
+
+async function saveSetupDraft(joinCode) {
+  await ext.storage.session.set({ [SETUP_DRAFT_KEY]: { joinCode } });
 }
 
 async function send(message) {
@@ -70,18 +83,19 @@ async function checkRequiredMedia(policy) {
 }
 
 element("check-code").addEventListener("click", async () => {
-  const baseUrl = element("backend-url").value;
   const joinCode = element("join-code").value.trim().toUpperCase();
   setStatus("setup-status", "Đang kiểm tra...");
   try {
-    DATT.normalizeBaseUrl(baseUrl);
-    const permission = await send({ type: "DATT_PREPARE_PERMISSIONS", urls: [baseUrl] });
-    if (!permission.granted) throw new Error("Bạn chưa cấp quyền truy cập backend.");
-    const { policy } = await send({ type: "DATT_GET_POLICY", baseUrl, joinCode });
+    DATT.normalizeBaseUrl(BACKEND_URL);
+    await saveSetupDraft(joinCode);
+    if (!(await requestOriginPermissions([BACKEND_URL]))) {
+      throw new Error("Bạn chưa cấp quyền truy cập backend.");
+    }
+    const { policy } = await send({ type: "DATT_GET_POLICY", baseUrl: BACKEND_URL, joinCode });
     renderPolicy(policy);
     if (policy.candidate_auth_mode === "google") {
       if (!policy.google_login_available) throw new Error("Backend chưa cấu hình Google OAuth cho kỳ thi này.");
-      const { profile } = await send({ type: "DATT_GET_CANDIDATE", baseUrl });
+      const { profile } = await send({ type: "DATT_GET_CANDIDATE", baseUrl: BACKEND_URL });
       renderGoogleProfile(profile);
     }
     setStatus("setup-status", "Mã hợp lệ.", "success");
@@ -95,7 +109,10 @@ element("check-code").addEventListener("click", async () => {
 element("google-login").addEventListener("click", async () => {
   setStatus("join-status", "Đang mở đăng nhập Google...");
   try {
-    const { profile } = await send({ type: "DATT_GOOGLE_LOGIN", baseUrl: element("backend-url").value });
+    const { profile } = await send({
+      type: "DATT_GOOGLE_LOGIN",
+      baseUrl: BACKEND_URL,
+    });
     renderGoogleProfile(profile);
     setStatus("join-status", "Đã xác minh tài khoản Google.", "success");
   } catch (error) {
@@ -105,7 +122,7 @@ element("google-login").addEventListener("click", async () => {
 
 element("google-logout").addEventListener("click", async () => {
   try {
-    await send({ type: "DATT_GOOGLE_LOGOUT", baseUrl: element("backend-url").value });
+    await send({ type: "DATT_GOOGLE_LOGOUT", baseUrl: BACKEND_URL });
     renderGoogleProfile(null);
     setStatus("join-status", "Đã xóa phiên đăng nhập lưu trên thiết bị.", "success");
   } catch (error) {
@@ -128,18 +145,19 @@ element("join-exam").addEventListener("click", async () => {
   element("join-exam").disabled = true;
   setStatus("join-status", "Đang kiểm tra thiết bị và tạo phiên...");
   try {
-    const urls = [element("backend-url").value, currentPolicy.exam_url].filter(Boolean);
-    const permission = await send({ type: "DATT_PREPARE_PERMISSIONS", urls });
-    if (!permission.granted) throw new Error("Chưa cấp quyền truy cập trang bài thi.");
+    const urls = [BACKEND_URL, currentPolicy.exam_url].filter(Boolean);
+    if (!(await requestOriginPermissions(urls))) {
+      throw new Error("Chưa cấp quyền truy cập trang bài thi.");
+    }
     await checkRequiredMedia(currentPolicy);
     const { session } = await send({
       type: "DATT_JOIN_EXAM",
-      baseUrl: element("backend-url").value,
+      baseUrl: BACKEND_URL,
       joinCode: element("join-code").value,
       studentName,
       candidateId,
     });
-    setStatus("join-status", `Đã tạo phiên ${session.sessionId}. Hãy kích hoạt cửa sổ giám sát vừa mở.`, "success");
+    setStatus("join-status", `Đã tạo phiên ${session.sessionId}. Hãy kích hoạt popup giám sát trên trang thi.`, "success");
     element("join-card").classList.add("hidden");
   } catch (error) {
     setStatus("join-status", error.message, "error");
@@ -149,14 +167,12 @@ element("join-exam").addEventListener("click", async () => {
 });
 
 async function initialize() {
-  const [{ settings }, { session }, extensionInfo] = await Promise.all([
-    send({ type: "DATT_GET_SETTINGS" }),
+  const [{ session }, storedDraft] = await Promise.all([
     send({ type: "DATT_GET_ACTIVE" }),
-    send({ type: "DATT_GET_EXTENSION_INFO" }),
+    ext.storage.session.get(SETUP_DRAFT_KEY),
   ]);
-  element("extension-info").textContent =
-    `Extension ${extensionInfo.version} · OAuth redirect: ${extensionInfo.oauthRedirectUri}`;
-  if (settings?.baseUrl) element("backend-url").value = settings.baseUrl;
+  const draft = storedDraft[SETUP_DRAFT_KEY];
+  if (draft?.joinCode) element("join-code").value = draft.joinCode;
   if (session) {
     element("active-card").classList.remove("hidden");
     element("join-card").classList.add("hidden");

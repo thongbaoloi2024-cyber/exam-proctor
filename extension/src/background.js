@@ -65,7 +65,6 @@ function publicActive() {
     policy: active.policy,
     connected: socket?.readyState === WebSocket.OPEN,
     examTabId: active.examTabId || null,
-    monitorWindowId: active.monitorWindowId || null,
   };
 }
 
@@ -75,6 +74,11 @@ async function requestOriginPermissions(urls) {
   const contains = await ext.permissions.contains({ origins });
   if (contains) return true;
   return ext.permissions.request({ origins });
+}
+
+async function hasOriginPermissions(urls) {
+  const origins = [...new Set(urls.filter(Boolean).map(DATT.originPattern))];
+  return !origins.length || ext.permissions.contains({ origins });
 }
 
 async function technicalDataAllowed() {
@@ -116,10 +120,15 @@ async function candidateState(baseUrl) {
 
 async function googleLogin(baseUrl) {
   const normalizedBase = DATT.normalizeBaseUrl(baseUrl);
-  const deviceId = await ensureDeviceId();
   const extensionRedirect = ext.identity.getRedirectURL("google");
   const startUrl = `${normalizedBase}/candidate-auth/google/start?extension_redirect_uri=${encodeURIComponent(extensionRedirect)}`;
   const finalUrl = await ext.identity.launchWebAuthFlow({ url: startUrl, interactive: true });
+  return completeGoogleLogin(normalizedBase, finalUrl);
+}
+
+async function completeGoogleLogin(baseUrl, finalUrl) {
+  const normalizedBase = DATT.normalizeBaseUrl(baseUrl);
+  const deviceId = await ensureDeviceId();
   if (!finalUrl) throw new Error("Không nhận được kết quả đăng nhập Google.");
   const result = DATT.parseOAuthRedirect(finalUrl);
   if (result.error) throw new Error(`Đăng nhập Google không hoàn tất: ${result.error}`);
@@ -171,7 +180,7 @@ async function joinExam(message) {
   if (DATT.compareVersions(DATT.VERSION, policy.min_extension_version) < 0) {
     throw new Error(`Cần extension phiên bản ${policy.min_extension_version} trở lên.`);
   }
-  if (!(await requestOriginPermissions([baseUrl, policy.exam_url]))) {
+  if (!(await hasOriginPermissions([baseUrl, policy.exam_url]))) {
     throw new Error("Bạn chưa cấp quyền truy cập backend hoặc trang bài thi cho extension.");
   }
 
@@ -223,8 +232,6 @@ async function joinExam(message) {
     pendingEvents: [],
     examTabId: null,
     examWindowId: null,
-    monitorTabId: null,
-    monitorWindowId: null,
     mediaReady: false,
     bootstrapping: true,
   };
@@ -237,21 +244,13 @@ async function joinExam(message) {
 async function openExamAndMonitor() {
   if (!active) return;
   if (active.policy.exam_url && !active.examTabId) {
-    const examTab = await ext.tabs.create({ url: active.policy.exam_url, active: false });
+    const examTab = await ext.tabs.create({ url: active.policy.exam_url, active: true });
     active.examTabId = examTab.id;
     active.examWindowId = examTab.windowId;
     await persistActive();
   }
-  if (!active.monitorWindowId) {
-    const monitorWindow = await ext.windows.create({
-      url: ext.runtime.getURL("monitor.html"),
-      type: "popup",
-      width: 420,
-      height: 690,
-      focused: true,
-    });
-    active.monitorWindowId = monitorWindow.id;
-    active.monitorTabId = monitorWindow.tabs?.[0]?.id || null;
+  if (active.examTabId) {
+    await configureExamContent(active.examTabId);
   }
   active.bootstrapping = false;
   await persistActive();
@@ -270,6 +269,8 @@ async function configureExamContent(tabId) {
     await ext.scripting.executeScript({ target: { tabId }, files: ["common.js", "content-monitor.js"] });
     await ext.tabs.sendMessage(tabId, {
       type: "DATT_CONFIGURE",
+      session: publicActive(),
+      showMonitor: !active.mediaReady,
       policy: {
         examOrigin: DATT.safeOrigin(active.policy.exam_url),
         requireFullscreen: active.policy.require_fullscreen,
@@ -462,6 +463,8 @@ async function handleMessage(message, sender) {
       return { profile: await candidateState(message.baseUrl) };
     case "DATT_GOOGLE_LOGIN":
       return { profile: await googleLogin(message.baseUrl) };
+    case "DATT_COMPLETE_GOOGLE_LOGIN":
+      return { profile: await completeGoogleLogin(message.baseUrl, message.finalUrl) };
     case "DATT_GOOGLE_LOGOUT":
       await googleLogout(message.baseUrl);
       return { profile: null };
@@ -498,24 +501,24 @@ ext.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-ext.action.onClicked.addListener(() => {
-  ext.tabs.create({ url: ext.runtime.getURL("setup.html") });
-});
-
 ext.tabs.onActivated.addListener((info) => {
-  if (!active || active.bootstrapping || !active.mediaReady || info.tabId === active.examTabId || info.tabId === active.monitorTabId) return;
+  if (!active || active.bootstrapping || !active.mediaReady || info.tabId === active.examTabId) return;
   ext.tabs.get(info.tabId).then((tab) => enqueueBrowserEvent("TAB_SWITCHED", {
     observedOrigin: tab.url,
   })).catch(() => enqueueBrowserEvent("TAB_SWITCHED"));
 });
 
 ext.tabs.onCreated.addListener((tab) => {
-  if (!active || active.bootstrapping || !active.mediaReady || tab.id === active.examTabId || tab.id === active.monitorTabId) return;
+  if (!active || active.bootstrapping || !active.mediaReady || tab.id === active.examTabId) return;
   enqueueBrowserEvent("NEW_TAB", { observedOrigin: tab.url });
 });
 
 ext.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!active || tabId !== active.examTabId) return;
+  if (changeInfo.status === "loading" && active.mediaReady) {
+    active.mediaReady = false;
+    persistActive();
+  }
   if (changeInfo.url) {
     const expected = DATT.safeOrigin(active.policy.exam_url);
     const observed = DATT.safeOrigin(changeInfo.url);
@@ -536,13 +539,7 @@ ext.tabs.onRemoved.addListener((tabId) => {
 ext.windows.onFocusChanged.addListener((windowId) => {
   if (!active || !active.mediaReady) return;
   if (windowId === active.examWindowId) enqueueBrowserEvent("WINDOW_FOCUS");
-  else if (windowId !== active.monitorWindowId) enqueueBrowserEvent("WINDOW_BLUR");
-});
-
-ext.windows.onRemoved.addListener((windowId) => {
-  if (active && windowId === active.monitorWindowId) {
-    enqueueBrowserEvent("MONITOR_CLOSED");
-  }
+  else enqueueBrowserEvent("WINDOW_BLUR");
 });
 
 ext.alarms.onAlarm.addListener((alarm) => {

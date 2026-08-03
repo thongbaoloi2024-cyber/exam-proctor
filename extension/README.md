@@ -6,10 +6,13 @@ source được build thành hai gói Manifest V3:
 - Chrome 116+ dùng extension service worker và WebSocket keepalive 15 giây.
 - Firefox 140+ dùng background event page và built-in data-collection consent.
 
-Camera/microphone/screen-share được giữ bởi `monitor.html`, một cửa sổ có
-preview và chỉ báo rõ ràng. Background không quay ẩn và không truyền video liên
-tục. Extension hiện giám sát tính toàn vẹn trình duyệt; pipeline CV Python bảy
-tín hiệu vẫn là module riêng và chưa được port sang WebAssembly/WebGPU.
+Camera/microphone/screen-share được bật qua popup overlay nằm trên trang thi,
+có preview và chỉ báo rõ ràng. Background không quay ẩn và không truyền video
+liên tục. Extension hiện giám sát tính toàn vẹn trình duyệt; pipeline CV Python
+bảy tín hiệu vẫn là module riêng và chưa được port sang WebAssembly/WebGPU.
+
+Nhấn biểu tượng extension trên thanh công cụ sẽ mở panel tham gia kỳ thi ngay
+dưới biểu tượng. Các màn hình nội bộ không mở thành tab hoặc cửa sổ riêng.
 
 ## Build và test
 
@@ -37,7 +40,7 @@ Chrome:
 1. Mở `chrome://extensions`.
 2. Bật **Developer mode**.
 3. Chọn **Load unpacked** và trỏ tới `extension/dist/chrome`.
-4. Nhấn biểu tượng extension để mở trang tham gia.
+4. Nhấn biểu tượng extension để mở panel tham gia.
 
 Firefox:
 
@@ -114,7 +117,8 @@ thi. Backend kiểm tra claim `hd` đã ký, không chỉ so chuỗi phía sau e
 
 ## Luồng phiên thi
 
-1. Nhập backend và mã tham gia.
+1. Mở panel từ biểu tượng extension và nhập mã tham gia. Backend được cấu hình
+   nội bộ, không hiển thị trên panel.
 2. Extension xin host permission cho đúng backend và origin bài thi.
 3. Backend trả về chính sách xác thực/thiết bị.
 4. Thí sinh xác thực và đồng ý chính sách.
@@ -122,7 +126,7 @@ thi. Backend kiểm tra claim `hd` đã ký, không chỉ so chuỗi phía sau e
 6. Backend tạo session và cấp session JWT.
 7. Extension đổi JWT qua REST lấy WebSocket ticket 30 giây dùng một lần.
 8. Ticket đi trong `Sec-WebSocket-Protocol`; session JWT không nằm trong URL.
-9. Cửa sổ monitor xin quyền thiết bị; sau khi sẵn sàng mới kích hoạt tab thi.
+9. Popup overlay trên trang thi xin quyền thiết bị; sau khi sẵn sàng mới thu nhỏ.
 10. Background gửi heartbeat, xếp hàng sự kiện và chờ ACK trước khi xóa.
 
 ## Dữ liệu được ghi nhận
@@ -133,7 +137,6 @@ thi. Backend kiểm tra claim `hd` đã ký, không chỉ so chuỗi phía sau e
 - Hành động copy, cut, paste và menu chuột phải; không đọc nội dung clipboard.
 - Điều hướng khỏi origin bài thi.
 - Camera/microphone/screen-share bị mute, dừng hoặc thiếu quyền.
-- Cửa sổ giám sát bị đóng.
 - Heartbeat và phiên bản extension/browser.
 
 Server tự gắn timestamp, tự tính mức độ và điểm integrity riêng. Dữ liệu này

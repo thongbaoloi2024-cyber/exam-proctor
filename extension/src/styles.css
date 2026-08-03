@@ -14,6 +14,11 @@
 html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
 body { padding: 24px; }
 .shell { max-width: 720px; margin: 0 auto; }
+.setup-body { width: 420px; min-width: 360px; max-width: 100vw; padding: 14px; overflow-x: hidden; }
+.setup-body .shell { width: 100%; max-width: none; }
+.setup-body .brand { margin-bottom: 14px; }
+.setup-body .card { padding: 14px; }
+.setup-body .grid { grid-template-columns: 1fr; }
 .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .brand-mark { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #1d4ed8; font-weight: 800; }
 h1 { font-size: 1.35rem; margin: 0; }
@@ -48,4 +53,8 @@ video { display: block; width: 100%; max-height: 280px; background: #050608; bor
 .indicator-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .indicator-ok { border-color: var(--success); color: #70d98a; }
 .indicator-wait { border-color: #c98b22; color: #f0bd5c; }
-@media (max-width: 560px) { body { padding: 12px; } .card { padding: 14px; } }
+@media (max-width: 560px) {
+  body { padding: 12px; }
+  .card { padding: 14px; }
+  .setup-body { width: 100vw; min-width: 320px; }
+}

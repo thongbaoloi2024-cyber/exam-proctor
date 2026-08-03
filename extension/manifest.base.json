@@ -15,7 +15,8 @@
     "https://*/*"
   ],
   "action": {
-    "default_title": "Mở Giám Thị Số"
+    "default_title": "Mở Giám Thị Số",
+    "default_popup": "setup.html"
   },
   "content_security_policy": {
     "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; object-src 'none'; base-uri 'self'"

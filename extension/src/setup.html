@@ -1,70 +1,116 @@
 <!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tham gia kỳ thi · Giám Thị Số</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <main class="shell">
-    <div class="brand"><div class="brand-mark">GS</div><div><h1>Giám Thị Số</h1><div class="muted">Browser Exam Guard</div></div></div>
-
-    <section id="active-card" class="card hidden">
-      <h2>Phiên đang hoạt động</h2>
-      <p id="active-summary"></p>
-      <p class="muted">Không thể tham gia kỳ thi khác cho đến khi phiên hiện tại kết thúc.</p>
-    </section>
-
-    <section id="join-card" class="card">
-      <h2>1. Kiểm tra mã tham gia</h2>
-      <div class="grid">
-        <label>Địa chỉ backend
-          <input id="backend-url" type="url" value="http://localhost:8000" autocomplete="url" required>
-        </label>
-        <label>Mã tham gia
-          <input id="join-code" type="text" minlength="6" maxlength="12" autocomplete="one-time-code" required>
-        </label>
-      </div>
-      <div class="actions"><button id="check-code" type="button">Kiểm tra mã</button></div>
-      <p id="setup-status" class="status" role="status" aria-live="polite"></p>
-    </section>
-
-    <section id="policy-card" class="card hidden">
-      <h2 id="exam-name">2. Xác thực thí sinh</h2>
-      <ul id="policy-list" class="policy-list"></ul>
-
-      <div id="manual-fields" class="grid hidden">
-        <label>Họ và tên
-          <input id="student-name" type="text" maxlength="200" autocomplete="name">
-        </label>
-        <label>Mã thí sinh
-          <input id="candidate-id" type="text" maxlength="100" autocomplete="off">
-        </label>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tham gia kỳ thi · Giám Thị Số</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="setup-body">
+    <main class="shell">
+      <div class="brand">
+        <div class="brand-mark">GS</div>
+        <div>
+          <h1>Giám Thị Số</h1>
+          <!-- <div class="muted">Browser Exam Guard</div> -->
+        </div>
       </div>
 
-      <div id="google-fields" class="hidden">
-        <div id="google-profile" class="profile hidden">
-          <strong id="google-name"></strong>
-          <span id="google-email" class="muted"></span>
+      <section id="active-card" class="card hidden">
+        <h2>Phiên đang hoạt động</h2>
+        <p id="active-summary"></p>
+        <p class="muted">
+          Trang thi và bảng giám sát đang chạy ở tab bài thi. Không thể tham gia
+          kỳ thi khác cho đến khi phiên hiện tại kết thúc.
+        </p>
+      </section>
+
+      <section id="join-card" class="card">
+        <h2>1. Kiểm tra mã tham gia</h2>
+        <div class="grid">
+          <label
+            >Mã tham gia
+            <input
+              id="join-code"
+              type="text"
+              minlength="6"
+              maxlength="12"
+              autocomplete="one-time-code"
+              required
+            />
+          </label>
         </div>
         <div class="actions">
-          <button id="google-login" type="button">Đăng nhập bằng Google</button>
-          <button id="google-logout" type="button" class="secondary hidden">Quên tài khoản đã lưu</button>
+          <button id="check-code" type="button">Kiểm tra mã</button>
         </div>
-        <p class="muted">Hệ thống chỉ dùng tên, email và mã định danh Google đã xác minh. Access token/refresh token của Google không được lưu.</p>
-      </div>
+        <p
+          id="setup-status"
+          class="status"
+          role="status"
+          aria-live="polite"
+        ></p>
+      </section>
 
-      <label class="consent">
-        <input id="consent" type="checkbox">
-        <span>Tôi đã đọc chính sách phía trên và đồng ý bật giám sát trong thời gian thi. Extension không đọc nội dung clipboard và không truyền video liên tục.</span>
-      </label>
-      <div class="actions"><button id="join-exam" type="button">Tham gia kỳ thi</button></div>
-      <p id="join-status" class="status" role="status" aria-live="polite"></p>
-    </section>
-    <p id="extension-info" class="muted"></p>
-  </main>
-  <script src="common.js"></script>
-  <script src="setup.js"></script>
-</body>
+      <section id="policy-card" class="card hidden">
+        <h2 id="exam-name">2. Xác thực thí sinh</h2>
+        <ul id="policy-list" class="policy-list"></ul>
+
+        <div id="manual-fields" class="grid hidden">
+          <label
+            >Họ và tên
+            <input
+              id="student-name"
+              type="text"
+              maxlength="200"
+              autocomplete="name"
+            />
+          </label>
+          <label
+            >Mã thí sinh
+            <input
+              id="candidate-id"
+              type="text"
+              maxlength="100"
+              autocomplete="off"
+            />
+          </label>
+        </div>
+
+        <div id="google-fields" class="hidden">
+          <div id="google-profile" class="profile hidden">
+            <strong id="google-name"></strong>
+            <span id="google-email" class="muted"></span>
+          </div>
+          <div class="actions">
+            <button id="google-login" type="button">
+              Đăng nhập bằng Google
+            </button>
+            <button id="google-logout" type="button" class="secondary hidden">
+              Quên tài khoản đã lưu
+            </button>
+          </div>
+          <p class="muted">
+            Hệ thống chỉ dùng tên, email và mã định danh Google đã xác minh.
+            Access token/refresh token của Google không được lưu. Sau khi xác
+            thực, hãy mở lại panel nếu trình duyệt đã tự đóng panel.
+          </p>
+        </div>
+
+        <label class="consent">
+          <input id="consent" type="checkbox" />
+          <span
+            >Tôi đã đọc chính sách phía trên và đồng ý bật giám sát trong thời
+            gian thi. Extension không đọc nội dung clipboard và không truyền
+            video liên tục.</span
+          >
+        </label>
+        <div class="actions">
+          <button id="join-exam" type="button">Tham gia kỳ thi</button>
+        </div>
+        <p id="join-status" class="status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <script src="common.js"></script>
+    <script src="setup.js"></script>
+  </body>
 </html>
