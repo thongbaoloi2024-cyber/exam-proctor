@@ -4,7 +4,8 @@
 > phát triển và có thể không còn đúng với source hiện tại. Bản hardening đã sửa
 > auth cookie/XSS, WebSocket strict telemetry, snapshot upload, exam expiry,
 > liveness, dependency backend nhẹ và single-worker guard. Dùng `README.md`,
-> `SECURITY.md`, `backend/ws_schemas.py` và test hiện tại làm nguồn chuẩn.
+> `SECURITY.md`, `backend/ws_schemas.py` và test hiện tại làm nguồn chuẩn. Kiến
+> trúc quản trị ba cấp mới hơn nằm tại `docs/QUAN_TRI_VA_PHAN_QUYEN.md`.
 
 > Viết sau khi hoàn chỉnh Tuần 1-12 (pipeline CV single-machine, xem `docs/DATA_SCHEMAS.md`, `docs/DIAGRAMS.md`, `docs/KE_HOACH_CHI_TIET_TUAN12.md`). Người dùng quyết định mở rộng đồ án thành 1 sản phẩm thương mại hóa được — không chỉ đóng gói đẹp cho 1 máy — deadline lùi 1-2 tháng để đủ thời gian. Tài liệu này ghi lại kiến trúc + lộ trình mới, đối chiếu rõ với kế hoạch Tuần 12 cũ.
 
@@ -18,7 +19,12 @@ Kế hoạch Tuần 12 cũ (`docs/KE_HOACH_CHI_TIET_TUAN12.md`) hướng tới 1
 
 **Đối tượng khách hàng** (B2B, tổ chức tự vận hành kỳ thi của họ):
 - Trường đại học/cao đẳng, trung tâm khảo thí/chứng chỉ — không nhắm cá nhân lẻ.
-- 2 vai trò dùng thật: **giám thị** (`proctor`, có tài khoản, dùng dashboard) và **thí sinh** (không có tài khoản, chỉ nhập tên + join-code — giữ luồng nhẹ như vào phòng Kahoot/Quizizz).
+- Ở mốc triển khai của tài liệu này có 2 vai trò dùng thật: **giám thị**
+  (`proctor`, có tài khoản, dùng dashboard) và **thí sinh** (không có tài khoản,
+  chỉ nhập tên + join-code — giữ luồng nhẹ như vào phòng Kahoot/Quizizz). Đây là
+  mô hình lịch sử; hướng nâng cấp tách System Admin, Organization Admin và Exam
+  Manager/Giáo viên được đặc tả riêng tại
+  `docs/QUAN_TRI_VA_PHAN_QUYEN.md`.
 - Định vị cạnh tranh: chi phí thấp hơn Proctorio/Honorlock/ProctorU (đã khảo sát ở Chương 3), tự host bằng Docker Compose, dữ liệu khuôn mặt lưu trong nước (thuận lợi cho tuân thủ Nghị định 13/2023, khác các SaaS nước ngoài).
 
 **Quyết định "không video live"** (đã hỏi và chốt với người dùng): dashboard giám thị hiển thị **bảng điểm rủi ro real-time + ảnh chụp bằng chứng lúc có vi phạm**, KHÔNG phải lưới video trực tiếp kiểu Zoom/Google Meet. Lý do:
@@ -54,6 +60,25 @@ main.py / client (CV engine, KHÔNG ĐỔI)      backend/ (FastAPI)
 ```
 
 Xem `docs/DATA_SCHEMAS.md` mục 7 cho chi tiết bảng DB.
+
+### 2.1. Lớp quản trị mục tiêu
+
+Lớp platform sẽ phát triển từ RBAC hai role hiện tại sang **RBAC + scope**:
+
+```text
+System Admin ---- quản lý platform/tổ chức, không mặc định đọc evidence
+                       |
+Organization Admin ---+--- quản lý thành viên/chính sách trong một org_id
+                       |
+Exam Manager ----------+--- chỉ vận hành Exam có ExamAssignment hợp lệ
+                       |
+Candidate ---------------- token exam_session của đúng một ExamSession
+```
+
+Mọi quyết định truy cập dữ liệu kỳ thi phải kiểm tra cả capability, `org_id` và
+`ExamAssignment`; ẩn menu ở frontend không thay thế kiểm tra tại REST,
+WebSocket, snapshot và report download. Mô hình bảng mục tiêu, sitemap và lộ
+trình migration xem `docs/QUAN_TRI_VA_PHAN_QUYEN.md`.
 
 ---
 

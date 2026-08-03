@@ -323,3 +323,40 @@ thái ban đầu mà không cần đọc lại file `.jsonl`.
 - Đề cương & cơ sở lý thuyết (lý do chọn hysteresis, weighted fusion): `docs/DE_CUONG_CHI_TIET.md`, mục 5.3.
 - Kế hoạch tổng: `KE_HOACH_DO_AN.md`, mục 3 (thiết kế kỹ thuật) và mục 3.3 (đánh giá định lượng).
 - Kiến trúc + lộ trình lớp platform (multi-tenant, cloud, dashboard giám thị): `docs/KE_HOACH_PLATFORM.md` (Tuần 12 mới trở đi).
+
+---
+
+## 9. Data model quản trị mục tiêu (chưa triển khai)
+
+Mục 7 phản ánh schema SQL hiện tại với `User.org_id` và role
+`admin|proctor`. Kiến trúc quản trị ba cấp không thay đổi log CV/JSONL nhưng dự
+kiến chuẩn hóa lớp identity và authorization như sau:
+
+```text
+User --< SystemRole
+  |
+  +--< OrganizationMembership >-- Organization --< Exam --< ExamSession
+              |                                    |
+              +----------------< ExamAssignment >--+
+
+User/Organization/Exam --< AuditLog
+User --< AccessGrant >-- Organization
+```
+
+| Bảng mục tiêu | Khóa/phạm vi | Vai trò |
+|---|---|---|
+| `SystemRole` | `user_id + role` | Gán `system_admin` ngoài luồng quản lý tổ chức |
+| `OrganizationMembership` | unique `user_id + org_id` | Gán `org_admin` hoặc `exam_manager`, có trạng thái/expiry |
+| `ExamAssignment` | unique `exam_id + user_id` | Giới hạn giáo viên theo `owner/manager/proctor` của kỳ thi |
+| `Invitation` | `org_id + token_hash` | Mời thành viên bằng token một lần, không gửi mật khẩu |
+| `AuditLog` | `org_id/resource/created_at` | Nhật ký append-only cho quyền và dữ liệu nhạy cảm |
+| `AccessGrant` | `requester + org_id + expires_at` | Break-glass có lý do, phê duyệt và thời hạn |
+
+`User.org_id` và chuỗi role hiện tại sẽ được migration theo mapping
+`admin → org_admin`, `proctor → exam_manager`. `ExamAssignment` phải được
+backfill trước khi đổi query danh sách để không làm mất quyền truy cập kỳ thi
+hiện có. Sau migration, query kỳ thi của Exam Manager bắt buộc join assignment;
+Organization Admin vẫn lọc trực tiếp bằng `Exam.org_id`.
+
+Schema chi tiết, ràng buộc và thứ tự migration nằm tại
+`docs/QUAN_TRI_VA_PHAN_QUYEN.md`.

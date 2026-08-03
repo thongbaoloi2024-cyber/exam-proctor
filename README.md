@@ -21,6 +21,27 @@ Bảy tín hiệu hiện có là `FACE_PRESENCE`, `MULTI_FACE`, `EYE_STATE`,
 stream video liên tục lên backend; chỉ gửi telemetry đã gom theo chu kỳ và ảnh
 bằng chứng tại thời điểm sinh vi phạm.
 
+## Quản trị và phân quyền
+
+Backend hiện tại đã cách ly dữ liệu theo tổ chức nhưng mới có hai role kỹ thuật:
+`admin` và `proctor`. Cả hai hiện có thể tạo kỳ thi và xem toàn bộ kỳ thi trong
+tổ chức; chỉ `admin` được tạo tài khoản `proctor`.
+
+Kiến trúc nâng cấp đã được đặc tả theo ba mức:
+
+| Vai trò mục tiêu | Phạm vi chính |
+|---|---|
+| `system_admin` | Quản lý platform, tổ chức, hạn mức, vận hành và audit toàn cục; không mặc định xem bằng chứng thí sinh |
+| `org_admin` | Quản lý thành viên, chính sách và mọi kỳ thi trong một tổ chức |
+| `exam_manager` | Chỉ tạo/vận hành kỳ thi do mình sở hữu hoặc được phân công |
+
+Mô hình mục tiêu kết hợp RBAC với `org_id` và phân công theo từng kỳ thi. Giao
+diện, ma trận quyền, mô hình dữ liệu, API policy, audit/break-glass và lộ trình
+migration được mô tả tại
+[docs/QUAN_TRI_VA_PHAN_QUYEN.md](docs/QUAN_TRI_VA_PHAN_QUYEN.md). Đây là kiến
+trúc mục tiêu; không nên coi các endpoint/màn hình trong tài liệu đó là đã có
+trong source hiện tại.
+
 ## Các thay đổi an toàn quan trọng
 
 Phiên bản này đã được harden so với bản demo ban đầu:
@@ -188,8 +209,10 @@ Trang setup của extension hiển thị chính xác redirect URI của chính b
 
 ## Nối client với platform
 
-1. Admin hoặc giám thị tạo kỳ thi, chọn `manual`/`google`, URL bài thi và các
-   quyền bắt buộc rồi lấy join code sáu ký tự.
+1. Với phiên bản hiện tại, Admin hoặc giám thị tạo kỳ thi, chọn
+   `manual`/`google`, URL bài thi và các quyền bắt buộc rồi lấy join code sáu ký
+   tự. Theo kiến trúc mục tiêu, thao tác này thuộc Organization Admin hoặc Exam
+   Manager được phân công.
 2. Thí sinh cài extension, nhập backend + join code. Extension chỉ hiện đúng
    chế độ xác thực của kỳ thi.
 3. Thí sinh đồng ý chính sách, kiểm tra camera/microphone và kích hoạt cửa sổ
@@ -268,3 +291,5 @@ liệu. Hệ thống hiện phù hợp nghiên cứu, đồ án và demo có ki�
 
 Các tài liệu `docs/BAO_CAO_TUAN*.md` và `docs/KE_HOACH_*.md` ghi lại lịch sử phát
 triển; nếu có khác biệt, README, SECURITY và code/test hiện tại là nguồn chuẩn.
+Kiến trúc quản trị ba cấp trong `docs/QUAN_TRI_VA_PHAN_QUYEN.md` là nguồn chuẩn
+cho phần nâng cấp RBAC sắp tới, đồng thời luôn ghi rõ phần nào chưa triển khai.

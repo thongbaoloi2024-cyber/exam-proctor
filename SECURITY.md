@@ -36,6 +36,25 @@ Server thực hiện các kiểm tra có thể xác minh từ protocol:
 - Browser event có allowlist/schema, sequence/event-id, server timestamp và
   server-side severity. Integrity score không được cộng lẫn với risk CV.
 
+## Kiểm soát mục tiêu cho quản trị ba cấp
+
+> Phần này là yêu cầu cho đợt nâng cấp RBAC, chưa phải cam kết rằng source hiện
+> tại đã triển khai đủ. Đặc tả đầy đủ nằm tại
+> `docs/QUAN_TRI_VA_PHAN_QUYEN.md`.
+
+- Quyền phải được quyết định từ role + `org_id` + `ExamAssignment`, không dựa
+  vào menu frontend hoặc chỉ dựa vào role ghi trong JWT.
+- System Admin quản lý hạ tầng nhưng không mặc định đọc evidence của thí sinh;
+  truy cập hỗ trợ cần break-glass có lý do, hết hạn, chỉ đọc và audit.
+- Thay đổi membership/assignment phải làm mất hiệu lực REST session và đóng
+  WebSocket không còn quyền.
+- Mọi endpoint REST, WebSocket, snapshot và report phải dùng cùng policy; query
+  tenant trước khi tra resource ID để chống IDOR và rò rỉ sự tồn tại dữ liệu.
+- Audit log cho đổi quyền và truy cập dữ liệu nhạy cảm là append-only, loại bỏ
+  token/password hash/sinh trắc khỏi before-after snapshot.
+- System Admin phải dùng MFA; các thao tác cấp quyền cao, suspend tổ chức, export
+  hàng loạt và break-glass phải xác thực lại.
+
 ## Giới hạn không thể che giấu
 
 Một client Python chạy trên máy do thí sinh sở hữu có thể bị patch. Kẻ tấn công

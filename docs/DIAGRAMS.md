@@ -212,6 +212,9 @@ stateDiagram-v2
 ## 4. Sơ đồ luồng người dùng & quản trị viên (Tuần 12-15, lớp platform)
 
 > Khác 3 mục trên (kiến trúc xử lý CV nội bộ 1 phiên) — mục này mô tả cách **3 vai trò con người** tương tác với hệ thống qua lớp platform (backend + dashboard, xem `docs/KE_HOACH_PLATFORM.md`). Không có video/hình ảnh trực tiếp truyền giữa các vai trò (quyết định đã chốt — xem mục 1 `docs/KE_HOACH_PLATFORM.md`), chỉ có số liệu (risk score, loại vi phạm) và ảnh chụp bằng chứng.
+>
+> **Lưu ý:** mục 4 phản ánh role `admin/proctor` đang có. Sơ đồ kiến trúc mục
+> tiêu System Admin/Organization Admin/Exam Manager nằm ở mục 6.
 
 ### 4.1. Vai trò
 
@@ -318,3 +321,48 @@ sequenceDiagram
 - Đề cương & khảo sát kỹ thuật (cơ sở lý thuyết cho hysteresis, state machine): `docs/DE_CUONG_CHI_TIET.md`, mục 5.3.
 - Cấu trúc dữ liệu tương ứng các sơ đồ trên (JSON schema, log format, ground-truth format): `docs/DATA_SCHEMAS.md` (mục 1-6 cho CV, mục 7 cho data model platform).
 - Kiến trúc + quyết định thiết kế lớp platform (multi-tenant, backend, dashboard): `docs/KE_HOACH_PLATFORM.md`.
+
+---
+
+## 6. Sơ đồ phân quyền quản trị mục tiêu
+
+```mermaid
+flowchart TB
+    REQ["REST / WebSocket / file download"] --> AUTHN["Xác thực identity<br/>account + token type + session version"]
+    AUTHN --> TENANT["Xác định scope<br/>system hoặc active org_id"]
+    TENANT --> CAP["Kiểm tra capability RBAC"]
+    CAP --> RESOURCE["Kiểm tra resource scope<br/>org_id + ExamAssignment"]
+    RESOURCE --> STATE["Kiểm tra trạng thái/policy<br/>user, org, exam, expiry, deny"]
+    STATE --> DECISION{"Cho phép?"}
+    DECISION -->|Có| ACTION["Thực hiện transaction"]
+    DECISION -->|Không| DENY["404 ngoài scope<br/>403 thiếu capability"]
+    ACTION --> AUDIT["Append AuditLog<br/>actor + scope + action + outcome"]
+    DENY --> AUDIT
+
+    SYS["System Admin<br/>platform capability<br/>evidence cần break-glass"] -.-> CAP
+    ORG["Organization Admin<br/>membership theo org"] -.-> TENANT
+    EXAM["Exam Manager/Giáo viên<br/>owner/manager/proctor"] -.-> RESOURCE
+```
+
+Quan hệ phạm vi dữ liệu:
+
+```mermaid
+erDiagram
+    USER ||--o{ SYSTEM_ROLE : has
+    USER ||--o{ ORGANIZATION_MEMBERSHIP : joins
+    ORGANIZATION ||--o{ ORGANIZATION_MEMBERSHIP : contains
+    ORGANIZATION ||--o{ EXAM : owns
+    USER ||--o{ EXAM_ASSIGNMENT : receives
+    EXAM ||--o{ EXAM_ASSIGNMENT : scopes
+    EXAM ||--o{ EXAM_SESSION : contains
+    USER ||--o{ AUDIT_LOG : acts
+    ORGANIZATION ||--o{ AUDIT_LOG : scopes
+    USER ||--o{ ACCESS_GRANT : requests
+    ORGANIZATION ||--o{ ACCESS_GRANT : protects
+```
+
+System Admin không có đường truy cập mặc định tới `ExamSession`/evidence. Muốn
+hỗ trợ dữ liệu nhạy cảm phải có `AccessGrant` còn hạn; Organization Admin đi
+qua membership cùng `org_id`; Exam Manager phải có thêm `ExamAssignment` của
+đúng kỳ thi. Chi tiết ma trận quyền và sitemap xem
+`docs/QUAN_TRI_VA_PHAN_QUYEN.md`.
