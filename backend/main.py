@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import re
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -22,8 +23,10 @@ from .db_migrations import apply_additive_migrations
 from .routers import auth as auth_router
 from .routers import candidate_auth as candidate_auth_router
 from .routers import exams as exams_router
+from .routers import organizations as organizations_router
 from .routers import pages as pages_router
 from .routers import sessions as sessions_router
+from .routers import system as system_router
 from .routers import ws as ws_router
 
 _IS_PRODUCTION = os.environ.get("APP_ENV", "development").strip().lower() == "production"
@@ -38,10 +41,11 @@ def initialize_backend() -> None:
         worker_count = int(os.environ.get("WEB_CONCURRENCY", "1"))
     except ValueError as exc:
         raise RuntimeError("WEB_CONCURRENCY phai la so nguyen") from exc
-    if worker_count != 1:
+    redis_url = os.environ.get("REDIS_URL", "").strip()
+    if worker_count != 1 and not redis_url:
         raise RuntimeError(
-            "Backend WebSocket hien dung connection manager in-process; "
-            "dat WEB_CONCURRENCY=1 hoac bo sung Redis pub/sub truoc khi tang worker."
+            "Nhieu backend worker bat buoc cau hinh REDIS_URL cho pub/sub, "
+            "client lease va distributed rate limit."
         )
     candidate_auth_router.validate_google_oauth_configuration()
     Base.metadata.create_all(bind=engine)
@@ -83,11 +87,13 @@ _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
+    request.state.request_id = str(uuid.uuid4())
     force_https = os.environ.get("FORCE_HTTPS", "false").strip().lower() in {"1", "true", "yes", "on"}
     if force_https and request.url.scheme != "https":
         return RedirectResponse(str(request.url.replace(scheme="https")), status_code=307)
 
     response = await call_next(request)
+    response.headers["X-Request-ID"] = request.state.request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
@@ -101,7 +107,9 @@ async def security_headers(request: Request, call_next):
     )
     if request.url.scheme == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    if request.url.path.startswith(("/auth", "/exams", "/sessions", "/ui")):
+    if request.url.path.startswith(
+        ("/auth", "/system", "/organizations", "/exams", "/sessions", "/ui")
+    ):
         response.headers["Cache-Control"] = "no-store"
     return response
 
@@ -111,7 +119,9 @@ app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 app.include_router(auth_router.router)
 app.include_router(candidate_auth_router.router)
 app.include_router(exams_router.router)
+app.include_router(organizations_router.router)
 app.include_router(sessions_router.router)
+app.include_router(system_router.router)
 app.include_router(ws_router.router)
 app.include_router(pages_router.router)
 

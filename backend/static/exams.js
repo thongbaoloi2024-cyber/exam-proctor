@@ -57,22 +57,35 @@ async function rotateJoinCode(examId) {
 }
 
 function buildExamRow(exam) {
+  const breakGlassView = Boolean(currentUser?.is_system_admin);
   const row = document.createElement("tr");
   appendTextCell(row, exam.name);
   appendTextCell(row, exam.candidate_auth_mode === "google" ? "Google" : "Họ tên + mã thí sinh");
 
   const codeCell = document.createElement("td");
-  const code = document.createElement("code");
-  code.textContent = exam.join_code;
-  const copyButton = document.createElement("button");
-  copyButton.type = "button";
-  copyButton.className = "link-button copy-btn";
-  copyButton.textContent = "Chép";
-  copyButton.addEventListener("click", () => copyJoinCode(exam.join_code));
-  codeCell.append(code, document.createTextNode(" "), copyButton);
+  if (breakGlassView || !exam.join_code) {
+    codeCell.textContent = "Đã ẩn";
+    codeCell.className = "muted";
+  } else {
+    const code = document.createElement("code");
+    code.textContent = exam.join_code;
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.className = "link-button copy-btn";
+    copyButton.textContent = "Chép";
+    copyButton.addEventListener("click", () => copyJoinCode(exam.join_code));
+    codeCell.append(code, document.createTextNode(" "), copyButton);
+  }
   row.appendChild(codeCell);
 
-  appendTextCell(row, exam.status === "open" ? "Đang mở" : "Đã đóng");
+  const statusLabels = {
+    draft: "Bản nháp",
+    scheduled: "Đã lên lịch",
+    open: "Đang mở",
+    closed: "Đã đóng",
+    archived: "Đã lưu trữ",
+  };
+  appendTextCell(row, statusLabels[exam.status] || exam.status);
   appendTextCell(row, formatExpiry(exam.join_code_expires_at));
 
   const actions = document.createElement("td");
@@ -81,7 +94,11 @@ function buildExamRow(exam) {
   dashboardLink.textContent = "Dashboard";
   actions.appendChild(dashboardLink);
 
-  if (["admin", "proctor"].includes(currentUser?.role)) {
+  if (API.hasCapability("exam.manage")) {
+    const manageLink = document.createElement("a");
+    manageLink.href = `/ui/exams/${encodeURIComponent(exam.id)}/manage`;
+    manageLink.textContent = "Quản lý";
+    actions.append(document.createTextNode(" · "), manageLink);
     const statusButton = document.createElement("button");
     statusButton.type = "button";
     statusButton.className = "link-button";
@@ -107,7 +124,12 @@ async function loadExams() {
   if (!response.ok) throw new Error("Không tải được danh sách kỳ thi.");
   const exams = await response.json();
   if (exams.length === 0) {
-    showTableMessage(tbody, "Chưa có kỳ thi nào - tạo kỳ thi đầu tiên ở trên.");
+    showTableMessage(
+      tbody,
+      currentUser?.is_system_admin
+        ? "Không có kỳ thi thuộc quyền break-glass đang hiệu lực."
+        : "Chưa có kỳ thi nào - tạo kỳ thi đầu tiên ở trên.",
+    );
     return;
   }
   tbody.replaceChildren(...exams.map(buildExamRow));
@@ -119,6 +141,7 @@ document.getElementById("create-exam-form").addEventListener("submit", async (ev
   const authMode = document.getElementById("candidate-auth-mode").value;
   const payload = {
     name: nameInput.value,
+    initial_status: document.getElementById("initial-status").value,
     candidate_auth_mode: authMode,
     exam_url: document.getElementById("exam-url").value,
     require_extension: document.getElementById("require-extension").checked,
@@ -148,32 +171,24 @@ document.getElementById("create-exam-form").addEventListener("submit", async (ev
   }
 });
 
-document.getElementById("create-proctor-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const emailInput = document.getElementById("proctor-email");
-  const passwordInput = document.getElementById("proctor-password");
-  const response = await API.request("/auth/proctors", {
-    method: "POST",
-    body: JSON.stringify({ email: emailInput.value, password: passwordInput.value }),
-  });
-  if (response.ok) {
-    showToast(`Đã tạo tài khoản giám thị: ${emailInput.value}`, "success");
-    emailInput.value = "";
-    passwordInput.value = "";
-  } else {
-    const body = await response.json().catch(() => ({}));
-    showToast(body.detail || "Không tạo được tài khoản giám thị.", "error");
-  }
-});
-
 async function initializeExams() {
   currentUser = await API.requireAuth();
   if (!currentUser) return;
-  const proctorCard = document.getElementById("proctor-card");
-  const createExamForm = document.getElementById("create-exam-form");
-  if (currentUser.role !== "admin") {
-    proctorCard.style.display = "none";
+  if (currentUser.effective_role === "org_admin" || currentUser.role === "admin") {
+    window.location.replace("/ui/organization");
+    return;
   }
+  if (currentUser.is_system_admin) {
+    document.getElementById("exams-page-title").textContent = "Dữ liệu break-glass";
+    document.getElementById("exams-page-description").classList.remove("hidden");
+    document.getElementById("exam-code-heading").textContent = "Mã tham gia (đã ẩn)";
+  }
+  const createExamForm = document.getElementById("create-exam-form");
+  createExamForm.classList.toggle("hidden", !API.hasCapability("exam.create"));
+  document.getElementById("organization-admin-hint").classList.toggle(
+    "hidden",
+    !API.hasCapability("org.members.manage"),
+  );
   try {
     await loadExams();
   } catch (error) {

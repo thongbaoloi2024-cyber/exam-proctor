@@ -12,6 +12,12 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
   backend:
     build:
       context: .
@@ -23,6 +29,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       DB_NAME: datt
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?Set MFA_ENCRYPTION_KEY in .env}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       FORCE_HTTPS: ${FORCE_HTTPS:-false}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
@@ -32,14 +39,38 @@ services:
       OAUTH_EXTENSION_REDIRECT_URIS: ${OAUTH_EXTENSION_REDIRECT_URIS:-}
       EXTENSION_ALLOWED_ORIGINS: ${EXTENSION_ALLOWED_ORIGINS:-}
       CANDIDATE_TOKEN_TTL_DAYS: ${CANDIDATE_TOKEN_TTL_DAYS:-90}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       SESSIONS_ROOT: /app/sessions
     depends_on:
       - db
+      - redis
     volumes:
       - sessions_data:/app/sessions
     ports:
       - "8000:8000"
 
+  report-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: ["python", "scripts/report_worker.py"]
+    environment:
+      APP_ENV: production
+      DB_HOST: db
+      DB_USER: datt
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      DB_NAME: datt
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?Set MFA_ENCRYPTION_KEY in .env}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      SESSIONS_ROOT: /app/sessions
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - sessions_data:/app/sessions
+
 volumes:
   db_data:
   sessions_data:
+  redis_data:

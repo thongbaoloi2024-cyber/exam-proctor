@@ -7,28 +7,98 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%81%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="{{ 'no-sidebar' if hide_sidebar else '' }}">
+<body class="{{ 'no-sidebar' if hide_sidebar else '' }} {% block body_class %}{% endblock %}">
   {% if not hide_sidebar %}
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M2 12C4.5 7 8 4.5 12 4.5S19.5 7 22 12C19.5 17 16 19.5 12 19.5S4.5 17 2 12Z" stroke="currentColor" stroke-width="1.6"/>
-        <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
-      </svg>
-      <span>Giám Thị Số</span>
-    </div>
-    <nav class="sidebar-nav">
-      <a href="/ui/exams" class="nav-item">Kỳ thi</a>
-      <span class="nav-item nav-item-disabled">Cài đặt <span class="badge-soon">Sắp ra mắt</span></span>
+  <aside class="sidebar" id="app-sidebar">
+    <a class="sidebar-brand" id="sidebar-home-link" href="/ui/exams" aria-label="Giám Thị Số - Trang chủ">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M2.75 12C5.04 7.72 8.12 5.58 12 5.58S18.96 7.72 21.25 12C18.96 16.28 15.88 18.42 12 18.42S5.04 16.28 2.75 12Z" stroke="currentColor" stroke-width="1.55"/>
+          <circle cx="12" cy="12" r="3.15" fill="currentColor"/>
+          <circle cx="13.1" cy="10.9" r=".8" fill="white" fill-opacity=".9"/>
+        </svg>
+      </span>
+      <span class="brand-copy">
+        <strong>Giám Thị Số</strong>
+        <small id="sidebar-brand-context">Quản lý kỳ thi</small>
+      </span>
+      <span class="platform-badge hidden" id="system-platform-badge">SYS</span>
+      <span class="platform-badge hidden" id="organization-platform-badge">ORG</span>
+      <span class="platform-badge hidden" id="exam-platform-badge">EXAM</span>
+    </a>
+    <nav class="sidebar-nav" aria-label="Điều hướng chính">
+      <div class="nav-group" id="tenant-nav-group">
+        <div class="system-nav-section" id="exam-nav-section">
+          <div class="nav-section-label">Vận hành kỳ thi</div>
+          <a href="/ui/exams" class="nav-item" id="nav-exams">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 2.75V6M16 2.75V6M3.5 9h17M8 13h3M8 16h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+            <span class="nav-copy"><strong>Kỳ thi</strong><small>Danh sách, phân công và phiên thi</small></span>
+          </a>
+        </div>
+        <div class="system-nav-section hidden" id="organization-nav-section">
+          <div class="nav-section-label">Quản trị tổ chức</div>
+          <a href="/ui/organization" class="nav-item" id="nav-organization">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20V8l8-4 8 4v12M8 20v-7h8v7M2.5 20h19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="nav-copy"><strong>Tổ chức</strong><small>Thành viên, vai trò và chính sách</small></span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-group hidden" id="system-nav-group">
+        <div class="system-nav-section">
+          <div class="nav-section-label">Không gian làm việc</div>
+          <a href="/ui/system" class="nav-item" id="nav-system">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3.5" width="7" height="4" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="10.5" width="7" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg></span>
+            <span class="nav-copy"><strong>Tổng quan</strong><small>Sức khỏe toàn nền tảng</small></span>
+          </a>
+        </div>
+        <div class="system-nav-section">
+          <div class="nav-section-label">Quản lý nền tảng</div>
+          <a href="/ui/system/organizations" class="nav-item" id="nav-system-organizations">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20V8l8-4 8 4v12M8 20v-7h8v7M2.5 20h19M8 9h.01M12 9h.01M16 9h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="nav-copy"><strong>Tổ chức</strong><small>Tenant, quota và trạng thái</small></span>
+          </a>
+        </div>
+        <div class="system-nav-section">
+          <div class="nav-section-label">Quản trị & tuân thủ</div>
+          <a href="/ui/system/security" class="nav-item" id="nav-system-security">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.25 19 6v5.25c0 4.35-2.86 7.83-7 9.5-4.14-1.67-7-5.15-7-9.5V6l7-2.75Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="nav-copy"><strong>Bảo mật & truy cập</strong><small>Yêu cầu quyền đặc biệt</small></span>
+          </a>
+          <a href="/ui/system/evidence" class="nav-item hidden" id="nav-system-evidence">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 12s3.25-5.5 9-5.5 9 5.5 9 5.5-3.25 5.5-9 5.5S3 12 3 12Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M18.5 5.5 20 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+            <span class="nav-copy"><strong>Dữ liệu break-glass</strong><small>Evidence được cấp quyền</small></span>
+          </a>
+          <a href="/ui/system/audit" class="nav-item" id="nav-system-audit">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3.5h10a2 2 0 0 1 2 2v15l-3-2-4 2-4-2-3 2v-15a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+            <span class="nav-copy"><strong>Nhật ký audit</strong><small>Truy vết hoạt động hệ thống</small></span>
+          </a>
+        </div>
+      </div>
     </nav>
     <div class="sidebar-footer">
-      <span id="role-badge" class="role-badge"></span>
-      <button id="logout-btn" class="link-button" style="display:none">Đăng xuất</button>
+      <!-- <div id="organization-context">
+        <label class="organization-switcher-label" for="organization-switcher">Tổ chức đang hoạt động</label>
+        <select id="organization-switcher" class="organization-switcher" disabled>
+          <option>Đang tải...</option>
+        </select>
+      </div> -->
+      <div id="system-scope" class="system-scope hidden">
+        <span class="scope-icon" aria-hidden="true"><span class="scope-dot"></span></span>
+        <span><small>Phạm vi truy cập</small><strong>Toàn hệ thống</strong></span>
+      </div>
+      <div class="sidebar-account hidden" id="sidebar-account">
+        <span class="account-avatar" id="account-avatar" aria-hidden="true">SA</span>
+        <span class="account-copy"><strong id="account-email">—</strong><small id="role-badge" class="role-badge"></small></span>
+        <button id="logout-btn" class="logout-button" style="display:none" aria-label="Đăng xuất" title="Đăng xuất">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10M14.5 8.5 18 12l-3.5 3.5M9 12h9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
     </div>
   </aside>
   {% endif %}
   <div class="page">
-    <main class="container">
+    <main class="container {% block container_class %}{% endblock %}">
       {% block content %}{% endblock %}
     </main>
   </div>

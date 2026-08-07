@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements-backend.txt
 COPY backend backend
 COPY src src
 COPY config config
+COPY scripts scripts
 
 ENV PYTHONPATH=/app
 ENV SESSIONS_ROOT=/app/sessions

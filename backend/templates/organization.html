@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Quản trị tổ chức · Giám Thị Số{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 id="organization-title">Tổ chức</h1>
+  <p class="muted" id="organization-meta">Đang tải...</p>
+</section>
+
+<section class="card">
+  <h2>Mời thành viên</h2>
+  <form id="invitation-form" class="inline-form">
+    <input id="invitation-email" type="email" placeholder="giaovien@example.edu" required>
+    <select id="invitation-role">
+      <option value="exam_manager">Exam Manager / Giáo viên</option>
+      <option value="org_admin">Organization Admin</option>
+    </select>
+    <button type="submit">Tạo lời mời</button>
+  </form>
+  <div id="invitation-result" class="callout hidden"></div>
+</section>
+
+<section class="card">
+  <h2>Thành viên</h2>
+  <div class="table-scroll">
+    <table class="data-table" id="members-table">
+      <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody><tr><td colspan="4">Đang tải...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Chính sách mặc định</h2>
+  <form id="policy-form" class="form-grid">
+    <label>Phiên bản extension tối thiểu<input id="policy-extension-version" value="1.0.0" required></label>
+    <label>Retention (ngày)<input id="policy-retention" type="number" min="1" max="3650" required></label>
+    <label>Rời cửa sổ tối đa (giây)<input id="policy-focus" type="number" min="0" max="300" step="0.5"></label>
+    <label class="checkbox-label"><input id="policy-require-extension" type="checkbox"> Bắt buộc extension</label>
+    <label class="checkbox-label"><input id="policy-require-camera" type="checkbox"> Bắt buộc camera</label>
+    <label class="checkbox-label"><input id="policy-require-fullscreen" type="checkbox"> Bắt buộc fullscreen</label>
+    <div><button type="submit">Lưu chính sách</button></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Yêu cầu break-glass</h2>
+  <div class="table-scroll">
+    <table class="data-table" id="access-grants-table">
+      <thead><tr><th>Lý do</th><th>Trạng thái</th><th>Hết hạn</th><th>Thao tác</th></tr></thead>
+      <tbody><tr><td colspan="4">Đang tải...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Audit gần nhất</h2>
+  <div class="table-scroll">
+    <table class="data-table" id="organization-audit-table">
+      <thead><tr><th>Thời gian</th><th>Hành động</th><th>Tài nguyên</th><th>Kết quả</th></tr></thead>
+      <tbody><tr><td colspan="4">Đang tải...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/organization.js"></script>{% endblock %}

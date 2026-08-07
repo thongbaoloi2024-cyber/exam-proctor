@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Kỳ thi · Giám Thị Số{% endblock %}
+{% block body_class %}{{ 'system-admin-page' if system_evidence else '' }}{% endblock %}
+{% block container_class %}{{ 'system-container' if system_evidence else '' }}{% endblock %}
 {% block content %}
-<section class="card">
-  <h1>Kỳ thi của tổ chức</h1>
-  <form id="create-exam-form" class="policy-form">
+<section class="card" id="create-exam-card">
+  <h1 id="exams-page-title">{{ 'Dữ liệu break-glass' if system_evidence else 'Kỳ thi của tôi' }}</h1>
+  <p id="exams-page-description" class="muted{% if not system_evidence %} hidden{% endif %}">Chỉ hiển thị kỳ thi thuộc các yêu cầu đang hiệu lực. Quyền truy cập hoàn toàn chỉ đọc.</p>
+  <form id="create-exam-form" class="policy-form{% if system_evidence %} hidden{% endif %}">
     <div class="form-grid">
       <label>Tên kỳ thi
         <input type="text" id="exam-name" required>
@@ -15,6 +18,12 @@
         <select id="candidate-auth-mode">
           <option value="manual">Họ tên + mã thí sinh</option>
           <option value="google">Tài khoản Google</option>
+        </select>
+      </label>
+      <label>Trạng thái ban đầu
+        <select id="initial-status">
+          <option value="draft">Bản nháp</option>
+          <option value="open">Mở ngay</option>
         </select>
       </label>
       <label id="google-domain-wrap" class="hidden">Google Workspace domain (tùy chọn)
@@ -39,7 +48,7 @@
   </form>
   <table id="exams-table" class="data-table">
     <thead>
-      <tr><th>Tên kỳ thi</th><th>Xác thực</th><th>Mã tham gia</th><th>Trạng thái</th><th>Hết hạn</th><th></th></tr>
+      <tr><th>Tên kỳ thi</th><th>Xác thực</th><th id="exam-code-heading">Mã tham gia</th><th>Trạng thái</th><th>Hết hạn</th><th></th></tr>
     </thead>
     <tbody>
       <tr class="loading-row"><td colspan="6">Đang tải...</td></tr>
@@ -48,13 +57,9 @@
   <p class="muted">Phát mã cho thí sinh. Extension sẽ đọc chính sách của kỳ thi và chỉ hiển thị đúng chế độ xác thực đã chọn ở đây.</p>
 </section>
 
-<section class="card" id="proctor-card">
-  <h2>Thêm tài khoản giám thị</h2>
-  <form id="create-proctor-form" class="inline-form">
-    <input type="email" id="proctor-email" placeholder="Email giám thị" required>
-    <input type="password" id="proctor-password" placeholder="Mật khẩu" minlength="6" required>
-    <button type="submit">Tạo</button>
-  </form>
+<section class="card hidden" id="organization-admin-hint">
+  <h2>Quản trị thành viên</h2>
+  <p>Tài khoản và lời mời giáo viên được quản lý tại <a href="/ui/organization">trang Tổ chức</a>.</p>
 </section>
 {% endblock %}
 {% block scripts %}

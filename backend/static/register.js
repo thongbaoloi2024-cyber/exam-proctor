@@ -22,5 +22,5 @@ document.getElementById("register-form").addEventListener("submit", async (event
 
   const body = await response.json();
   API.setSession(body.role, body.org_id);
-  window.location.href = "/ui/exams";
+  window.location.href = "/ui/organization";
 });

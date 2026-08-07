@@ -1,10 +1,14 @@
-"""Small additive migrations for deployments created by older ZIP builds.
+"""Convergent additive migrations for deployments created by older builds.
 
-The project doesn't otherwise depend on Alembic. These migrations only add
-nullable/backfilled columns and are safe to run repeatedly at startup.
+The project does not yet depend on Alembic. Migrations in this module only add
+or backfill data, keep the legacy columns during the RBAC transition, and are
+safe to run repeatedly at startup. ``schema_migrations`` records completed
+milestones for support diagnostics; column/table checks remain the source of
+truth so an interrupted deployment can repair itself on the next startup.
 """
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import inspect, text
@@ -15,7 +19,189 @@ def _column_names(engine: Engine, table_name: str) -> set[str]:
     return {column["name"] for column in inspect(engine).get_columns(table_name)}
 
 
+def _create_migration_ledger(engine: Engine) -> None:
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS schema_migrations ("
+                "version VARCHAR(100) PRIMARY KEY, "
+                "applied_at TIMESTAMP NOT NULL"
+                ")"
+            )
+        )
+
+
+def _record_migration(engine: Engine, version: str) -> None:
+    with engine.begin() as connection:
+        exists = connection.execute(
+            text("SELECT 1 FROM schema_migrations WHERE version = :version"),
+            {"version": version},
+        ).first()
+        if exists is None:
+            connection.execute(
+                text(
+                    "INSERT INTO schema_migrations (version, applied_at) "
+                    "VALUES (:version, :applied_at)"
+                ),
+                {"version": version, "applied_at": datetime.now(timezone.utc)},
+            )
+
+
+def _add_columns(
+    engine: Engine,
+    table_name: str,
+    definitions: dict[str, str],
+) -> None:
+    columns = _column_names(engine, table_name)
+    with engine.begin() as connection:
+        for name, sql_type in definitions.items():
+            if name not in columns:
+                connection.execute(
+                    text(f"ALTER TABLE {table_name} ADD COLUMN {name} {sql_type}")
+                )
+
+
+def _backfill_rbac_foundation(engine: Engine) -> None:
+    tables = set(inspect(engine).get_table_names())
+    required = {"organizations", "users", "exams", "organization_memberships", "exam_assignments"}
+    if not required.issubset(tables):
+        return
+
+    now = datetime.now(timezone.utc)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "UPDATE organizations SET "
+                "status = COALESCE(status, 'active'), "
+                "settings_json = COALESCE(settings_json, '{}'), "
+                "retention_days = COALESCE(retention_days, 365), "
+                "updated_at = COALESCE(updated_at, created_at, :now)"
+            ),
+            {"now": now},
+        )
+        organizations = connection.execute(
+            text("SELECT id FROM organizations WHERE slug IS NULL OR slug = ''")
+        ).mappings()
+        for organization in organizations:
+            connection.execute(
+                text("UPDATE organizations SET slug = :slug WHERE id = :org_id"),
+                {
+                    "slug": f"org-{str(organization['id']).replace('-', '')[:12]}",
+                    "org_id": organization["id"],
+                },
+            )
+
+        connection.execute(
+            text(
+                "UPDATE users SET "
+                "status = COALESCE(status, 'active'), "
+                "session_version = COALESCE(session_version, 1), "
+                "updated_at = COALESCE(updated_at, created_at, :now)"
+            ),
+            {"now": now},
+        )
+        connection.execute(
+            text(
+                "UPDATE exams SET "
+                "owner_user_id = COALESCE(owner_user_id, created_by_user_id), "
+                "version = COALESCE(version, 1), "
+                "updated_at = COALESCE(updated_at, created_at, :now)"
+            ),
+            {"now": now},
+        )
+
+        users = list(
+            connection.execute(text("SELECT id, org_id, role FROM users")).mappings()
+        )
+        for user in users:
+            existing = connection.execute(
+                text(
+                    "SELECT 1 FROM organization_memberships "
+                    "WHERE user_id = :user_id AND org_id = :org_id"
+                ),
+                {"user_id": user["id"], "org_id": user["org_id"]},
+            ).first()
+            if existing is None:
+                membership_role = "org_admin" if user["role"] == "admin" else "exam_manager"
+                connection.execute(
+                    text(
+                        "INSERT INTO organization_memberships "
+                        "(id, user_id, org_id, role, status, created_at, updated_at) "
+                        "VALUES (:id, :user_id, :org_id, :role, 'active', :now, :now)"
+                    ),
+                    {
+                        "id": str(uuid.uuid4()),
+                        "user_id": user["id"],
+                        "org_id": user["org_id"],
+                        "role": membership_role,
+                        "now": now,
+                    },
+                )
+
+        exams = list(
+            connection.execute(
+                text("SELECT id, org_id, created_by_user_id FROM exams")
+            ).mappings()
+        )
+        for exam in exams:
+            creator_assignment = connection.execute(
+                text(
+                    "SELECT 1 FROM exam_assignments "
+                    "WHERE exam_id = :exam_id AND user_id = :user_id"
+                ),
+                {"exam_id": exam["id"], "user_id": exam["created_by_user_id"]},
+            ).first()
+            if creator_assignment is None:
+                connection.execute(
+                    text(
+                        "INSERT INTO exam_assignments "
+                        "(id, exam_id, user_id, assignment_role, status, "
+                        "assigned_by_user_id, created_at, updated_at) "
+                        "VALUES (:id, :exam_id, :user_id, 'owner', 'active', "
+                        ":user_id, :now, :now)"
+                    ),
+                    {
+                        "id": str(uuid.uuid4()),
+                        "exam_id": exam["id"],
+                        "user_id": exam["created_by_user_id"],
+                        "now": now,
+                    },
+                )
+
+            # Legacy proctors could see every exam in their organization. Give
+            # them explicit manager assignments so enabling v2 never silently
+            # removes existing access. Organization admins do not need one.
+            for user in users:
+                if user["org_id"] != exam["org_id"] or user["role"] != "proctor":
+                    continue
+                existing = connection.execute(
+                    text(
+                        "SELECT 1 FROM exam_assignments "
+                        "WHERE exam_id = :exam_id AND user_id = :user_id"
+                    ),
+                    {"exam_id": exam["id"], "user_id": user["id"]},
+                ).first()
+                if existing is None:
+                    connection.execute(
+                        text(
+                            "INSERT INTO exam_assignments "
+                            "(id, exam_id, user_id, assignment_role, status, "
+                            "assigned_by_user_id, created_at, updated_at) "
+                            "VALUES (:id, :exam_id, :user_id, 'manager', 'active', "
+                            ":assigned_by, :now, :now)"
+                        ),
+                        {
+                            "id": str(uuid.uuid4()),
+                            "exam_id": exam["id"],
+                            "user_id": user["id"],
+                            "assigned_by": exam["created_by_user_id"],
+                            "now": now,
+                        },
+                    )
+
+
 def apply_additive_migrations(engine: Engine) -> None:
+    _create_migration_ledger(engine)
     tables = set(inspect(engine).get_table_names())
     if "exams" in tables:
         columns = _column_names(engine, "exams")
@@ -96,3 +282,70 @@ def apply_additive_migrations(engine: Engine) -> None:
                     "ON exam_sessions (exam_id, candidate_identity_id)"
                 )
             )
+
+    tables = set(inspect(engine).get_table_names())
+    if "organizations" in tables:
+        _add_columns(
+            engine,
+            "organizations",
+            {
+                "slug": "VARCHAR(255)",
+                "status": "VARCHAR(20)",
+                "settings_json": "TEXT",
+                "quota_concurrent_sessions": "INTEGER",
+                "retention_days": "INTEGER",
+                "updated_at": "TIMESTAMP",
+            },
+        )
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_organizations_slug "
+                    "ON organizations (slug)"
+                )
+            )
+
+    if "users" in tables:
+        _add_columns(
+            engine,
+            "users",
+            {
+                "status": "VARCHAR(20)",
+                "session_version": "INTEGER",
+                "locked_at": "TIMESTAMP",
+                "mfa_enabled": "BOOLEAN",
+                "mfa_secret_encrypted": "TEXT",
+                "mfa_recovery_codes_json": "TEXT",
+                "updated_at": "TIMESTAMP",
+            },
+        )
+
+    if "exams" in tables:
+        _add_columns(
+            engine,
+            "exams",
+            {
+                "owner_user_id": "VARCHAR(36)",
+                "scheduled_start_at": "TIMESTAMP",
+                "scheduled_end_at": "TIMESTAMP",
+                "archived_at": "TIMESTAMP",
+                "version": "INTEGER",
+                "updated_at": "TIMESTAMP",
+            },
+        )
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_exams_owner_user_id "
+                    "ON exams (owner_user_id)"
+                )
+            )
+
+    _backfill_rbac_foundation(engine)
+    if "users" in set(inspect(engine).get_table_names()):
+        with engine.begin() as connection:
+            connection.execute(
+                text("UPDATE users SET mfa_enabled = COALESCE(mfa_enabled, :disabled)"),
+                {"disabled": False},
+            )
+    _record_migration(engine, "2026_08_03_rbac_foundation")

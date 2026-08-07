@@ -355,8 +355,8 @@ User --< AccessGrant >-- Organization
 `User.org_id` và chuỗi role hiện tại sẽ được migration theo mapping
 `admin → org_admin`, `proctor → exam_manager`. `ExamAssignment` phải được
 backfill trước khi đổi query danh sách để không làm mất quyền truy cập kỳ thi
-hiện có. Sau migration, query kỳ thi của Exam Manager bắt buộc join assignment;
-Organization Admin vẫn lọc trực tiếp bằng `Exam.org_id`.
+của Exam Manager hiện có. Query kỳ thi bắt buộc join assignment active của
+membership `exam_manager`; assignment gắn với `org_admin` không cấp quyền.
 
 Schema chi tiết, ràng buộc và thứ tự migration nằm tại
 `docs/QUAN_TRI_VA_PHAN_QUYEN.md`.

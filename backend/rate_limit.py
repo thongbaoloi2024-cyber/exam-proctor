@@ -1,9 +1,7 @@
-"""Small in-process rate limiter for public authentication/join endpoints.
+"""Sliding/fixed-window rate limiting for public authentication endpoints.
 
-The project intentionally keeps a single backend worker in the default
-deployment.  This limiter therefore provides useful brute-force protection
-without introducing another service.  A distributed deployment should move
-the counters to Redis (and keep the same call sites).
+Development uses an in-process sliding window. When ``REDIS_URL`` is set,
+workers share fixed-window counters in Redis and fail closed if Redis is down.
 """
 from __future__ import annotations
 
@@ -20,8 +18,51 @@ class SlidingWindowRateLimiter:
     def __init__(self) -> None:
         self._events: Dict[str, Deque[float]] = defaultdict(deque)
         self._lock = threading.Lock()
+        self._redis_url = os.environ.get("REDIS_URL", "").strip()
+        self._redis = None
+
+    def _redis_client(self):
+        if self._redis is None:
+            try:
+                import redis
+            except ImportError as exc:
+                raise RuntimeError("REDIS_URL da dat nhung chua cai package redis") from exc
+            self._redis = redis.Redis.from_url(
+                self._redis_url,
+                decode_responses=True,
+                socket_connect_timeout=2,
+                socket_timeout=2,
+            )
+        return self._redis
+
+    def _check_redis(self, key: str, limit: int, window_sec: float) -> None:
+        now = time.time()
+        window = max(1, int(window_sec))
+        bucket = int(now // window)
+        redis_key = f"datt:rate:{bucket}:{key}"
+        try:
+            client = self._redis_client()
+            with client.pipeline(transaction=True) as pipeline:
+                pipeline.incr(redis_key)
+                pipeline.expire(redis_key, window + 2)
+                count, _ = pipeline.execute()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Dich vu bao ve tan suat tam thoi khong san sang",
+            ) from exc
+        if int(count) > limit:
+            retry_after = max(1, window - int(now % window))
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Qua nhieu yeu cau. Vui long thu lai sau.",
+                headers={"Retry-After": str(retry_after)},
+            )
 
     def check(self, key: str, limit: int, window_sec: float) -> None:
+        if self._redis_url:
+            self._check_redis(key, limit, window_sec)
+            return
         now = time.monotonic()
         cutoff = now - window_sec
         with self._lock:

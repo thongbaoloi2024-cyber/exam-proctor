@@ -37,14 +37,67 @@ def register_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "register.html", {"hide_sidebar": True})
 
 
+@router.get("/ui/mfa", response_class=HTMLResponse)
+def mfa_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "mfa.html", {"hide_sidebar": True})
+
+
 @router.get("/ui/exams", response_class=HTMLResponse)
 def exams_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "exams.html")
 
 
+@router.get("/ui/organization", response_class=HTMLResponse)
+def organization_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "organization.html")
+
+
+@router.get("/ui/system", response_class=HTMLResponse)
+def system_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "system.html")
+
+
+@router.get("/ui/system/organizations", response_class=HTMLResponse)
+def system_organizations_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "system_organizations.html")
+
+
+@router.get("/ui/system/organizations/{organization_id}", response_class=HTMLResponse)
+def system_organization_detail_page(request: Request, organization_id: str) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "system_organization_detail.html",
+        {"organization_id": organization_id},
+    )
+
+
+@router.get("/ui/system/security", response_class=HTMLResponse)
+def system_security_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "system_security.html")
+
+
+@router.get("/ui/system/evidence", response_class=HTMLResponse)
+def system_evidence_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "exams.html",
+        {"system_evidence": True},
+    )
+
+
+@router.get("/ui/system/audit", response_class=HTMLResponse)
+def system_audit_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "system_audit.html")
+
+
 @router.get("/ui/exams/{exam_id}/dashboard", response_class=HTMLResponse)
 def dashboard_page(request: Request, exam_id: str) -> HTMLResponse:
     return templates.TemplateResponse(request, "dashboard.html", {"exam_id": exam_id})
+
+
+@router.get("/ui/exams/{exam_id}/manage", response_class=HTMLResponse)
+def exam_manage_page(request: Request, exam_id: str) -> HTMLResponse:
+    return templates.TemplateResponse(request, "exam_manage.html", {"exam_id": exam_id})
 
 
 @router.get("/ui/exams/{exam_id}/sessions/{session_id}", response_class=HTMLResponse)

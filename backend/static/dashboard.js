@@ -238,6 +238,11 @@ function connectDashboardWs() {
 async function initializeDashboard() {
   const user = await API.requireAuth();
   if (!user) return;
+  if (user.is_system_admin) {
+    const backLink = document.getElementById("dashboard-back-link");
+    backLink.href = "/ui/system/evidence";
+    backLink.textContent = "← Dữ liệu break-glass";
+  }
   try {
     await loadInitialSessions();
     connectDashboardWs();

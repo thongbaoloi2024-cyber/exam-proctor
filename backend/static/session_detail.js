@@ -3,6 +3,7 @@ const EXAM_ID = detailRoot.dataset.examId;
 const SESSION_ID = detailRoot.dataset.sessionId;
 const SEVERITY_BADGE_CLASS = { LOW: "badge-low", MEDIUM: "badge-medium", HIGH: "badge-high" };
 const snapshotObjectUrls = [];
+const incidentReviews = new Map();
 const BROWSER_EVENT_LABELS = {
   CONTENT_MONITOR_READY: "Bộ giám sát trang sẵn sàng",
   TAB_HIDDEN: "Ẩn tab bài thi",
@@ -129,6 +130,19 @@ async function loadSnapshot(img, url) {
   img.addEventListener("click", () => window.open(objectUrl, "_blank", "noopener"));
 }
 
+async function saveIncidentReview(eventId, status, note) {
+  const response = await API.request(
+    `/sessions/${encodeURIComponent(SESSION_ID)}/incidents/${encodeURIComponent(eventId)}`,
+    { method: "PUT", body: JSON.stringify({ status, note: note || null }) },
+  );
+  if (!response.ok) {
+    showToast("Không lưu được kết luận sự cố.", "error");
+    return;
+  }
+  incidentReviews.set(eventId, await response.json());
+  showToast("Đã lưu kết luận sự cố.", "success");
+}
+
 function appendViolationRow(tbody, violation) {
   const row = document.createElement("tr");
   const timeCell = document.createElement("td");
@@ -161,8 +175,44 @@ function appendViolationRow(tbody, violation) {
     snapshotCell.appendChild(empty);
   }
 
-  row.append(timeCell, severityCell, typeCell, snapshotCell);
+  const reviewCell = document.createElement("td");
+  const eventId = String(violation.event_id || "");
+  if (eventId) {
+    const current = incidentReviews.get(eventId);
+    const reviewStatus = document.createElement("select");
+    reviewStatus.replaceChildren(...[
+      ["new", "Mới"],
+      ["in_review", "Đang duyệt"],
+      ["confirmed", "Xác nhận"],
+      ["dismissed", "Bỏ qua"],
+    ].map(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      return option;
+    }));
+    reviewStatus.value = current?.status || "new";
+    const note = document.createElement("input");
+    note.placeholder = "Ghi chú";
+    note.value = current?.note || "";
+    const save = document.createElement("button");
+    save.type = "button";
+    save.textContent = "Lưu";
+    save.addEventListener("click", () => saveIncidentReview(eventId, reviewStatus.value, note.value));
+    reviewCell.append(reviewStatus, note, save);
+  } else {
+    reviewCell.textContent = "–";
+  }
+
+  row.append(timeCell, severityCell, typeCell, snapshotCell, reviewCell);
   tbody.appendChild(row);
+}
+
+async function loadIncidentReviews() {
+  const response = await API.request(`/sessions/${encodeURIComponent(SESSION_ID)}/incidents`);
+  if (!response.ok) return;
+  const reviews = await response.json();
+  reviews.forEach((review) => incidentReviews.set(review.violation_event_id, review));
 }
 
 async function loadDetail() {
@@ -183,7 +233,7 @@ async function loadDetail() {
   const tbody = document.querySelector("#violations-table tbody");
   tbody.replaceChildren();
   if (violations.length === 0) {
-    showTableMessage(tbody, "Không có vi phạm nào được ghi nhận.");
+    showTableMessage(tbody, "Không có vi phạm nào được ghi nhận.", 5);
   } else {
     violations.forEach((violation) => appendViolationRow(tbody, violation));
   }
@@ -212,6 +262,7 @@ async function initializeDetail() {
   const user = await API.requireAuth();
   if (!user) return;
   try {
+    await loadIncidentReviews();
     await loadDetail();
   } catch (error) {
     showToast(error.message || "Không tải được chi tiết phiên.", "error");

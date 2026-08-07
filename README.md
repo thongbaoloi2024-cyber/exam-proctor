@@ -23,24 +23,19 @@ bằng chứng tại thời điểm sinh vi phạm.
 
 ## Quản trị và phân quyền
 
-Backend hiện tại đã cách ly dữ liệu theo tổ chức nhưng mới có hai role kỹ thuật:
-`admin` và `proctor`. Cả hai hiện có thể tạo kỳ thi và xem toàn bộ kỳ thi trong
-tổ chức; chỉ `admin` được tạo tài khoản `proctor`.
+Backend đã triển khai ba mức quản trị bằng capability + tenant/resource scope:
 
-Kiến trúc nâng cấp đã được đặc tả theo ba mức:
-
-| Vai trò mục tiêu | Phạm vi chính |
+| Vai trò | Phạm vi chính |
 |---|---|
 | `system_admin` | Quản lý platform, tổ chức, hạn mức, vận hành và audit toàn cục; không mặc định xem bằng chứng thí sinh |
-| `org_admin` | Quản lý thành viên, chính sách và mọi kỳ thi trong một tổ chức |
+| `org_admin` | Quản lý thành viên, vai trò, chính sách và audit của một tổ chức; không vận hành kỳ thi |
 | `exam_manager` | Chỉ tạo/vận hành kỳ thi do mình sở hữu hoặc được phân công |
 
-Mô hình mục tiêu kết hợp RBAC với `org_id` và phân công theo từng kỳ thi. Giao
-diện, ma trận quyền, mô hình dữ liệu, API policy, audit/break-glass và lộ trình
-migration được mô tả tại
-[docs/QUAN_TRI_VA_PHAN_QUYEN.md](docs/QUAN_TRI_VA_PHAN_QUYEN.md). Đây là kiến
-trúc mục tiêu; không nên coi các endpoint/màn hình trong tài liệu đó là đã có
-trong source hiện tại.
+`User.role` (`admin/proctor`) vẫn được dual-write để tương thích với client cũ;
+quyết định quyền mới đọc `OrganizationMembership`, `SystemRole` và
+`ExamAssignment`. Exam Manager chỉ thấy kỳ thi được giao. System Admin bắt buộc
+MFA và chỉ đọc evidence khi có break-glass grant được Organization Admin duyệt.
+Chi tiết tại [docs/QUAN_TRI_VA_PHAN_QUYEN.md](docs/QUAN_TRI_VA_PHAN_QUYEN.md).
 
 ## Các thay đổi an toàn quan trọng
 
@@ -59,8 +54,11 @@ Phiên bản này đã được harden so với bản demo ban đầu:
 - Telemetry mặc định gửi mỗi 1 giây thay vì mỗi frame. Server có giới hạn kích
   thước/tần suất message, heartbeat, idle timeout và trạng thái
   `pending/active/disconnected/ended`.
-- Kỳ thi có trạng thái mở/đóng, join code có thời hạn và có thể xoay mã. Các API
-  công khai có rate limit trong process.
+- Kỳ thi có lifecycle `draft/scheduled/open/closed/archived`, optimistic locking,
+  join code có thời hạn và có thể xoay mã. Rate limit dùng Redis khi cấu hình,
+  nếu không dùng bộ đếm in-process cho development một worker.
+- Thay đổi role/assignment làm token cũ mất hiệu lực; WebSocket dashboard kiểm
+  tra lại quyền định kỳ. Audit log ghi thay đổi quyền và truy cập evidence.
 - Production không chấp nhận JWT secret/DB password mặc định. Docker backend chỉ
   cài dependency web/reporting nhẹ.
 - Enrollment có thử thách chớp mắt `mở → nhắm → mở` trước khi chấp nhận
@@ -179,8 +177,14 @@ lần đầu tại `/ui/register`.
 cp .env.example .env
 ```
 
-Thay cả `JWT_SECRET_KEY` và `POSTGRES_PASSWORD` trong `.env` bằng giá trị ngẫu
-nhiên dài, sau đó:
+Thay `JWT_SECRET_KEY`, `POSTGRES_PASSWORD` và `MFA_ENCRYPTION_KEY` trong `.env`.
+Sinh Fernet key cho MFA bằng:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Sau đó chạy:
 
 ```bash
 docker compose up --build
@@ -191,8 +195,30 @@ mật khẩu DB. Với local HTTP, giữ `COOKIE_SECURE=false`; khi đặt sau H
 proxy phải dùng `COOKIE_SECURE=true`, `FORCE_HTTPS=true` và cấu hình
 `ALLOWED_HOSTS` đúng hostname.
 
-Backend hiện yêu cầu `WEB_CONCURRENCY=1` vì fan-out WebSocket nằm trong memory.
-Muốn chạy nhiều worker phải bổ sung Redis/pub-sub hoặc message broker trước.
+Compose chạy PostgreSQL, Redis, backend và `report-worker`. Redis cung cấp
+distributed rate limit, WebSocket dashboard pub/sub và lease chống hai worker
+nhận đồng thời cùng một candidate session. Compose mặc định vẫn chạy một worker;
+khi tăng `WEB_CONCURRENCY`, `REDIS_URL` là bắt buộc và volume evidence phải được
+chia sẻ giữa các worker.
+
+Tạo System Admin bằng bootstrap CLI, không có public registration:
+
+```powershell
+$env:SYSTEM_ADMIN_BOOTSTRAP_PASSWORD="mat-khau-manh-toi-thieu-12-byte"
+python scripts/bootstrap_system_admin.py --email system-admin@example.edu
+```
+
+Đăng nhập tại `/ui/login`, sau đó hoàn tất MFA tại `/ui/mfa`. Khu vực
+System Admin được tách rõ thành tổng quan (`/ui/system`), danh sách/chi tiết
+tổ chức (`/ui/system/organizations`), bảo mật và break-glass
+(`/ui/system/security`), dữ liệu được cấp quyền tạm thời
+(`/ui/system/evidence`) và nhật ký toàn hệ thống (`/ui/system/audit`).
+Tenant nội bộ `slug=system` không xuất hiện trong danh mục khách hàng và
+không thể bị khóa qua API. System Admin chỉ thấy exam/session khi chính tài
+khoản đó có break-glass grant đang active; mã tham gia và URL bài thi luôn bị
+ẩn trong phạm vi này.
+Các giao diện theo tenant tiếp tục tại `/ui/organization`, `/ui/exams` và
+`/ui/exams/{exam_id}/manage`.
 
 Chế độ Google là tùy chọn. Khi bật, cấu hình bốn biến bắt buộc sau và đăng ký
 callback HTTPS tương ứng trong Google Cloud Console:
@@ -209,10 +235,9 @@ Trang setup của extension hiển thị chính xác redirect URI của chính b
 
 ## Nối client với platform
 
-1. Với phiên bản hiện tại, Admin hoặc giám thị tạo kỳ thi, chọn
-   `manual`/`google`, URL bài thi và các quyền bắt buộc rồi lấy join code sáu ký
-   tự. Theo kiến trúc mục tiêu, thao tác này thuộc Organization Admin hoặc Exam
-   Manager được phân công.
+1. Exam Manager tạo kỳ thi, cấu hình ở trạng thái `draft`, phân công nhân sự
+   rồi chuyển sang `open` để phát join code. Organization Admin chỉ quản trị
+   tenant và cấp membership `exam_manager`, không có quyền truy cập kỳ thi.
 2. Thí sinh cài extension, nhập backend + join code. Extension chỉ hiện đúng
    chế độ xác thực của kỳ thi.
 3. Thí sinh đồng ý chính sách, kiểm tra camera/microphone và kích hoạt cửa sổ
@@ -269,6 +294,26 @@ python -m compileall -q backend src scripts main.py
 node --check backend/static/api.js
 ```
 
+## Tác vụ nền và retention
+
+API có thể tạo report job bằng
+`POST /sessions/{session_id}/report-jobs/{html|pdf}`. Docker Compose chạy worker
+tự xử lý hàng đợi; khi chạy thủ công dùng:
+
+```bash
+python scripts/report_worker.py
+```
+
+Kiểm tra dữ liệu đã quá hạn mà chưa xóa:
+
+```bash
+python scripts/cleanup_retention.py
+```
+
+Chỉ khi đã kiểm tra danh sách dry-run mới chạy
+`python scripts/cleanup_retention.py --apply`. Tác vụ xóa thư mục evidence,
+review/report job liên quan và ẩn danh row phiên, đồng thời ghi audit.
+
 `tests/manual_webcam_demo.py` dành cho kiểm tra thủ công camera/ánh sáng/góc mặt
 trên máy triển khai.
 
@@ -286,8 +331,9 @@ người đang ngồi trước camera.
 Để dùng trong kỳ thi có rủi ro cao cần thêm ít nhất: extension được ký và
 force-install bằng managed browser, client/native companion được ký và quản lý,
 secure boot/attestation hoặc lockdown browser, liveness/anti-replay chuyên dụng,
-HTTPS bắt buộc, audit vận hành, Redis rate limit/pub-sub và chính sách bảo vệ dữ
-liệu. Hệ thống hiện phù hợp nghiên cứu, đồ án và demo có kiểm soát.
+HTTPS bắt buộc, audit vận hành, object storage/backup phù hợp và chính sách bảo
+vệ dữ liệu. Hệ thống hiện phù hợp nghiên cứu, đồ án và triển khai có kiểm soát;
+không coi đây là lockdown browser/remote-attestation hoàn chỉnh.
 
 Các tài liệu `docs/BAO_CAO_TUAN*.md` và `docs/KE_HOACH_*.md` ghi lại lịch sử phát
 triển; nếu có khác biệt, README, SECURITY và code/test hiện tại là nguồn chuẩn.

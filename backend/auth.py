@@ -85,9 +85,21 @@ def verify_password(password: str, password_hash: str) -> bool:
 # --- User JWT (admin/proctor) ------------------------------------------------
 
 
-def create_access_token(user_id: str, role: str, org_id: str) -> str:
+def create_access_token(
+    user_id: str,
+    role: str,
+    org_id: str,
+    session_version: int = 1,
+) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": user_id, "role": role, "org_id": org_id, "type": "user", "exp": expire}
+    payload = {
+        "sub": user_id,
+        "role": role,
+        "org_id": org_id,
+        "ver": session_version,
+        "type": "user",
+        "exp": expire,
+    }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -115,8 +127,24 @@ def get_current_user(
         raise credentials_error
 
     user = db.get(models.User, user_id)
-    if user is None:
+    token_version = payload.get("ver", 1)
+    token_org_id = payload.get("org_id")
+    if (
+        user is None
+        or user.status != "active"
+        or token_version != user.session_version
+        or not isinstance(token_org_id, str)
+    ):
         raise credentials_error
+    membership = db.query(models.OrganizationMembership).filter_by(
+        user_id=user.id,
+        org_id=token_org_id,
+        status="active",
+    ).first()
+    organization = db.get(models.Organization, token_org_id)
+    if membership is None or organization is None or organization.status != "active":
+        raise credentials_error
+    user._authorization_org_id = token_org_id
     return user
 
 
@@ -169,8 +197,24 @@ def decode_user_token_for_ws(token: str, db: Session) -> models.User:
         raise error
 
     user = db.get(models.User, user_id)
-    if user is None:
+    token_version = payload.get("ver", 1)
+    token_org_id = payload.get("org_id")
+    if (
+        user is None
+        or user.status != "active"
+        or token_version != user.session_version
+        or not isinstance(token_org_id, str)
+    ):
         raise error
+    membership = db.query(models.OrganizationMembership).filter_by(
+        user_id=user.id,
+        org_id=token_org_id,
+        status="active",
+    ).first()
+    organization = db.get(models.Organization, token_org_id)
+    if membership is None or organization is None or organization.status != "active":
+        raise error
+    user._authorization_org_id = token_org_id
     return user
 
 

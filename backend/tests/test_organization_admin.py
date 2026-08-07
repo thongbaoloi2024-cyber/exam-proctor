@@ -1,0 +1,190 @@
+"""Organization administration, invitation and active-tenant tests."""
+from __future__ import annotations
+
+from backend import models
+from backend.db import SessionLocal
+from backend.tests.helpers import create_exam_manager
+
+
+def _register(client, email: str, name: str) -> tuple[str, str]:
+    response = client.post(
+        "/auth/register",
+        json={
+            "organization_name": name,
+            "admin_email": email,
+            "admin_password": "matkhau123",
+        },
+    )
+    assert response.status_code == 201
+    body = response.json()
+    return body["access_token"], body["org_id"]
+
+
+def _headers(token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_org_admin_invites_new_member_and_last_admin_is_protected(client):
+    admin_token, _ = _register(client, "org-admin@test.local", "Organization Admin Test")
+    invitation = client.post(
+        "/organizations/current/invitations",
+        json={"email": "teacher@test.local", "role": "exam_manager"},
+        headers=_headers(admin_token),
+    )
+    assert invitation.status_code == 201
+    assert invitation.json()["invitation_token"]
+
+    accepted = client.post(
+        "/auth/invitations/accept",
+        json={
+            "invitation_token": invitation.json()["invitation_token"],
+            "password": "giaovien123",
+        },
+    )
+    assert accepted.status_code == 201
+    teacher_token = accepted.json()["access_token"]
+
+    members = client.get(
+        "/organizations/current/members",
+        headers=_headers(admin_token),
+    )
+    assert members.status_code == 200
+    by_email = {item["email"]: item for item in members.json()}
+    assert by_email["teacher@test.local"]["role"] == "exam_manager"
+    assert by_email["teacher@test.local"]["membership_status"] == "active"
+
+    # Exam managers cannot enter organization-administration APIs.
+    assert client.get(
+        "/organizations/current/members",
+        headers=_headers(teacher_token),
+    ).status_code == 403
+
+    admin_member = by_email["org-admin@test.local"]
+    protected = client.patch(
+        f"/organizations/current/members/{admin_member['user_id']}",
+        json={"role": "exam_manager"},
+        headers=_headers(admin_token),
+    )
+    assert protected.status_code == 409
+
+
+def test_existing_user_can_join_and_switch_between_organizations(client):
+    first_admin_token, first_org_id = _register(
+        client,
+        "first-admin@test.local",
+        "First Organization",
+    )
+    second_admin_token, second_org_id = _register(
+        client,
+        "shared-user@test.local",
+        "Second Organization",
+    )
+
+    invitation = client.post(
+        "/organizations/current/invitations",
+        json={"email": "shared-user@test.local", "role": "exam_manager"},
+        headers=_headers(first_admin_token),
+    )
+    assert invitation.status_code == 201
+    accepted = client.post(
+        "/auth/invitations/accept",
+        json={
+            "invitation_token": invitation.json()["invitation_token"],
+            "password": "matkhau123",
+        },
+    )
+    assert accepted.status_code == 201
+    assert accepted.json()["org_id"] == first_org_id
+    first_org_teacher_token = accepted.json()["access_token"]
+
+    organizations = client.get(
+        "/auth/organizations",
+        headers=_headers(first_org_teacher_token),
+    )
+    assert organizations.status_code == 200
+    assert {item["id"] for item in organizations.json()} == {first_org_id, second_org_id}
+
+    # The active tenant is encoded in a newly issued server token. Creating an
+    # exam while switched must use that tenant, not legacy User.org_id.
+    created_in_first = client.post(
+        "/exams",
+        json={"name": "Exam in First Org"},
+        headers=_headers(first_org_teacher_token),
+    )
+    assert created_in_first.status_code == 201
+
+    switched = client.post(
+        f"/auth/switch-organization/{second_org_id}",
+        headers=_headers(first_org_teacher_token),
+    )
+    assert switched.status_code == 200
+    assert switched.json()["role"] == "admin"
+    second_org_token = switched.json()["access_token"]
+    assert client.get("/exams", headers=_headers(second_org_token)).json() == []
+
+    # Keep the variable used so the test also proves the original admin token
+    # remains a valid credential for its own organization.
+    assert client.get("/exams", headers=_headers(second_admin_token)).status_code == 200
+
+
+def test_org_policy_is_validated_and_persisted(client):
+    admin_token, _ = _register(client, "policy-admin@test.local", "Policy Org")
+    payload = {
+        "default_candidate_auth_mode": "manual",
+        "min_extension_version": "2.1.0",
+        "require_extension": True,
+        "require_fullscreen": True,
+        "require_camera": True,
+        "require_microphone": True,
+        "require_screen_share": False,
+        "block_clipboard": True,
+        "max_focus_loss_seconds": 3.5,
+        "retention_days": 180,
+    }
+    updated = client.put(
+        "/organizations/current/policy",
+        json=payload,
+        headers=_headers(admin_token),
+    )
+    assert updated.status_code == 200
+    loaded = client.get(
+        "/organizations/current/policy",
+        headers=_headers(admin_token),
+    )
+    assert loaded.status_code == 200
+    assert loaded.json() == payload
+
+    invalid = client.put(
+        "/organizations/current/policy",
+        json={**payload, "retention_days": 0},
+        headers=_headers(admin_token),
+    )
+    assert invalid.status_code == 422
+
+
+def test_concurrent_session_quota_is_enforced(client):
+    admin_token, org_id = _register(client, "quota-admin@test.local", "Quota Org")
+    with SessionLocal() as db:
+        organization = db.get(models.Organization, org_id)
+        organization.quota_concurrent_sessions = 1
+        db.commit()
+    manager_token = create_exam_manager(
+        client,
+        admin_token,
+        email="quota-manager@test.local",
+    )
+    exam = client.post(
+        "/exams",
+        json={"name": "Quota Exam"},
+        headers=_headers(manager_token),
+    ).json()
+    first = client.post(
+        "/exams/join",
+        json={"join_code": exam["join_code"], "student_name": "First"},
+    )
+    assert first.status_code == 200
+    second = client.post(
+        "/exams/join",
+        json={"join_code": exam["join_code"], "student_name": "Second"},
+    )
+    assert second.status_code == 429

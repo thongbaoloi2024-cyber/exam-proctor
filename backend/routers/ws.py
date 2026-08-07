@@ -22,6 +22,7 @@ from pydantic import ValidationError
 
 from .. import models
 from ..auth import decode_session_websocket, decode_user_websocket
+from ..authorization import Permission, authorize_exam
 from ..candidate_tokens import hash_device_id
 from ..db import SessionLocal
 from ..session_materializer import (
@@ -262,6 +263,7 @@ async def client_ws(websocket: WebSocket) -> None:
                 disconnect_reason = "heartbeat_timeout"
                 await websocket.close(code=4408)
                 break
+            await manager.touch_client(session_id)
 
             monotonic_now = time.monotonic()
             recent_message_times.append(monotonic_now)
@@ -623,7 +625,7 @@ async def client_ws(websocket: WebSocket) -> None:
         disconnect_reason = "client_disconnected"
     finally:
         if client_registered:
-            manager.disconnect_client(session_id, websocket)
+            await manager.disconnect_client(session_id, websocket)
         if client_registered and exam_session is not None and exam_id is not None and not ended_normally:
             try:
                 db.refresh(exam_session)
@@ -650,26 +652,53 @@ async def client_ws(websocket: WebSocket) -> None:
 @router.websocket("/ws/dashboard/{exam_id}")
 async def dashboard_ws(websocket: WebSocket, exam_id: str) -> None:
     db = SessionLocal()
+    user_id: Optional[str] = None
+    session_version: Optional[int] = None
     try:
         try:
             user = decode_user_websocket(websocket, db)
         except Exception:
             await websocket.close(code=4401)
             return
-        if user.role not in ("admin", "proctor"):
-            await websocket.close(code=4403)
-            return
-        exam = db.get(models.Exam, exam_id)
-        if exam is None or exam.org_id != user.org_id:
+        try:
+            authorize_exam(db, user, exam_id, Permission.EXAM_MONITOR)
+        except Exception:
             await websocket.close(code=4404)
             return
+        user_id = user.id
+        session_version = user.session_version
     finally:
         db.close()
 
     await manager.connect_dashboard(exam_id, websocket)
     try:
         while True:
-            await websocket.receive_text()
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
+            except asyncio.TimeoutError:
+                pass
+            validation_db = SessionLocal()
+            try:
+                current_user = validation_db.get(models.User, user_id)
+                if (
+                    current_user is None
+                    or current_user.status != "active"
+                    or current_user.session_version != session_version
+                ):
+                    await websocket.close(code=4403)
+                    return
+                authorize_exam(
+                    validation_db,
+                    current_user,
+                    exam_id,
+                    Permission.EXAM_MONITOR,
+                )
+            except Exception:
+                await websocket.close(code=4403)
+                return
+            finally:
+                validation_db.close()
+            await websocket.send_json({"type": "server_heartbeat", "server_received_at": _now_iso()})
     except WebSocketDisconnect:
         pass
     finally:

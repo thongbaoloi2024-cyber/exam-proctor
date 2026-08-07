@@ -1,9 +1,12 @@
 # Kiến trúc quản trị và phân quyền
 
-> **Trạng thái: kiến trúc mục tiêu, chưa được triển khai đầy đủ.** Source hiện tại
-> chỉ có `admin` và `proctor`, đều thuộc đúng một tổ chức; cả hai đang có thể tạo
-> kỳ thi và xem toàn bộ kỳ thi trong tổ chức. Tài liệu này là đặc tả để nâng cấp
-> backend/dashboard lên ba mức quản trị mà không mô tả nhầm là tính năng đã có.
+> **Trạng thái cập nhật 2026-08-03:** các giai đoạn nền tảng RBAC, membership,
+> assignment, quản trị tổ chức/kỳ thi, System Admin, audit, break-glass, MFA và
+> giao diện theo capability đã được triển khai. `User.org_id`/`User.role` vẫn
+> được giữ để tương thích trong giai đoạn migration. Redis đã phục vụ rate
+> limit, WebSocket pub/sub và distributed client lease; report worker, quota và
+> retention job cũng đã có. Object storage và PostgreSQL RLS vẫn là hardening
+> tùy chọn tiếp theo; local/shared volume vẫn là storage mặc định.
 
 ## 1. Mục tiêu và nguyên tắc
 
@@ -62,19 +65,20 @@ Phạm vi: một tổ chức đang được chọn.
 
 Chức năng chính:
 
-- Xem tổng quan toàn tổ chức và mọi kỳ thi thuộc tổ chức.
+- Xem thông tin, thành viên, chính sách và mức sử dụng của tổ chức.
 - Mời, khóa, mở khóa người dùng; gán hoặc thu hồi vai trò `org_admin` và
   `exam_manager` trong tổ chức.
 - Thiết lập chính sách mặc định: xác thực thí sinh, thiết bị bắt buộc, thời hạn
   lưu dữ liệu, ngưỡng cảnh báo và phiên bản extension tối thiểu.
-- Tạo, phân công, chuyển chủ sở hữu, đóng hoặc lưu trữ kỳ thi.
-- Xem báo cáo tổng hợp, audit log và mức sử dụng của tổ chức.
+- Xem audit log quản trị và mức sử dụng của tổ chức.
 - Duyệt yêu cầu xuất hoặc xóa dữ liệu theo chính sách.
 
 Không được:
 
 - Đọc hoặc sửa dữ liệu của tổ chức khác.
 - Tạo `system_admin` hay thay đổi cấu hình toàn platform.
+- Tạo, đọc, sửa, phân công, giám sát hoặc xuất dữ liệu kỳ thi; assignment lịch
+  sử không cấp lại các quyền này.
 - Sửa/xóa audit log.
 - Hạ chính sách dưới mức tối thiểu do System Admin bắt buộc.
 
@@ -121,15 +125,15 @@ không được phép.
 | Gán System Admin | Theo quy trình bảo mật riêng | — | — |
 | Quản lý thành viên/vai trò | Admin tổ chức | Trong tổ chức | — |
 | Cấu hình chính sách mặc định | Mức sàn toàn cục | Trong tổ chức | — |
-| Tạo kỳ thi | Hỗ trợ có audit | Trong tổ chức | Tự tạo và được gán owner |
-| Xem danh sách kỳ thi | Metadata vận hành | Mọi kỳ thi trong tổ chức | Kỳ thi được giao |
-| Sửa/mở/đóng kỳ thi | Hỗ trợ có audit | Mọi kỳ thi trong tổ chức | Theo assignment |
-| Phân công giáo viên/giám thị | Hỗ trợ có audit | Trong tổ chức | Người dùng có sẵn, theo assignment |
-| Theo dõi dashboard live | Không mặc định | Trong tổ chức | Kỳ thi được giao |
-| Xem ảnh/báo cáo thí sinh | Break-glass, chỉ đọc | Trong tổ chức | Kỳ thi được giao |
-| Kết thúc một phiên thi | — | Trong tổ chức | Kỳ thi được giao |
-| Ghi chú/duyệt sự cố | — | Trong tổ chức | Kỳ thi được giao |
-| Xuất báo cáo | Thống kê không định danh | Trong tổ chức | Kỳ thi được giao |
+| Tạo kỳ thi | Hỗ trợ có audit | — | Tự tạo và được gán owner |
+| Xem danh sách kỳ thi | Metadata vận hành | — | Kỳ thi được giao |
+| Sửa/mở/đóng kỳ thi | Hỗ trợ có audit | — | Theo assignment |
+| Phân công giáo viên/giám thị | Hỗ trợ có audit | — | Người dùng có sẵn, theo assignment |
+| Theo dõi dashboard live | Không mặc định | — | Kỳ thi được giao |
+| Xem ảnh/báo cáo thí sinh | Break-glass, chỉ đọc | — | Kỳ thi được giao |
+| Kết thúc một phiên thi | — | — | Kỳ thi được giao |
+| Ghi chú/duyệt sự cố | — | — | Kỳ thi được giao |
+| Xuất báo cáo | Thống kê không định danh | — | Kỳ thi được giao |
 | Xóa dữ liệu trước retention | Quy trình hệ thống | Theo quy trình phê duyệt | — |
 | Xem audit log | Toàn hệ thống | Trong tổ chức | Hành động của mình/kỳ thi được giao |
 
@@ -178,8 +182,7 @@ nhận, nhập lý do và xác thực lại.
 
 | Màn hình | Nội dung/chức năng |
 |---|---|
-| Tổng quan tổ chức | Kỳ thi sắp diễn ra/đang mở, phiên cảnh báo, usage, người dùng |
-| Kỳ thi | Tất cả kỳ thi; lọc theo trạng thái, người phụ trách, thời gian |
+| Tổng quan tổ chức | Usage, trạng thái chính sách và người dùng |
 | Người dùng | Danh sách, mời mới, vai trò, trạng thái, đăng xuất cưỡng bức |
 | Nhóm/đơn vị | Nhóm giáo viên hoặc khoa/phòng nếu tổ chức cần phân cấp thêm |
 | Chính sách | Mẫu cấu hình kỳ thi, xác thực, extension, retention, quyền riêng tư |
@@ -263,13 +266,14 @@ allow(user, action, exam) khi:
   account_active
   AND organization_active
   AND (
-    org_admin_membership(user, exam.org_id)
-    OR exam_assignment_allows(user, exam.id, action)
+    exam_manager_membership(user, exam.org_id)
+      AND exam_assignment_allows(user, exam.id, action)
     OR valid_break_glass_grant(user, exam.org_id, action)
   )
 ```
 
-System Admin không nằm ở nhánh cho phép mặc định đối với evidence.
+Organization Admin không nằm ở nhánh dữ liệu kỳ thi, kể cả khi còn assignment
+lịch sử. System Admin không nằm ở nhánh cho phép mặc định đối với evidence.
 
 ### 6.2. Capability đề xuất
 
@@ -393,4 +397,3 @@ Các kiểm soát bổ sung:
 - Không thể tạo System Admin từ UI/API của Organization Admin.
 - Tổ chức bị khóa không thể đăng nhập mới, mở kỳ thi hay nối dashboard.
 - Các test isolation hiện có tiếp tục pass trong suốt migration.
-

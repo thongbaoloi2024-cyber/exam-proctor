@@ -36,10 +36,12 @@ Server thực hiện các kiểm tra có thể xác minh từ protocol:
 - Browser event có allowlist/schema, sequence/event-id, server timestamp và
   server-side severity. Integrity score không được cộng lẫn với risk CV.
 
-## Kiểm soát mục tiêu cho quản trị ba cấp
+## Kiểm soát quản trị ba cấp
 
-> Phần này là yêu cầu cho đợt nâng cấp RBAC, chưa phải cam kết rằng source hiện
-> tại đã triển khai đủ. Đặc tả đầy đủ nằm tại
+> RBAC, assignment, audit, break-glass và MFA đã được triển khai. Các mục mở còn
+> Redis WebSocket pub/sub, distributed rate limit/client lease, report worker,
+> quota và retention job đã có. Object storage và PostgreSQL RLS vẫn là các lớp
+> hardening tiếp theo. Đặc tả đầy đủ nằm tại
 > `docs/QUAN_TRI_VA_PHAN_QUYEN.md`.
 
 - Quyền phải được quyết định từ role + `org_id` + `ExamAssignment`, không dựa
@@ -94,8 +96,9 @@ làm căn cứ kỷ luật duy nhất; cần quy trình người giám thị xem
   Rotate client secret nếu bị lộ và không commit secret vào manifest/source.
 - Chỉ yêu cầu scope Google `openid email profile`. Định kỳ thu hồi candidate
   devices cũ và đặt `CANDIDATE_TOKEN_TTL_DAYS` phù hợp chính sách.
-- Chỉ chạy một backend worker. Trước khi scale ngang, thay connection manager và
-  rate limiter in-memory bằng Redis/pub-sub + distributed rate limiting.
+- Development không có Redis chỉ được chạy một backend worker. Khi scale ngang,
+  bắt buộc cấu hình `REDIS_URL`; kiểm tra pub/sub, distributed client lease,
+  rate limit và shared evidence volume trước khi đưa tải thật vào.
 - Giới hạn truy cập PostgreSQL, volume `sessions`, backup và retention; ảnh khuôn
   mặt/vi phạm là dữ liệu nhạy cảm.
 - Theo dõi dung lượng vì snapshot và report được lưu bền vững; đặt quota và lịch

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Thiết lập MFA · Giám Thị Số{% endblock %}
+{% block content %}
+<section class="card auth-card">
+  <h1>Thiết lập MFA</h1>
+  <p class="muted">System Admin phải kích hoạt MFA trước khi dùng chức năng vận hành.</p>
+  <button id="mfa-start" type="button">Tạo mã QR</button>
+  <p id="mfa-status" class="muted" role="status" aria-live="polite"></p>
+  <div id="mfa-setup-data" class="hidden">
+    <div class="mfa-qr-panel">
+      <p>Quét mã bằng Google Authenticator, Microsoft Authenticator hoặc ứng dụng TOTP tương thích:</p>
+      <img id="mfa-qr" class="mfa-qr" alt="Mã QR thiết lập MFA" width="264" height="264">
+    </div>
+    <details class="mfa-manual">
+      <summary>Không quét được? Nhập khóa thủ công</summary>
+      <p class="muted">Loại tài khoản: dựa trên thời gian (TOTP), 6 chữ số, chu kỳ 30 giây.</p>
+      <code id="mfa-secret"></code>
+      <p><a id="mfa-uri" href="#">Mở trực tiếp bằng ứng dụng xác thực</a></p>
+    </details>
+    <p>Lưu các recovery code ở nơi an toàn; mỗi mã chỉ dùng một lần:</p>
+    <pre id="mfa-recovery"></pre>
+    <form id="mfa-confirm-form">
+      <label>Mã 6 chữ số<input id="mfa-confirm-code" pattern="\d{6}" required autocomplete="one-time-code"></label>
+      <button type="submit">Xác nhận và kích hoạt</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/mfa.js"></script>{% endblock %}

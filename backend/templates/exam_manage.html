@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Quản lý kỳ thi · Giám Thị Số{% endblock %}
+{% block content %}
+<script>const MANAGE_EXAM_ID = {{ exam_id | tojson }};</script>
+<section class="card">
+  <p class="muted"><a href="/ui/exams">Kỳ thi</a> → Quản lý</p>
+  <h1 id="manage-exam-title">Đang tải...</h1>
+  <p id="manage-exam-state" class="muted"></p>
+  <div id="lifecycle-actions" class="button-row"></div>
+</section>
+
+<section class="card" id="exam-config-card">
+  <h2>Cấu hình bản nháp</h2>
+  <form id="exam-config-form" class="form-grid">
+    <label>Tên kỳ thi<input id="manage-exam-name" required></label>
+    <label>Bắt đầu<input id="manage-exam-start" type="datetime-local"></label>
+    <label>Kết thúc<input id="manage-exam-end" type="datetime-local"></label>
+    <div><button type="submit">Lưu cấu hình</button></div>
+  </form>
+  <p class="muted">Cấu hình đầy đủ chỉ sửa khi kỳ thi ở trạng thái bản nháp.</p>
+</section>
+
+<section class="card" id="assignment-card">
+  <h2>Nhân sự kỳ thi</h2>
+  <form id="assignment-form" class="inline-form hidden">
+    <select id="assignment-user" required></select>
+    <select id="assignment-role"><option value="manager">Manager</option><option value="proctor">Proctor</option></select>
+    <button type="submit">Phân công</button>
+  </form>
+  <div class="table-scroll">
+    <table class="data-table" id="assignments-table">
+      <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody><tr><td colspan="4">Đang tải...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/exam_manage.js"></script>{% endblock %}
