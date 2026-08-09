@@ -17,12 +17,74 @@ function orgSelect(options, selectedValue) {
   return select;
 }
 
+const ORGANIZATION_SECTIONS = new Set(["organization", "policy", "break-glass", "audit"]);
+
+function getOrganizationSection() {
+  const requestedSection = window.location.hash.slice(1);
+  return ORGANIZATION_SECTIONS.has(requestedSection) ? requestedSection : "organization";
+}
+
+function updateOrganizationSection() {
+  const currentSection = getOrganizationSection();
+  document.querySelectorAll("[data-organization-panel]").forEach((panel) => {
+    panel.classList.toggle("hidden", panel.dataset.organizationPanel !== currentSection);
+  });
+  document.querySelectorAll("#organization-nav-section .nav-item").forEach((item) => {
+    const section = item.dataset.organizationNav || "organization";
+    const isActive = section === currentSection;
+    item.classList.toggle("active", isActive);
+    if (isActive) item.setAttribute("aria-current", "page");
+    else item.removeAttribute("aria-current");
+  });
+}
+
+function bindOrganizationNavigation() {
+  document.querySelectorAll("#organization-nav-section [data-organization-nav]").forEach((item) => {
+    item.addEventListener("click", (event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      const section = item.dataset.organizationNav;
+      const nextHash = section === "organization" ? "" : `#${section}`;
+      const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+      const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (nextUrl !== currentUrl) window.history.pushState(null, "", nextUrl);
+      updateOrganizationSection();
+    });
+  });
+}
+
+function bindInvitationDialog() {
+  const dialog = document.getElementById("invitation-dialog");
+  const result = document.getElementById("invitation-result");
+  document.getElementById("open-invitation-dialog").addEventListener("click", () => {
+    result.classList.add("hidden");
+    result.textContent = "";
+    dialog.showModal();
+    document.getElementById("invitation-email").focus();
+  });
+  dialog.querySelectorAll(".dialog-close").forEach((button) => {
+    button.addEventListener("click", () => dialog.close());
+  });
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+}
+
 async function loadOrganization() {
   const response = await API.request("/organizations/current");
   if (!response.ok) throw new Error("Không tải được tổ chức.");
   const organization = await response.json();
-  document.getElementById("organization-title").textContent = organization.name;
-  document.getElementById("organization-meta").textContent = `${organization.status} · retention ${organization.retention_days} ngày`;
+  const title = document.getElementById("sidebar-brand-title");
+  const meta = document.getElementById("sidebar-brand-context");
+  const metaText = `${organization.status} · retention ${organization.retention_days} ngày`;
+  if (title) {
+    title.textContent = organization.name;
+    title.title = organization.name;
+  }
+  if (meta) {
+    meta.textContent = metaText;
+    meta.title = metaText;
+  }
 }
 
 async function updateMember(userId, role, status) {
@@ -177,13 +239,19 @@ document.getElementById("policy-form").addEventListener("submit", async (event) 
 });
 
 async function initializeOrganization() {
+  bindOrganizationNavigation();
+  updateOrganizationSection();
   const user = await API.requireAuth();
   if (!user) return;
   if (!API.hasCapability("org.members.read")) {
     window.location.replace("/ui/exams");
     return;
   }
+  updateOrganizationSection();
+  bindInvitationDialog();
   await Promise.all([loadOrganization(), loadMembers(), loadPolicy(), loadAccessGrants(), loadOrganizationAudit()]);
 }
 
+window.addEventListener("hashchange", updateOrganizationSection);
+window.addEventListener("popstate", updateOrganizationSection);
 initializeOrganization().catch((error) => showToast(error.message, "error"));

@@ -78,6 +78,27 @@ def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     assert "qr_code_data_url" in client.get("/static/mfa.js").text
 
 
+def test_organization_sidebar_sections_and_invitation_dialog(client):
+    response = client.get("/ui/organization")
+    assert response.status_code == 200
+    assert 'id="nav-organization" data-organization-nav="organization"' in response.text
+    assert 'id="nav-organization-policy" data-organization-nav="policy"' in response.text
+    assert 'id="nav-organization-break-glass" data-organization-nav="break-glass"' in response.text
+    assert 'id="nav-organization-audit" data-organization-nav="audit"' in response.text
+    assert 'data-organization-panel="organization"' in response.text
+    assert 'data-organization-panel="policy"' in response.text
+    assert 'data-organization-panel="break-glass"' in response.text
+    assert 'data-organization-panel="audit"' in response.text
+    assert 'id="open-invitation-dialog"' in response.text
+    assert 'id="invitation-dialog"' in response.text
+    assert 'src="/static/organization.js?v=' in response.text
+
+    script = client.get("/static/organization.js").text
+    assert "function bindOrganizationNavigation()" in script
+    assert "window.history.pushState" in script
+    assert 'window.addEventListener("popstate", updateOrganizationSection)' in script
+
+
 def test_current_user_exposes_server_resolved_capabilities(client):
     registered = client.post(
         "/auth/register",

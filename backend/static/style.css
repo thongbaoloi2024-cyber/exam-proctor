@@ -54,9 +54,9 @@ body.no-sidebar { display: block; }
 .sidebar-brand svg { color: var(--color-primary); flex-shrink: 0; }
 .brand-mark { display: grid; width: 26px; height: 26px; place-items: center; flex: 0 0 auto; }
 .brand-mark svg { width: 22px; height: 22px; }
-.brand-copy { display: flex; min-width: 0; flex-direction: column; gap: 1px; }
-.brand-copy strong { color: inherit; font-size: inherit; line-height: 1.2; }
-.brand-copy small { color: var(--color-muted); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.03em; }
+.brand-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 1px; }
+.brand-copy strong { overflow: hidden; color: inherit; font-size: inherit; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.brand-copy small { overflow: hidden; color: var(--color-muted); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.03em; text-overflow: ellipsis; white-space: nowrap; }
 .platform-badge { margin-left: auto; padding: 3px 6px; color: #9fc3ff; background: rgba(79, 142, 247, 0.12); border: 1px solid rgba(79, 142, 247, 0.25); border-radius: 5px; font-size: 0.58rem; line-height: 1; letter-spacing: 0.08em; }
 
 .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
@@ -125,6 +125,8 @@ a.nav-item:hover { background: var(--color-border); }
   border-radius: 8px;
   padding: 20px 24px;
 }
+.organization-card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.organization-card-header h2 { margin: 0; }
 
 h1 { margin-top: 0; font-size: 1.4rem; }
 h2 { font-size: 1.1rem; }
@@ -729,6 +731,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid rgba(79, 142, 247
   .audit-json-grid { grid-template-columns: 1fr; }
   .dialog-header, .dialog-body { padding-left: 17px; padding-right: 17px; }
   .dialog-actions { padding-left: 17px; padding-right: 17px; }
+  .organization-card-header { align-items: stretch; flex-direction: column; }
+  .organization-card-header .primary-action { justify-content: center; }
   .timeline-item { grid-template-columns: auto 1fr; }
   .timeline-item time { grid-column: 2; }
 }

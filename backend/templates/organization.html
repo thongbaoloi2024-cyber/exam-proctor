@@ -1,26 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Quản trị tổ chức · Giám Thị Số{% endblock %}
 {% block content %}
-<section class="card">
-  <h1 id="organization-title">Tổ chức</h1>
-  <p class="muted" id="organization-meta">Đang tải...</p>
-</section>
-
-<section class="card">
-  <h2>Mời thành viên</h2>
-  <form id="invitation-form" class="inline-form">
-    <input id="invitation-email" type="email" placeholder="giaovien@example.edu" required>
-    <select id="invitation-role">
-      <option value="exam_manager">Exam Manager / Giáo viên</option>
-      <option value="org_admin">Organization Admin</option>
-    </select>
-    <button type="submit">Tạo lời mời</button>
-  </form>
-  <div id="invitation-result" class="callout hidden"></div>
-</section>
-
-<section class="card">
-  <h2>Thành viên</h2>
+<section class="card organization-panel" data-organization-panel="organization">
+  <div class="organization-card-header">
+    <h2>Thành viên</h2>
+    <button type="button" id="open-invitation-dialog" class="primary-action"><span aria-hidden="true">＋</span>Mời thành viên</button>
+  </div>
   <div class="table-scroll">
     <table class="data-table" id="members-table">
       <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
@@ -29,7 +14,7 @@
   </div>
 </section>
 
-<section class="card">
+<section class="card organization-panel hidden" data-organization-panel="policy">
   <h2>Chính sách mặc định</h2>
   <form id="policy-form" class="form-grid">
     <label>Phiên bản extension tối thiểu<input id="policy-extension-version" value="1.0.0" required></label>
@@ -42,7 +27,7 @@
   </form>
 </section>
 
-<section class="card">
+<section class="card organization-panel hidden" data-organization-panel="break-glass">
   <h2>Yêu cầu break-glass</h2>
   <div class="table-scroll">
     <table class="data-table" id="access-grants-table">
@@ -52,7 +37,7 @@
   </div>
 </section>
 
-<section class="card">
+<section class="card organization-panel hidden" data-organization-panel="audit">
   <h2>Audit gần nhất</h2>
   <div class="table-scroll">
     <table class="data-table" id="organization-audit-table">
@@ -61,5 +46,26 @@
     </table>
   </div>
 </section>
+
+<dialog id="invitation-dialog" class="admin-dialog admin-dialog-small">
+  <form id="invitation-form">
+    <div class="dialog-header">
+      <div><h2>Mời thành viên</h2><p class="muted">Tạo lời mời tham gia tổ chức và cấp vai trò ban đầu.</p></div>
+      <button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button>
+    </div>
+    <div class="dialog-body form-stack">
+      <label>Email thành viên<input id="invitation-email" type="email" placeholder="giaovien@example.edu" autocomplete="email" required></label>
+      <label>Vai trò<select id="invitation-role">
+        <option value="exam_manager">Exam Manager / Giáo viên</option>
+        <option value="org_admin">Organization Admin</option>
+      </select></label>
+      <div id="invitation-result" class="invitation-result hidden"></div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="secondary-button dialog-close">Hủy</button>
+      <button type="submit">Tạo lời mời</button>
+    </div>
+  </form>
+</dialog>
 {% endblock %}
-{% block scripts %}<script src="/static/organization.js"></script>{% endblock %}
+{% block scripts %}<script src="/static/organization.js?v=20260807-2"></script>{% endblock %}
