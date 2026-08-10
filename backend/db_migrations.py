@@ -316,9 +316,17 @@ def apply_additive_migrations(engine: Engine) -> None:
                 "mfa_enabled": "BOOLEAN",
                 "mfa_secret_encrypted": "TEXT",
                 "mfa_recovery_codes_json": "TEXT",
+                "google_subject": "VARCHAR(255)",
                 "updated_at": "TIMESTAMP",
             },
         )
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_subject "
+                    "ON users (google_subject)"
+                )
+            )
 
     if "exams" in tables:
         _add_columns(
@@ -349,3 +357,4 @@ def apply_additive_migrations(engine: Engine) -> None:
                 {"disabled": False},
             )
     _record_migration(engine, "2026_08_03_rbac_foundation")
+    _record_migration(engine, "2026_08_09_web_google_auth")

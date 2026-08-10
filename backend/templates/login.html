@@ -1,32 +1,42 @@
 {% extends "base.html" %}
 {% block title %}Đăng nhập · Giám Thị Số{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block container_class %}auth-container{% endblock %}
 {% block content %}
-<section class="card auth-card">
-  <div class="sidebar-brand" style="justify-content:center; margin-bottom:6px;">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M2 12C4.5 7 8 4.5 12 4.5S19.5 7 22 12C19.5 17 16 19.5 12 19.5S4.5 17 2 12Z" stroke="currentColor" stroke-width="1.6"/>
-      <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
-    </svg>
-    <span>Giám Thị Số</span>
-  </div>
-  <p class="muted" style="text-align:center; margin-top:0;">Giám sát thi trực tuyến bằng AI</p>
-  <h1>Đăng nhập</h1>
-  <form id="login-form">
-    <label>Email
-      <input type="email" id="email" required>
-    </label>
-    <label>Mật khẩu
-      <input type="password" id="password" required>
-    </label>
-    <label>Mã MFA hoặc recovery code (nếu đã bật)
-      <input type="text" id="mfa-code" autocomplete="one-time-code">
-    </label>
-    <button type="submit">Đăng nhập</button>
-  </form>
-  <p id="error-message" class="error" hidden></p>
-  <p class="muted">Chưa có tài khoản tổ chức? <a href="/ui/register">Đăng ký mới</a></p>
+<section class="auth-shell">
+  <aside class="auth-visual" aria-label="Giới thiệu Giám Thị Số">
+    <a class="auth-brand" href="/ui/login">
+      <span class="auth-brand-mark" aria-hidden="true">◉</span>
+      <span>Giám Thị Số</span>
+    </a>
+    <div class="auth-visual-copy">
+      <span class="eyebrow">Nền tảng khảo thí thông minh</span>
+      <h2>Tập trung vào kỳ thi.<br>Chúng tôi bảo vệ tính công bằng.</h2>
+      <p>Giám sát, quản trị và truy vết phiên thi trong một không gian an toàn.</p>
+    </div>
+    <div class="auth-signal" aria-hidden="true"><span></span><span></span><span></span></div>
+  </aside>
+  <article class="auth-panel">
+    <div class="auth-heading">
+      <span class="eyebrow">Chào mừng trở lại</span>
+      <h1>Đăng nhập tài khoản</h1>
+      <p>Tiếp tục vào không gian quản lý kỳ thi của bạn.</p>
+    </div>
+    <a class="google-button {{ '' if google_oauth_enabled else 'is-disabled' }}" href="{{ '/auth/google/start?flow=login' if google_oauth_enabled else '#' }}" {% if not google_oauth_enabled %}aria-disabled="true" title="Google OAuth chưa được cấu hình"{% endif %}>
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.41Z"/><path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.36l-3.24-2.54c-.9.6-2.05.96-3.38.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.39 13.93A6.02 6.02 0 0 1 6.08 12c0-.67.11-1.32.31-1.93V7.45H3.04A10 10 0 0 0 2 12c0 1.61.39 3.14 1.04 4.55l3.35-2.62Z"/><path fill="#EA4335" d="M12 5.94c1.47 0 2.79.51 3.83 1.5l2.87-2.88A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.62C7.18 7.7 9.39 5.94 12 5.94Z"/></svg>
+      Tiếp tục với Google
+    </a>
+    <div class="auth-divider"><span>hoặc đăng nhập bằng tài khoản</span></div>
+    <form id="login-form" class="auth-form">
+      <label>Email<input type="email" id="email" autocomplete="username" placeholder="ten@tochuc.edu.vn" required></label>
+      <label>Mật khẩu<input type="password" id="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required></label>
+      <button class="auth-submit" type="submit">Đăng nhập</button>
+    </form>
+    <p id="error-message" class="form-message error" role="alert" hidden></p>
+    <p class="auth-switch">Chưa có tài khoản? <a href="/ui/register">Đăng ký tổ chức</a></p>
+  </article>
 </section>
 {% endblock %}
 {% block scripts %}
-<script src="/static/login.js"></script>
+<script src="/static/login.js?v=20260809-auth-ui-2"></script>
 {% endblock %}

@@ -48,6 +48,7 @@ def initialize_backend() -> None:
             "client lease va distributed rate limit."
         )
     candidate_auth_router.validate_google_oauth_configuration()
+    auth_router.validate_web_google_oauth_configuration()
     Base.metadata.create_all(bind=engine)
     apply_additive_migrations(engine)
 

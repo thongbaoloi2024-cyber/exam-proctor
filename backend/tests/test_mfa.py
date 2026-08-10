@@ -67,28 +67,28 @@ def test_system_admin_must_enroll_mfa_and_login_with_second_factor(client):
         headers={"Authorization": f"Bearer {setup_token}"},
     ).status_code == 401
 
-    missing_code = client.post(
+    primary_login = client.post(
         "/auth/login",
         json={"email": "mfa-system@test.local", "password": "matkhau123"},
     )
-    assert missing_code.status_code == 401
+    assert primary_login.status_code == 200
+    assert primary_login.json()["mfa_required"] is True
+    assert primary_login.json()["access_token"] is None
+    assert client.get("/auth/me").status_code == 401
+    assert client.get("/auth/mfa/challenge").json()["attempts_remaining"] == 3
     recovery_login = client.post(
-        "/auth/login",
-        json={
-            "email": "mfa-system@test.local",
-            "password": "matkhau123",
-            "mfa_code": setup.json()["recovery_codes"][0],
-        },
+        "/auth/mfa/verify",
+        json={"code": setup.json()["recovery_codes"][0]},
     )
     assert recovery_login.status_code == 200
     assert recovery_login.json()["role"] == "system_admin"
-    reused = client.post(
+    client.post(
         "/auth/login",
-        json={
-            "email": "mfa-system@test.local",
-            "password": "matkhau123",
-            "mfa_code": setup.json()["recovery_codes"][0],
-        },
+        json={"email": "mfa-system@test.local", "password": "matkhau123"},
+    )
+    reused = client.post(
+        "/auth/mfa/verify",
+        json={"code": setup.json()["recovery_codes"][0]},
     )
     assert reused.status_code == 401
 
@@ -157,24 +157,18 @@ def test_broken_mfa_encryption_uses_recovery_code_and_forces_reenrollment(client
         user.mfa_secret_encrypted = "not-a-valid-fernet-token"
         db.commit()
 
-    controlled_error = client.post(
+    primary_login = client.post(
         "/auth/login",
-        json={
-            "email": "broken-mfa@test.local",
-            "password": "matkhau123",
-            "mfa_code": "000000",
-        },
+        json={"email": "broken-mfa@test.local", "password": "matkhau123"},
     )
+    assert primary_login.json()["mfa_required"] is True
+    controlled_error = client.post("/auth/mfa/verify", json={"code": "invalid-code"})
     assert controlled_error.status_code == 409
-    assert "reset MFA" in controlled_error.json()["detail"]
+    assert controlled_error.json()["attempts_remaining"] == 2
 
     recovered = client.post(
-        "/auth/login",
-        json={
-            "email": "broken-mfa@test.local",
-            "password": "matkhau123",
-            "mfa_code": setup["recovery_codes"][0],
-        },
+        "/auth/mfa/verify",
+        json={"code": setup["recovery_codes"][0]},
     )
     assert recovered.status_code == 200
     assert recovered.json()["mfa_setup_required"] is True
@@ -185,3 +179,41 @@ def test_broken_mfa_encryption_uses_recovery_code_and_forces_reenrollment(client
         assert user.mfa_secret_encrypted is None
         assert user.mfa_recovery_codes_json is None
         assert role.status == "pending_mfa"
+
+
+def test_mfa_challenge_allows_only_three_failed_attempts(client):
+    registered = client.post(
+        "/auth/register",
+        json={
+            "organization_name": "MFA Attempt Org",
+            "admin_email": "mfa-attempt@test.local",
+            "admin_password": "matkhau123",
+        },
+    )
+    token = registered.json()["access_token"]
+    setup = client.post(
+        "/auth/mfa/setup",
+        headers={"Authorization": f"Bearer {token}"},
+    ).json()
+    client.post(
+        "/auth/mfa/confirm",
+        json={"code": current_totp(setup["secret"])},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    login = client.post(
+        "/auth/login",
+        json={"email": "mfa-attempt@test.local", "password": "matkhau123"},
+    )
+    assert login.json()["mfa_required"] is True
+
+    for remaining in (2, 1, 0):
+        invalid = client.post("/auth/mfa/verify", json={"code": "invalid-code"})
+        assert invalid.status_code == 401
+        assert invalid.json()["attempts_remaining"] == remaining
+
+    assert client.get("/auth/mfa/challenge").status_code == 401
+    blocked_valid_code = client.post(
+        "/auth/mfa/verify",
+        json={"code": current_totp(setup["secret"])},
+    )
+    assert blocked_valid_code.status_code == 401

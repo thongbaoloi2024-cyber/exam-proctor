@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Xác minh hai bước · Giám Thị Số{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block container_class %}auth-container auth-container-compact{% endblock %}
+{% block content %}
+<section class="auth-shell auth-shell-compact">
+  <aside class="auth-visual auth-visual-mfa">
+    <a class="auth-brand" href="/ui/login"><span class="auth-brand-mark" aria-hidden="true">◉</span><span>Giám Thị Số</span></a>
+    <div class="auth-visual-copy"><span class="eyebrow">Lớp bảo vệ thứ hai</span><h2>Xác minh an toàn.<br>Truy cập đúng người.</h2><p>Session chỉ được tạo sau khi mã xác minh hợp lệ.</p></div>
+  </aside>
+  <article class="auth-panel">
+    <div class="security-icon" aria-hidden="true">✓</div>
+    <div class="auth-heading"><span class="eyebrow">Xác minh danh tính</span><h1>Nhập mã bảo mật</h1><p id="mfa-account">Dùng mã từ ứng dụng Authenticator hoặc recovery code.</p></div>
+    <div class="code-type-switch" role="tablist" aria-label="Loại mã">
+      <button type="button" class="active" data-code-type="totp" role="tab" aria-selected="true">Authenticator</button>
+      <button type="button" data-code-type="recovery" role="tab" aria-selected="false">Recovery code</button>
+    </div>
+    <form id="mfa-verify-form" class="auth-form">
+      <label id="mfa-code-label">Mã xác thực 6 chữ số<input id="mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required></label>
+      <button class="auth-submit" type="submit">Xác minh và tiếp tục</button>
+    </form>
+    <p id="mfa-attempts" class="attempt-message" aria-live="polite"></p>
+    <p id="mfa-error" class="form-message error" role="alert" hidden></p>
+    <p class="auth-switch"><a href="/ui/login">← Quay lại đăng nhập</a></p>
+  </article>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/mfa-verify.js?v=20260809-auth-ui-2"></script>{% endblock %}

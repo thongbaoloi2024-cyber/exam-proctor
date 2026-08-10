@@ -71,6 +71,9 @@ class User(Base):
     org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    google_subject: Mapped[Optional[str]] = mapped_column(
+        String(255), unique=True, nullable=True, index=True,
+    )
     role: Mapped[str] = mapped_column(String(20), nullable=False)  # "admin" | "proctor"
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
     session_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -86,6 +89,40 @@ class User(Base):
         back_populates="user",
         foreign_keys="OrganizationMembership.user_id",
     )
+
+
+class WebAuthChallenge(Base):
+    """Short-lived, server-side state for MFA and Google registration."""
+
+    __tablename__ = "web_auth_challenges"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid_str)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    purpose: Mapped[str] = mapped_column(String(32), nullable=False)
+    user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    google_subject: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    google_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    google_display_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    google_avatar_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    failed_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class WebOAuthTransaction(Base):
+    """One-time OAuth state/PKCE transaction for the server-rendered web UI."""
+
+    __tablename__ = "web_oauth_transactions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid_str)
+    state_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    flow: Mapped[str] = mapped_column(String(20), nullable=False)
+    pkce_verifier: Mapped[str] = mapped_column(String(255), nullable=False)
+    oidc_nonce: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class Exam(Base):

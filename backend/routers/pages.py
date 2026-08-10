@@ -29,17 +29,43 @@ def root() -> RedirectResponse:
 
 @router.get("/ui/login", response_class=HTMLResponse)
 def login_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "login.html", {"hide_sidebar": True})
+    from .auth import web_google_oauth_configured
+
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        {"hide_sidebar": True, "google_oauth_enabled": web_google_oauth_configured()},
+    )
 
 
 @router.get("/ui/register", response_class=HTMLResponse)
 def register_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "register.html", {"hide_sidebar": True})
+    from .auth import web_google_oauth_configured
+
+    return templates.TemplateResponse(
+        request,
+        "register.html",
+        {"hide_sidebar": True, "google_oauth_enabled": web_google_oauth_configured()},
+    )
+
+
+@router.get("/ui/register/organization", response_class=HTMLResponse)
+def google_organization_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "register_organization.html",
+        {"hide_sidebar": True},
+    )
 
 
 @router.get("/ui/mfa", response_class=HTMLResponse)
 def mfa_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "mfa.html", {"hide_sidebar": True})
+
+
+@router.get("/ui/mfa/verify", response_class=HTMLResponse)
+def mfa_verify_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "mfa_verify.html", {"hide_sidebar": True})
 
 
 @router.get("/ui/exams", response_class=HTMLResponse)

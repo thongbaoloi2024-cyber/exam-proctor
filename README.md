@@ -208,7 +208,11 @@ $env:SYSTEM_ADMIN_BOOTSTRAP_PASSWORD="mat-khau-manh-toi-thieu-12-byte"
 python scripts/bootstrap_system_admin.py --email system-admin@example.edu
 ```
 
-Đăng nhập tại `/ui/login`, sau đó hoàn tất MFA tại `/ui/mfa`. Khu vực
+Đăng nhập bằng email/mật khẩu hoặc Google tại `/ui/login`. Với tài khoản đã
+bật MFA, hệ thống chỉ chuyển tới `/ui/mfa/verify` sau khi danh tính chính hợp
+lệ, chưa cấp session cho tới khi TOTP/recovery code được xác minh. Mỗi challenge
+chỉ cho phép tối đa ba lần nhập sai. `/ui/mfa` tiếp tục là trang thiết lập MFA.
+Khu vực
 System Admin được tách rõ thành tổng quan (`/ui/system`), danh sách/chi tiết
 tổ chức (`/ui/system/organizations`), bảo mật và break-glass
 (`/ui/system/security`), dữ liệu được cấp quyền tạm thời
@@ -220,18 +224,22 @@ khoản đó có break-glass grant đang active; mã tham gia và URL bài thi l
 Các giao diện theo tenant tiếp tục tại `/ui/organization`, `/ui/exams` và
 `/ui/exams/{exam_id}/manage`.
 
-Chế độ Google là tùy chọn. Khi bật, cấu hình bốn biến bắt buộc sau và đăng ký
-callback HTTPS tương ứng trong Google Cloud Console:
+Chế độ Google là tùy chọn. Hai luồng web và extension dùng chung client ID/
+secret nhưng có callback riêng. Đăng ký các callback HTTPS được sử dụng trong
+Google Cloud Console:
 
 ```dotenv
 GOOGLE_OAUTH_CLIENT_ID=...
 GOOGLE_OAUTH_CLIENT_SECRET=...
 GOOGLE_OAUTH_CALLBACK_URL=https://proctor.example.edu/candidate-auth/google/callback
+GOOGLE_WEB_OAUTH_CALLBACK_URL=https://proctor.example.edu/auth/google/callback
 OAUTH_EXTENSION_REDIRECT_URIS=https://<extension-id>.chromiumapp.org/google
 ```
 
-Trang setup của extension hiển thị chính xác redirect URI của chính bản cài
-đó. Để trống toàn bộ các biến trên nếu chỉ dùng chế độ manual.
+`GOOGLE_WEB_OAUTH_CALLBACK_URL` bật đăng nhập/đăng ký Google cho tài khoản web.
+`GOOGLE_OAUTH_CALLBACK_URL` cùng `OAUTH_EXTENSION_REDIRECT_URIS` bật Google cho
+thí sinh trong extension. Trang setup của extension hiển thị chính xác redirect
+URI của chính bản cài đó. Có thể chỉ cấu hình một trong hai luồng.
 
 ## Nối client với platform
 

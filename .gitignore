@@ -57,6 +57,7 @@ backend/tests/*
 !backend/tests/test_admin_pages_v2.py
 !backend/tests/test_exam_management_v2.py
 !backend/tests/test_mfa.py
+!backend/tests/test_web_google_auth.py
 !backend/tests/test_organization_admin.py
 !backend/tests/test_rbac_foundation.py
 !backend/tests/test_report_jobs.py

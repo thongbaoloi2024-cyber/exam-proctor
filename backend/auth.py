@@ -23,6 +23,7 @@ from .db import get_db
 from .ws_tickets import ticket_store
 
 AUTH_COOKIE_NAME = "datt_access_token"
+AUTH_FLOW_COOKIE_NAME = "datt_auth_flow"
 
 
 def _load_secret_key() -> str:
@@ -72,6 +73,22 @@ def set_auth_cookie(response: Response, token: str) -> None:
 
 def clear_auth_cookie(response: Response) -> None:
     response.delete_cookie(key=AUTH_COOKIE_NAME, path="/", samesite="strict")
+
+
+def set_auth_flow_cookie(response: Response, token: str, max_age: int = 600) -> None:
+    response.set_cookie(
+        key=AUTH_FLOW_COOKIE_NAME,
+        value=token,
+        max_age=max_age,
+        httponly=True,
+        secure=_env_flag("COOKIE_SECURE", os.environ.get("APP_ENV") == "production"),
+        samesite="lax",
+        path="/",
+    )
+
+
+def clear_auth_flow_cookie(response: Response) -> None:
+    response.delete_cookie(key=AUTH_FLOW_COOKIE_NAME, path="/", samesite="lax")
 
 
 def hash_password(password: str) -> str:

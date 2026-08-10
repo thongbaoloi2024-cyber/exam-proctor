@@ -72,7 +72,10 @@ def _google_settings() -> Optional[GoogleOAuthSettings]:
         for item in os.environ.get("OAUTH_EXTENSION_REDIRECT_URIS", "").split(",")
         if item.strip()
     )
-    if not any((client_id, client_secret, callback_url, redirect_uris)):
+    # The web dashboard can share the Google client credentials while using a
+    # different callback. Candidate OAuth is enabled only when at least one of
+    # its own redirect settings is present.
+    if not callback_url and not redirect_uris:
         return None
     if not all((client_id, client_secret, callback_url, redirect_uris)):
         raise RuntimeError(

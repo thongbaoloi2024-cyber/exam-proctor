@@ -136,8 +136,11 @@ def test_rbac_migration_backfills_legacy_database_idempotently(tmp_path):
     assert {"slug", "status", "retention_days"}.issubset(
         {column["name"] for column in inspector.get_columns("organizations")}
     )
-    assert {"status", "session_version"}.issubset(
+    assert {"status", "session_version", "google_subject"}.issubset(
         {column["name"] for column in inspector.get_columns("users")}
+    )
+    assert {"web_auth_challenges", "web_oauth_transactions"}.issubset(
+        set(inspector.get_table_names())
     )
     assert {"owner_user_id", "version"}.issubset(
         {column["name"] for column in inspector.get_columns("exams")}

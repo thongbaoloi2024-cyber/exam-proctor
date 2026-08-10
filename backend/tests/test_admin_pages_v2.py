@@ -12,6 +12,8 @@ def test_new_admin_page_shells_and_scripts_are_served(client):
         "/ui/system/audit": "/static/system-audit.js",
         "/ui/organization": "/static/organization.js",
         "/ui/mfa": "/static/mfa.js",
+        "/ui/mfa/verify": "/static/mfa-verify.js",
+        "/ui/register/organization": "/static/register-organization.js",
         "/ui/exams/exam-id/manage": "/static/exam_manage.js",
     }
     for path, script in pages.items():
@@ -26,6 +28,14 @@ def test_new_admin_page_shells_and_scripts_are_served(client):
     login_script = client.get("/static/login.js").text
     assert 'body.role === "system_admin"' in login_script
     assert '? "/ui/organization"' in login_script
+
+    login_page = client.get("/ui/login").text
+    register_page = client.get("/ui/register").text
+    assert "/static/style.css?v=" in login_page
+    assert "/static/login.js?v=" in login_page
+    assert "/static/register.js?v=" in register_page
+    assert '<svg width="20" height="20" viewBox="0 0 24 24"' in login_page
+    assert '<svg width="20" height="20" viewBox="0 0 24 24"' in register_page
 
 
 def test_system_admin_sidebar_has_control_panel_navigation_and_account(client):
@@ -76,6 +86,10 @@ def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     mfa_page = client.get("/ui/mfa").text
     assert 'id="mfa-qr"' in mfa_page
     assert "qr_code_data_url" in client.get("/static/mfa.js").text
+    mfa_verify_page = client.get("/ui/mfa/verify").text
+    assert 'data-code-type="totp"' in mfa_verify_page
+    assert 'data-code-type="recovery"' in mfa_verify_page
+    assert "Gửi lại mã" not in mfa_verify_page
 
 
 def test_organization_sidebar_sections_and_invitation_dialog(client):
