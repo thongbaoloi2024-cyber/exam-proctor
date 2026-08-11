@@ -1,4 +1,4 @@
-const securityState = { page: 1, pageSize: 10, organizations: [] };
+const securityState = { page: 1, pageSize: 15, organizations: [] };
 
 function grantQuery() {
   const params = new URLSearchParams({

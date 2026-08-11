@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Chi tiết phiên · Giám Thị Số{% endblock %}
+{% block container_class %}workspace-container{% endblock %}
 {% block content %}
 <section
   class="card"
@@ -28,24 +29,30 @@
     <div><h2>Dòng thời gian tổng hợp</h2><p class="muted">Phân tích hình ảnh và sự kiện trình duyệt trên cùng trục thời gian.</p></div>
     <label>Mức độ<select id="timeline-severity-filter"><option value="">Tất cả</option><option value="HIGH">Nghiêm trọng</option><option value="MEDIUM">Cảnh báo</option><option value="LOW">Thông tin</option></select></label>
   </div>
-  <table id="unified-timeline-table" class="data-table">
-    <thead><tr><th>Thời điểm (s)</th><th>Nguồn</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th></tr></thead>
-    <tbody><tr><td colspan="5" class="muted">Đang tải...</td></tr></tbody>
-  </table>
+  <div class="table-scroll">
+    <table id="unified-timeline-table" class="data-table workspace-table">
+      <thead><tr><th>Thời điểm (s)</th><th>Nguồn</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th></tr></thead>
+      <tbody><tr><td colspan="5" class="muted">Đang tải...</td></tr></tbody>
+    </table>
+  </div>
   <h2>Dòng thời gian vi phạm</h2>
-  <table id="violations-table" class="data-table">
-    <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Loại vi phạm chính</th><th>Ảnh chụp</th><th>Duyệt sự cố</th></tr></thead>
-    <tbody>
-      <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
-    </tbody>
-  </table>
+  <div class="table-scroll">
+    <table id="violations-table" class="data-table workspace-table">
+      <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Loại vi phạm chính</th><th>Ảnh chụp</th><th>Duyệt sự cố</th></tr></thead>
+      <tbody>
+        <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
   <h2>Sự kiện toàn vẹn trình duyệt</h2>
-  <table id="browser-events-table" class="data-table">
-    <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th><th>Ảnh</th></tr></thead>
-    <tbody>
-      <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
-    </tbody>
-  </table>
+  <div class="table-scroll">
+    <table id="browser-events-table" class="data-table workspace-table">
+      <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th><th>Ảnh</th></tr></thead>
+      <tbody>
+        <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endblock %}
 {% block scripts %}

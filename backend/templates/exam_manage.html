@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Quản lý kỳ thi · Giám Thị Số{% endblock %}
+{% block container_class %}workspace-container{% endblock %}
 {% block content %}
 <section class="card exam-detail-header" id="exam-manage-root" data-exam-id="{{ exam_id }}">
   <div class="exam-detail-header-top">
@@ -57,7 +58,7 @@
     <button type="submit">Phân công</button>
   </form>
   <div class="table-scroll">
-    <table class="data-table" id="assignments-table">
+    <table class="data-table workspace-table" id="assignments-table">
       <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Hết hạn</th><th>Thao tác</th></tr></thead>
       <tbody><tr><td colspan="5">Đang tải...</td></tr></tbody>
     </table>

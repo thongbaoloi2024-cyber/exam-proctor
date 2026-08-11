@@ -864,7 +864,7 @@ code { background: var(--color-bg); padding: 2px 6px; border-radius: 4px; }
 .has-role-sidebar .logout-button:hover { color: #f2a0a9; background: rgba(239, 106, 120, 0.08); border-color: rgba(239, 106, 120, 0.13); opacity: 1; }
 .has-role-sidebar .logout-button svg { display: block; }
 .has-role-sidebar .logout-button span { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-.system-container { max-width: 1380px; gap: 18px; padding: 0 24px 36px; }
+.system-container, .workspace-container { max-width: 1400px; gap: 18px; padding: 0 24px 36px; }
 .system-page-header {
   display: flex;
   align-items: flex-end;
@@ -1220,7 +1220,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid rgba(79, 142, 247
     border-top-color: rgba(255, 255, 255, 0.045);
   }
   .has-role-sidebar .system-scope, .has-role-sidebar #organization-context, .has-role-sidebar .sidebar-account { min-height: 54px; }
-  .system-container { margin-top: 18px; padding: 0 16px 28px; }
+  .system-container, .workspace-container { margin-top: 18px; padding: 0 16px 28px; }
   .metric-grid-five, .metric-grid-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .chart-grid, .chart-grid-primary, .detail-grid { grid-template-columns: 1fr; }
   .chart-panel-wide { grid-column: auto; }
@@ -1357,6 +1357,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid rgba(79, 142, 247
 
 /* --- Exam list and detail workspace --- */
 .exams-container { max-width: 1400px; }
+.workspace-container .table-scroll { width: 100%; overscroll-behavior-inline: contain; }
+.workspace-container .data-table th,
+.workspace-container .data-table td { padding: 11px 12px; vertical-align: middle; }
+.workspace-table { min-width: 820px; }
+.workspace-table-wide { min-width: 1080px; }
+.organization-panel[data-organization-panel="policy"] { width: 100%; max-width: 900px; align-self: flex-start; }
 .exams-page-card { overflow: hidden; }
 .exams-page-heading, .create-exam-panel-heading, .exam-manage-actions {
   display: flex;

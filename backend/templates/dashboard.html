@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Bảng giám sát · Giám Thị Số{% endblock %}
+{% block container_class %}workspace-container{% endblock %}
 {% block content %}
 <section class="card exam-detail-header" id="exam-detail-header">
   <div class="exam-detail-header-top">
@@ -49,14 +50,16 @@
     </label>
   </div>
 
-  <table id="sessions-table" class="data-table">
-    <thead>
-      <tr><th>Thí sinh</th><th>Mã/Email</th><th>Xác thực · Thiết bị</th><th>Trạng thái</th><th>Rủi ro hình ảnh</th><th>Trình duyệt</th><th></th></tr>
-    </thead>
-    <tbody>
-      <tr class="loading-row"><td colspan="7">Đang tải...</td></tr>
-    </tbody>
-  </table>
+  <div class="table-scroll">
+    <table id="sessions-table" class="data-table workspace-table workspace-table-wide">
+      <thead>
+        <tr><th>Thí sinh</th><th>Mã/Email</th><th>Xác thực · Thiết bị</th><th>Trạng thái</th><th>Rủi ro hình ảnh</th><th>Trình duyệt</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr class="loading-row"><td colspan="7">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
   <div class="section-heading-row">
     <div><h2>Hàng đợi sự cố</h2><p class="muted">Sự cố mới và mức nghiêm trọng được ưu tiên trước.</p></div>
@@ -70,10 +73,12 @@
       </select>
     </label>
   </div>
-  <table id="incidents-table" class="data-table">
-    <thead><tr><th>Thí sinh</th><th>Mức độ</th><th>Sự cố</th><th>Trạng thái</th><th>Người duyệt</th><th></th></tr></thead>
-    <tbody><tr><td colspan="6" class="muted">Đang tải...</td></tr></tbody>
-  </table>
+  <div class="table-scroll">
+    <table id="incidents-table" class="data-table workspace-table">
+      <thead><tr><th>Thí sinh</th><th>Mức độ</th><th>Sự cố</th><th>Trạng thái</th><th>Người duyệt</th><th></th></tr></thead>
+      <tbody><tr><td colspan="6" class="muted">Đang tải...</td></tr></tbody>
+    </table>
+  </div>
 </section>
 
 <dialog id="end-session-dialog" class="admin-dialog admin-dialog-small">

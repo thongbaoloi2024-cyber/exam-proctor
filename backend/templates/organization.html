@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ {'organization': 'Quản trị tổ chức', 'policy': 'Chính sách tổ chức', 'break-glass': 'Quyền truy cập ngoại lệ', 'audit': 'Nhật ký hoạt động của tổ chức'}[organization_section] }} · Giám Thị Số{% endblock %}
+{% block container_class %}workspace-container{% endblock %}
 {% block content %}
 <div id="organization-page" data-section="{{ organization_section }}" hidden></div>
 {% if organization_section == "organization" %}
@@ -13,14 +14,14 @@
     </div>
   </div>
   <div class="table-scroll">
-    <table class="data-table" id="members-table">
+    <table class="data-table workspace-table" id="members-table">
       <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody><tr><td colspan="4">Đang tải...</td></tr></tbody>
     </table>
   </div>
   <h2 class="subsection-title">Lời mời đang chờ</h2>
   <div class="table-scroll">
-    <table class="data-table" id="invitations-table">
+    <table class="data-table workspace-table" id="invitations-table">
       <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Ngày tạo</th><th>Hết hạn</th><th></th></tr></thead>
       <tbody><tr><td colspan="6">Đang tải...</td></tr></tbody>
     </table>
@@ -55,7 +56,7 @@
 <section class="card organization-panel" data-organization-panel="break-glass">
   <h2>Yêu cầu quyền truy cập ngoại lệ</h2>
   <div class="table-scroll">
-    <table class="data-table" id="access-grants-table">
+    <table class="data-table workspace-table workspace-table-wide" id="access-grants-table">
       <thead><tr><th>Người yêu cầu</th><th>Lý do</th><th>Phạm vi</th><th>Khởi tạo</th><th>Trạng thái</th><th>Hết hạn</th><th>Thao tác</th></tr></thead>
       <tbody><tr><td colspan="7">Đang tải...</td></tr></tbody>
     </table>
@@ -72,7 +73,7 @@
     <button type="button" id="audit-filter-button">Lọc</button>
   </div>
   <div class="table-scroll">
-    <table class="data-table admin-table" id="organization-audit-table">
+    <table class="data-table admin-table workspace-table workspace-table-wide" id="organization-audit-table">
       <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Tài nguyên</th><th>Kết quả</th><th>Lý do</th></tr></thead>
       <tbody><tr><td colspan="6">Đang tải...</td></tr></tbody>
     </table>

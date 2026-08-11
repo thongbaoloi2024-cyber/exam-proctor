@@ -163,6 +163,36 @@ def test_exam_table_supports_sorting_and_pagination(client):
     assert ".exam-code-copy" in stylesheet
 
 
+def test_data_workspaces_use_wide_responsive_containers(client):
+    workspace_pages = (
+        client.get("/ui/exams/exam-id/detail"),
+        client.get("/ui/exams/exam-id/detail?tab=manage"),
+        client.get("/ui/exams/exam-id/sessions/session-id"),
+        client.get("/ui/organization"),
+        client.get("/ui/organization/audit"),
+    )
+    for page in workspace_pages:
+        assert page.status_code == 200
+        assert 'class="container workspace-container"' in page.text
+
+    dashboard = workspace_pages[0].text
+    assert 'id="sessions-table" class="data-table workspace-table workspace-table-wide"' in dashboard
+    assert 'id="incidents-table" class="data-table workspace-table"' in dashboard
+
+    session_detail = workspace_pages[2].text
+    assert session_detail.count('class="data-table workspace-table"') == 3
+
+    stylesheet = client.get("/static/style.css").text
+    assert ".system-container, .workspace-container { max-width: 1400px;" in stylesheet
+    assert ".workspace-table-wide { min-width: 1080px; }" in stylesheet
+    assert '.organization-panel[data-organization-panel="policy"]' in stylesheet
+
+    organizations_script = client.get("/static/system-organizations.js").text
+    security_script = client.get("/static/system-security.js").text
+    assert "pageSize: 15" in organizations_script
+    assert "pageSize: 15" in security_script
+
+
 def test_organization_sidebar_uses_real_paths_and_each_route_renders_one_panel(client):
     members = client.get("/ui/organization")
     policy = client.get("/ui/organization/policy")
