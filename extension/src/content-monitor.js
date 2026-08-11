@@ -138,6 +138,7 @@
     if (!session) throw new Error("Không tìm thấy phiên thi.");
     const startButton = monitorElement("datt-start-monitoring");
     startButton.disabled = true;
+    startButton.setAttribute("aria-busy", "true");
     setMonitorStatus("Đang xin quyền thiết bị...");
     try {
       if (session.policy.require_screen_share) {
@@ -177,6 +178,7 @@
       setMonitorStatus(error.message || "Không thể bật thiết bị bắt buộc.", "error");
       startButton.disabled = false;
     }
+    startButton.setAttribute("aria-busy", "false");
   }
 
   function showMonitorOverlay(nextSession) {
@@ -266,17 +268,34 @@
           }
           .actions { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; margin-top: 12px; }
           button {
-            border: 0;
-            border-radius: 7px;
-            padding: 10px 14px;
+            display: inline-flex;
+            min-height: 42px;
+            padding: 9px 14px;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
             background: #4f8ef7;
             color: white;
-            font: 600 13px system-ui, sans-serif;
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 8px;
+            box-shadow: inset 0 1px rgba(255, 255, 255, .13), 0 5px 14px rgba(22, 70, 145, .2);
+            font: 650 13px/1.4 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             cursor: pointer;
+            transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease,
+              box-shadow 150ms ease, filter 150ms ease, translate 150ms ease;
+            -webkit-tap-highlight-color: transparent;
           }
-          button.danger { background: #dc4c4c; }
-          button.secondary { background: #374151; }
-          button:disabled { opacity: .55; cursor: not-allowed; }
+          button:not(:disabled):hover { background: #68a1ff; translate: 0 -1px; }
+          button:not(:disabled):active { filter: brightness(.95); translate: 0 0; box-shadow: inset 0 1px 2px rgba(5, 12, 24, .28); }
+          button:focus-visible { outline: 3px solid rgba(105, 163, 255, .42); outline-offset: 2px; }
+          button.danger { background: #c94757; box-shadow: inset 0 1px rgba(255, 255, 255, .1), 0 5px 14px rgba(122, 24, 40, .2); }
+          button.danger:not(:disabled):hover { background: #dc5b6b; }
+          button.secondary { color: #d7dde6; background: #242b36; border-color: #3b4555; box-shadow: inset 0 1px rgba(255, 255, 255, .035); }
+          button.secondary:not(:disabled):hover { color: #fff; background: #303948; border-color: #4b586b; }
+          button:disabled { opacity: .5; cursor: not-allowed; filter: saturate(.65); translate: 0 0; box-shadow: none; }
+          button[aria-busy="true"] { cursor: progress; }
+          button[aria-busy="true"]::after { width: 12px; height: 12px; flex: 0 0 12px; border: 2px solid rgba(255, 255, 255, .42); border-top-color: currentColor; border-radius: 50%; content: ""; animation: datt-button-spin 700ms linear infinite; }
+          @keyframes datt-button-spin { to { transform: rotate(360deg); } }
           .status { min-height: 20px; margin: 10px 0 0; color: #a7afbd; font-size: 13px; line-height: 1.35; }
           .status.error { color: #ff8585; }
           .status.success { color: #70d98a; }
@@ -292,6 +311,10 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
           }
           .hidden { display: none !important; }
+          @media (prefers-reduced-motion: reduce) {
+            button { transition-duration: .001ms; }
+            button[aria-busy="true"]::after { animation-duration: 1.4s; }
+          }
           @media (max-width: 520px) {
             .backdrop { padding: 12px; align-items: start; }
             .panel { max-height: calc(100vh - 24px); }
@@ -340,6 +363,7 @@
       monitorElement("datt-end-session").addEventListener("click", async () => {
         const button = monitorElement("datt-end-session");
         button.disabled = true;
+        button.setAttribute("aria-busy", "true");
         setMonitorStatus("Đang kết thúc phiên...");
         try {
           await send({ type: "DATT_END_SESSION", reason: "completed" });
@@ -354,6 +378,8 @@
         } catch (error) {
           setMonitorStatus(error.message, "error");
           button.disabled = false;
+        } finally {
+          button.setAttribute("aria-busy", "false");
         }
       });
       document.documentElement.appendChild(monitorHost);

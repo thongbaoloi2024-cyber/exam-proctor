@@ -16,6 +16,16 @@ from src.signals.base import SignalResult
 
 from .button import Button
 from .text_field import TextField
+from .typography import (
+    FONT_FACE,
+    TEXT_LINE_HEIGHT,
+    TEXT_SCALE_BODY,
+    TEXT_SCALE_CAPTION,
+    TEXT_SCALE_HEADING,
+    TEXT_SCALE_LABEL,
+    TEXT_THICKNESS_EMPHASIS,
+    TEXT_THICKNESS_REGULAR,
+)
 
 STATE_COLOR = {
     SignalState.NORMAL: (0, 255, 255),      # vang
@@ -33,7 +43,8 @@ def draw_idle_screen(
 ) -> None:
     cv2.putText(
         frame, "He thong Giam sat Thi bang CV", (20, 40),
-        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA,
+        FONT_FACE, TEXT_SCALE_HEADING, (255, 255, 255),
+        TEXT_THICKNESS_EMPHASIS, cv2.LINE_AA,
     )
     name_field.draw(frame)
     code_field.draw(frame)
@@ -41,7 +52,8 @@ def draw_idle_screen(
     if error_message:
         cv2.putText(
             frame, error_message, (20, start_button.rect[1] + start_button.rect[3] + 30),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 1, cv2.LINE_AA,
+            FONT_FACE, TEXT_SCALE_BODY, (0, 0, 255),
+            TEXT_THICKNESS_REGULAR, cv2.LINE_AA,
         )
 
 
@@ -50,12 +62,14 @@ def draw_enrollment_progress(
 ) -> None:
     cv2.putText(
         frame, f"Dang dang ky khuon mat... {count}/{total}", (10, 30),
-        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, cv2.LINE_AA,
+        FONT_FACE, TEXT_SCALE_LABEL, (0, 255, 255),
+        TEXT_THICKNESS_EMPHASIS, cv2.LINE_AA,
     )
     if liveness_prompt:
         cv2.putText(
             frame, f"Kiem tra song: {liveness_prompt}", (10, 60),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2, cv2.LINE_AA,
+            FONT_FACE, TEXT_SCALE_BODY, (0, 255, 255),
+            TEXT_THICKNESS_EMPHASIS, cv2.LINE_AA,
         )
 
 
@@ -84,7 +98,8 @@ def _draw_head_pose_axes(display: np.ndarray, head_pose_result: SignalResult) ->
         display,
         f"yaw={metadata['yaw']:.1f} pitch={metadata['pitch']:.1f} roll={metadata['roll']:.1f}",
         (nose[0] + 10, nose[1]),
-        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA,
+        FONT_FACE, TEXT_SCALE_CAPTION, (255, 255, 255),
+        TEXT_THICKNESS_REGULAR, cv2.LINE_AA,
     )
 
 
@@ -104,7 +119,8 @@ def draw_monitoring_overlay(
         cv2.rectangle(display, (x1, y1), (x2, y2), (0, 0, 255), 2)
         cv2.putText(
             display, obj.class_name, (x1, max(0, y1 - 6)),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA,
+            FONT_FACE, TEXT_SCALE_CAPTION, (0, 0, 255),
+            TEXT_THICKNESS_REGULAR, cv2.LINE_AA,
         )
 
     for i, result in enumerate(results):
@@ -116,8 +132,9 @@ def draw_monitoring_overlay(
         state_label = state.value if state is not None else "?"
         line = f"{result.signal_name}: value={result.value:.2f} state={state_label}{extra}"
         cv2.putText(
-            display, line, (10, 25 + 20 * i),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA,
+            display, line, (10, 25 + TEXT_LINE_HEIGHT * i),
+            FONT_FACE, TEXT_SCALE_CAPTION, color,
+            TEXT_THICKNESS_REGULAR, cv2.LINE_AA,
         )
         if result.signal_name == "HEAD_POSE":
             _draw_head_pose_axes(display, result)
@@ -125,7 +142,8 @@ def draw_monitoring_overlay(
     session_color = (0, 0, 255) if session_state_value == "SESSION_ALERT" else (0, 255, 0)
     cv2.putText(
         display, f"SESSION: {session_state_value}",
-        (10, display.shape[0] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, session_color, 2, cv2.LINE_AA,
+        (10, display.shape[0] - 15), FONT_FACE, TEXT_SCALE_BODY,
+        session_color, TEXT_THICKNESS_EMPHASIS, cv2.LINE_AA,
     )
     end_button.draw(display)
 
@@ -133,21 +151,25 @@ def draw_monitoring_overlay(
 def draw_generating_report_message(frame: np.ndarray) -> None:
     cv2.putText(
         frame, "Dang tao bao cao...", (20, frame.shape[0] // 2),
-        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA,
+        FONT_FACE, TEXT_SCALE_HEADING, (0, 255, 255),
+        TEXT_THICKNESS_EMPHASIS, cv2.LINE_AA,
     )
 
 
 def draw_ended_screen(frame: np.ndarray, summary_sentence: str, report_path: Optional[str]) -> None:
     cv2.putText(
         frame, "Phien giam sat da ket thuc.", (20, 40),
-        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA,
+        FONT_FACE, TEXT_SCALE_HEADING, (255, 255, 255),
+        TEXT_THICKNESS_EMPHASIS, cv2.LINE_AA,
     )
     cv2.putText(
         frame, summary_sentence, (20, 80),
-        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA,
+        FONT_FACE, TEXT_SCALE_BODY, (255, 255, 255),
+        TEXT_THICKNESS_REGULAR, cv2.LINE_AA,
     )
     if report_path:
         cv2.putText(
             frame, f"Bao cao: {report_path}", (20, 110),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA,
+            FONT_FACE, TEXT_SCALE_CAPTION, (0, 255, 0),
+            TEXT_THICKNESS_REGULAR, cv2.LINE_AA,
         )

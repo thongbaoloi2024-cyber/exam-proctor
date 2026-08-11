@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Kỳ thi · Giám Thị Số{% endblock %}
 {% block body_class %}{{ 'system-admin-page' if system_evidence else '' }}{% endblock %}
-{% block container_class %}{{ 'system-container' if system_evidence else '' }}{% endblock %}
+{% block container_class %}exams-container{{ ' system-container' if system_evidence else '' }}{% endblock %}
 {% block content %}
 <section class="card exams-page-card" id="create-exam-card">
   <div class="exams-page-heading">
@@ -99,13 +99,22 @@
   <div class="table-scroll exams-table-wrap">
     <table id="exams-table" class="data-table exams-table">
       <thead>
-        <tr><th>Tên kỳ thi</th><th>Ngày tạo</th><th>Thời gian cập nhật</th><th>Xác thực</th><th>Trạng thái</th><th id="exam-code-heading">Mã tham gia</th><th>Hành động</th></tr>
+        <tr>
+          <th scope="col" aria-sort="none"><button type="button" class="table-sort-button" data-exam-sort="name">Tên kỳ thi <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="table-sort-button" data-exam-sort="created_at">Thời gian tạo <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="table-sort-button" data-exam-sort="updated_at">Thời gian cập nhật <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="table-sort-button" data-exam-sort="candidate_auth_mode">Xác thực <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th scope="col" aria-sort="ascending"><button type="button" class="table-sort-button" data-exam-sort="status">Trạng thái <span class="sort-indicator" aria-hidden="true">↑</span></button></th>
+          <th scope="col" id="exam-code-heading" aria-sort="none"><button type="button" class="table-sort-button" data-exam-sort="join_code"><span class="sort-label">Mã tham gia</span> <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+          <th scope="col">Hành động</th>
+        </tr>
       </thead>
       <tbody>
         <tr class="loading-row"><td colspan="7">Đang tải...</td></tr>
       </tbody>
     </table>
   </div>
+  <nav id="exam-pagination" class="pagination exams-pagination hidden" aria-label="Phân trang danh sách kỳ thi"></nav>
   <p class="muted">Phát mã cho thí sinh. Tiện ích trình duyệt sẽ đọc chính sách của kỳ thi và chỉ hiển thị chế độ xác thực đã chọn ở đây.</p>
 </section>
 
@@ -115,5 +124,5 @@
 </section>
 {% endblock %}
 {% block scripts %}
-<script src="/static/exams.js?v=20260811-exam-management-1"></script>
+<script src="/static/exams.js?v=20260812-exam-table-2"></script>
 {% endblock %}

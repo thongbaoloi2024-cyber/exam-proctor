@@ -9,6 +9,12 @@ const preflight = new Map();
 
 function element(id) { return document.getElementById(id); }
 
+function setButtonBusy(id, busy) {
+  const button = element(id);
+  button.disabled = busy;
+  button.setAttribute("aria-busy", String(busy));
+}
+
 function setStatus(id, text, kind = "") {
   const node = element(id);
   node.textContent = text;
@@ -116,6 +122,7 @@ async function checkRequiredMedia(policy) {
 
 element("check-code").addEventListener("click", async () => {
   const joinCode = element("join-code").value.trim().toUpperCase();
+  setButtonBusy("check-code", true);
   setStatus("setup-status", "Đang kiểm tra...");
   try {
     DATT.normalizeBaseUrl(BACKEND_URL);
@@ -136,6 +143,8 @@ element("check-code").addEventListener("click", async () => {
     currentPolicy = null;
     element("policy-card").classList.add("hidden");
     setStatus("setup-status", error.message, "error");
+  } finally {
+    setButtonBusy("check-code", false);
   }
 });
 
@@ -146,6 +155,7 @@ element("change-code").addEventListener("click", () => {
 });
 
 element("google-login").addEventListener("click", async () => {
+  setButtonBusy("google-login", true);
   setStatus("join-status", "Đang mở đăng nhập Google...");
   try {
     const { profile } = await send({
@@ -156,16 +166,21 @@ element("google-login").addEventListener("click", async () => {
     setStatus("join-status", "Đã xác minh tài khoản Google.", "success");
   } catch (error) {
     setStatus("join-status", error.message, "error");
+  } finally {
+    setButtonBusy("google-login", false);
   }
 });
 
 element("google-logout").addEventListener("click", async () => {
+  setButtonBusy("google-logout", true);
   try {
     await send({ type: "DATT_GOOGLE_LOGOUT", baseUrl: BACKEND_URL });
     renderGoogleProfile(null);
     setStatus("join-status", "Đã xóa phiên đăng nhập lưu trên thiết bị.", "success");
   } catch (error) {
     setStatus("join-status", error.message, "error");
+  } finally {
+    setButtonBusy("google-logout", false);
   }
 });
 
@@ -181,7 +196,7 @@ element("join-exam").addEventListener("click", async () => {
     return setStatus("join-status", "Vui lòng nhập đủ họ tên và mã thí sinh.", "error");
   }
 
-  element("join-exam").disabled = true;
+  setButtonBusy("join-exam", true);
   setStatus("join-status", "Đang kiểm tra thiết bị và tạo phiên...");
   try {
     const urls = [BACKEND_URL, currentPolicy.exam_url].filter(Boolean);
@@ -204,7 +219,7 @@ element("join-exam").addEventListener("click", async () => {
   } catch (error) {
     setStatus("join-status", error.message, "error");
   } finally {
-    element("join-exam").disabled = false;
+    setButtonBusy("join-exam", false);
   }
 });
 
@@ -243,7 +258,8 @@ element("open-monitor").addEventListener("click", async () => {
 });
 element("end-active").addEventListener("click", async () => {
   if (!confirm("Bạn chắc chắn muốn kết thúc phiên? Hãy bảo đảm các sự kiện đã đồng bộ.")) return;
-  try { await send({ type: "DATT_END_SESSION", reason: "completed" }); element("active-card").classList.add("hidden"); showJoinCodeStep("Phiên đã kết thúc."); } catch (error) { setStatus("setup-status", error.message, "error"); }
+  setButtonBusy("end-active", true);
+  try { await send({ type: "DATT_END_SESSION", reason: "completed" }); element("active-card").classList.add("hidden"); showJoinCodeStep("Phiên đã kết thúc."); } catch (error) { setStatus("setup-status", error.message, "error"); } finally { setButtonBusy("end-active", false); }
 });
 
 initialize().catch((error) => setStatus("setup-status", error.message, "error"));

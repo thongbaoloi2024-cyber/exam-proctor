@@ -8,6 +8,8 @@ from typing import Tuple
 import cv2
 import numpy as np
 
+from .typography import FONT_FACE, TEXT_SCALE_BODY, TEXT_THICKNESS_EMPHASIS
+
 
 @dataclass
 class Button:
@@ -24,10 +26,13 @@ class Button:
         x, y, w, h = self.rect
         cv2.rectangle(frame, (x, y), (x + w, y + h), (80, 80, 80), -1)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
-        text_size = cv2.getTextSize(self.label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
+        text_size = cv2.getTextSize(
+            self.label, FONT_FACE, TEXT_SCALE_BODY, TEXT_THICKNESS_EMPHASIS,
+        )[0]
         text_x = x + max(0, (w - text_size[0]) // 2)
         text_y = y + (h + text_size[1]) // 2
         cv2.putText(
             frame, self.label, (text_x, text_y),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2, cv2.LINE_AA,
+            FONT_FACE, TEXT_SCALE_BODY, (255, 255, 255),
+            TEXT_THICKNESS_EMPHASIS, cv2.LINE_AA,
         )

@@ -1,6 +1,33 @@
 let currentUser = null;
 let organizationPolicyFloor = null;
 let wizardStep = 0;
+let allExams = [];
+let currentExamPage = 1;
+const EXAMS_PAGE_SIZE = 15;
+const EXAM_STATUS_LABELS = {
+  draft: "Bản nháp",
+  scheduled: "Đã lên lịch",
+  open: "Đang mở",
+  closed: "Đã đóng",
+  archived: "Đã lưu trữ",
+};
+const EXAM_STATUS_ORDER = {
+  open: 0,
+  scheduled: 1,
+  draft: 2,
+  closed: 3,
+  archived: 4,
+};
+const EXAM_SORT_DEFAULT_DIRECTIONS = {
+  name: "ascending",
+  created_at: "descending",
+  updated_at: "descending",
+  candidate_auth_mode: "ascending",
+  status: "ascending",
+  join_code: "ascending",
+};
+const examNameCollator = new Intl.Collator("vi", { numeric: true, sensitivity: "base" });
+let examSort = { key: "status", direction: "ascending" };
 
 async function copyJoinCode(code) {
   try {
@@ -18,12 +45,13 @@ function appendTextCell(row, text) {
   return cell;
 }
 
-function formatExamDate(value, dateOnly = false) {
+function formatExamDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "–";
-  return new Intl.DateTimeFormat("vi-VN", dateOnly
-    ? { dateStyle: "short" }
-    : { dateStyle: "short", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function setCreateExamPanelOpen(open) {
@@ -79,6 +107,105 @@ function showTableMessage(tbody, message) {
   cell.textContent = message;
   row.appendChild(cell);
   tbody.replaceChildren(row);
+  const pagination = document.getElementById("exam-pagination");
+  pagination.classList.add("hidden");
+  pagination.replaceChildren();
+}
+
+function examAuthLabel(exam) {
+  return exam.candidate_auth_mode === "google" ? "Google" : "Họ tên + mã thí sinh";
+}
+
+function examTimestamp(value) {
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function compareExamValues(left, right, key) {
+  if (key === "status") {
+    const leftRank = EXAM_STATUS_ORDER[left.status] ?? Number.MAX_SAFE_INTEGER;
+    const rightRank = EXAM_STATUS_ORDER[right.status] ?? Number.MAX_SAFE_INTEGER;
+    return leftRank - rightRank;
+  }
+  if (key === "created_at" || key === "updated_at") {
+    return examTimestamp(left[key]) - examTimestamp(right[key]);
+  }
+  if (key === "candidate_auth_mode") {
+    return examNameCollator.compare(examAuthLabel(left), examAuthLabel(right));
+  }
+  return examNameCollator.compare(String(left[key] || ""), String(right[key] || ""));
+}
+
+function sortedExams() {
+  const direction = examSort.direction === "ascending" ? 1 : -1;
+  return [...allExams].sort((left, right) => {
+    const primary = compareExamValues(left, right, examSort.key);
+    if (primary !== 0) return primary * direction;
+
+    // Within the same status, the most recently updated exam always comes first.
+    if (examSort.key === "status") {
+      const updated = examTimestamp(right.updated_at) - examTimestamp(left.updated_at);
+      if (updated !== 0) return updated;
+    }
+    const name = examNameCollator.compare(left.name || "", right.name || "");
+    if (name !== 0) return name;
+    return String(left.id).localeCompare(String(right.id));
+  });
+}
+
+function updateExamSortHeaders() {
+  document.querySelectorAll("[data-exam-sort]").forEach((button) => {
+    const active = button.dataset.examSort === examSort.key;
+    const heading = button.closest("th");
+    const indicator = button.querySelector(".sort-indicator");
+    heading.setAttribute("aria-sort", active ? examSort.direction : "none");
+    indicator.textContent = active
+      ? (examSort.direction === "ascending" ? "↑" : "↓")
+      : "↕";
+  });
+}
+
+function renderExamPagination(totalItems, totalPages) {
+  const pagination = document.getElementById("exam-pagination");
+  const firstItem = (currentExamPage - 1) * EXAMS_PAGE_SIZE + 1;
+  const lastItem = Math.min(currentExamPage * EXAMS_PAGE_SIZE, totalItems);
+  const label = document.createElement("span");
+  label.textContent = `Hiển thị ${firstItem}–${lastItem} / ${totalItems} · Trang ${currentExamPage} / ${totalPages}`;
+
+  const actions = document.createElement("div");
+  const previous = document.createElement("button");
+  previous.type = "button";
+  previous.className = "secondary-button pagination-button";
+  previous.textContent = "← Trước";
+  previous.disabled = currentExamPage <= 1;
+  previous.addEventListener("click", () => {
+    currentExamPage -= 1;
+    renderExamTable();
+  });
+
+  const next = document.createElement("button");
+  next.type = "button";
+  next.className = "secondary-button pagination-button";
+  next.textContent = "Sau →";
+  next.disabled = currentExamPage >= totalPages;
+  next.addEventListener("click", () => {
+    currentExamPage += 1;
+    renderExamTable();
+  });
+  actions.append(previous, next);
+  pagination.replaceChildren(label, actions);
+  pagination.classList.remove("hidden");
+}
+
+function renderExamTable() {
+  const tbody = document.querySelector("#exams-table tbody");
+  const exams = sortedExams();
+  const totalPages = Math.max(1, Math.ceil(exams.length / EXAMS_PAGE_SIZE));
+  currentExamPage = Math.min(Math.max(1, currentExamPage), totalPages);
+  const pageStart = (currentExamPage - 1) * EXAMS_PAGE_SIZE;
+  tbody.replaceChildren(...exams.slice(pageStart, pageStart + EXAMS_PAGE_SIZE).map(buildExamRow));
+  updateExamSortHeaders();
+  renderExamPagination(exams.length, totalPages);
 }
 
 function formatExpiry(value) {
@@ -108,29 +235,24 @@ function buildExamRow(exam) {
   const breakGlassView = Boolean(currentUser?.is_system_admin);
   const row = document.createElement("tr");
   const nameCell = document.createElement("td");
-  nameCell.className = "exam-name-cell";
-  if (!breakGlassView) nameCell.appendChild(examPinButton(exam));
+  const nameContent = document.createElement("div");
+  nameContent.className = "exam-name-cell";
+  if (!breakGlassView) nameContent.appendChild(examPinButton(exam));
   const examName = document.createElement("a");
   examName.href = `/ui/exams/${encodeURIComponent(exam.id)}/detail`;
   examName.className = "exam-name-link";
   examName.textContent = exam.name;
-  nameCell.appendChild(examName);
+  nameContent.appendChild(examName);
+  nameCell.appendChild(nameContent);
   row.appendChild(nameCell);
-  appendTextCell(row, formatExamDate(exam.created_at, true));
+  appendTextCell(row, formatExamDate(exam.created_at));
   appendTextCell(row, formatExamDate(exam.updated_at));
-  appendTextCell(row, exam.candidate_auth_mode === "google" ? "Google" : "Họ tên + mã thí sinh");
+  appendTextCell(row, examAuthLabel(exam));
 
-  const statusLabels = {
-    draft: "Bản nháp",
-    scheduled: "Đã lên lịch",
-    open: "Đang mở",
-    closed: "Đã đóng",
-    archived: "Đã lưu trữ",
-  };
   const statusCell = document.createElement("td");
   const statusBadge = document.createElement("span");
   statusBadge.className = `exam-status-badge status-${exam.status}`;
-  statusBadge.textContent = statusLabels[exam.status] || exam.status;
+  statusBadge.textContent = EXAM_STATUS_LABELS[exam.status] || exam.status;
   statusCell.appendChild(statusBadge);
   row.appendChild(statusCell);
 
@@ -139,14 +261,14 @@ function buildExamRow(exam) {
     codeCell.textContent = "Đã ẩn";
     codeCell.className = "muted";
   } else {
-    const code = document.createElement("code");
-    code.textContent = exam.join_code;
     const copyButton = document.createElement("button");
     copyButton.type = "button";
-    copyButton.className = "link-button copy-btn";
-    copyButton.textContent = "Chép";
+    copyButton.className = "exam-code-copy";
+    copyButton.textContent = exam.join_code;
+    copyButton.title = `Sao chép mã ${exam.join_code}`;
+    copyButton.setAttribute("aria-label", `Sao chép mã tham gia ${exam.join_code}`);
     copyButton.addEventListener("click", () => copyJoinCode(exam.join_code));
-    codeCell.append(code, document.createTextNode(" "), copyButton);
+    codeCell.appendChild(copyButton);
     const expiry = document.createElement("small");
     expiry.className = "exam-code-expiry muted";
     expiry.textContent = formatExpiry(exam.join_code_expires_at);
@@ -154,7 +276,8 @@ function buildExamRow(exam) {
   }
   row.appendChild(codeCell);
 
-  const actions = document.createElement("td");
+  const actionsCell = document.createElement("td");
+  const actions = document.createElement("div");
   actions.className = "exam-row-actions";
 
   const allowedActions = new Set(exam.allowed_actions || []);
@@ -180,16 +303,19 @@ function buildExamRow(exam) {
   detailLink.href = `/ui/exams/${encodeURIComponent(exam.id)}/detail`;
   detailLink.textContent = "Chi tiết";
   actions.appendChild(detailLink);
-  row.appendChild(actions);
+  actionsCell.appendChild(actions);
+  row.appendChild(actionsCell);
   return row;
 }
 
 async function loadExams() {
   const tbody = document.querySelector("#exams-table tbody");
+  allExams = [];
   showTableMessage(tbody, "Đang tải...");
   const response = await API.request("/exams");
   if (!response.ok) throw new Error("Không tải được danh sách kỳ thi.");
   const exams = await response.json();
+  allExams = exams;
   if (exams.length === 0) {
     showTableMessage(
       tbody,
@@ -199,7 +325,8 @@ async function loadExams() {
     );
     return;
   }
-  tbody.replaceChildren(...exams.map(buildExamRow));
+  currentExamPage = 1;
+  renderExamTable();
 }
 
 async function loadDefaultExamPolicy() {
@@ -348,7 +475,7 @@ async function initializeExams() {
   if (currentUser.is_system_admin) {
     document.getElementById("exams-page-title").textContent = "Dữ liệu được cấp quyền";
     document.getElementById("exams-page-description").classList.remove("hidden");
-    document.getElementById("exam-code-heading").textContent = "Mã tham gia (đã ẩn)";
+    document.querySelector('[data-exam-sort="join_code"] .sort-label').textContent = "Mã tham gia (đã ẩn)";
   }
   const createExamForm = document.getElementById("create-exam-form");
   const canCreateExam = API.hasCapability("exam.create");
@@ -385,6 +512,19 @@ function syncExamAuthMode() {
 document.getElementById("candidate-auth-mode").addEventListener("change", syncExamAuthMode);
 document.getElementById("initial-status").addEventListener("change", syncCreateRequirements);
 document.getElementById("require-extension").addEventListener("change", syncCreateRequirements);
+document.querySelectorAll("[data-exam-sort]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const key = button.dataset.examSort;
+    if (examSort.key === key) {
+      examSort.direction = examSort.direction === "ascending" ? "descending" : "ascending";
+    } else {
+      examSort = { key, direction: EXAM_SORT_DEFAULT_DIRECTIONS[key] };
+    }
+    currentExamPage = 1;
+    if (allExams.length) renderExamTable();
+    else updateExamSortHeaders();
+  });
+});
 document.getElementById("wizard-next").addEventListener("click", () => {
   if (currentWizardStepIsValid()) setWizardStep(wizardStep + 1);
 });

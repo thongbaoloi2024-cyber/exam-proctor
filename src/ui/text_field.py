@@ -11,6 +11,8 @@ from typing import Tuple
 import cv2
 import numpy as np
 
+from .typography import FONT_FACE, TEXT_SCALE_BODY, TEXT_THICKNESS_REGULAR
+
 _BACKSPACE_KEYS = (8, 127)
 _MAX_LENGTH = 40
 
@@ -44,5 +46,6 @@ class TextField:
         cv2.rectangle(frame, (x, y), (x + w, y + h), border_color, 2)
         cv2.putText(
             frame, f"{self.label}: {self.value}", (x + 8, y + h // 2 + 6),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA,
+            FONT_FACE, TEXT_SCALE_BODY, (255, 255, 255),
+            TEXT_THICKNESS_REGULAR, cv2.LINE_AA,
         )

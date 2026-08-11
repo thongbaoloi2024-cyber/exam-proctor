@@ -139,6 +139,30 @@ def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     assert "Gửi lại mã" not in mfa_verify_page
 
 
+def test_exam_table_supports_sorting_and_pagination(client):
+    page = client.get("/ui/exams")
+    assert page.status_code == 200
+    assert "Thời gian tạo" in page.text
+    assert 'data-exam-sort="status"' in page.text
+    assert 'aria-sort="ascending"' in page.text
+    assert 'id="exam-pagination"' in page.text
+
+    script = client.get("/static/exams.js").text
+    assert "const EXAMS_PAGE_SIZE = 15" in script
+    assert "const EXAM_STATUS_ORDER" in script
+    assert "function sortedExams()" in script
+    assert "function renderExamPagination" in script
+    assert 'copyButton.className = "exam-code-copy"' in script
+    assert 'copyButton.textContent = "Chép"' not in script
+    assert 'nameContent.className = "exam-name-cell"' in script
+    assert 'actionsCell.appendChild(actions)' in script
+
+    stylesheet = client.get("/static/style.css").text
+    assert ".exams-container { max-width: 1400px; }" in stylesheet
+    assert ".table-sort-button" in stylesheet
+    assert ".exam-code-copy" in stylesheet
+
+
 def test_organization_sidebar_uses_real_paths_and_each_route_renders_one_panel(client):
     members = client.get("/ui/organization")
     policy = client.get("/ui/organization/policy")
