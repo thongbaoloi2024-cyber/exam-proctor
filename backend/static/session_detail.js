@@ -44,6 +44,30 @@ const BROWSER_EVENT_LABELS = {
 };
 const reportPollTimers = new Map();
 let unifiedTimeline = [];
+let violationData = [];
+let browserEventData = [];
+const severityOrder = { LOW: 1, MEDIUM: 2, HIGH: 3 };
+const unifiedTableState = TableUI.createState({ pageSize: 10, sortKey: "time" });
+const violationTableState = TableUI.createState({ pageSize: 10, sortKey: "time" });
+const browserEventTableState = TableUI.createState({ pageSize: 10, sortKey: "time" });
+const UNIFIED_SORT_COLUMNS = {
+  time: { value: (item) => numeric(item.time), type: "number" },
+  source: (item) => item.source,
+  severity: { value: (item) => severityOrder[item.severity] || 0, type: "number" },
+  type: (item) => item.type,
+  detail: (item) => item.detail,
+};
+const VIOLATION_SORT_COLUMNS = {
+  time: { value: (item) => numeric(item.video_time_sec), type: "number" },
+  severity: { value: (item) => severityOrder[String(item.severity || "LOW")] || 0, type: "number" },
+  type: (item) => VIOLATION_LABELS[item.primary_violation] || item.primary_violation,
+};
+const BROWSER_SORT_COLUMNS = {
+  time: { value: (item) => numeric(item.video_time_sec), type: "number" },
+  severity: { value: (item) => severityOrder[String(item.severity || "LOW")] || 0, type: "number" },
+  type: (item) => BROWSER_EVENT_LABELS[item.event_type] || item.event_type,
+  detail: (item) => item.observed_origin || item.server_duration_ms,
+};
 
 function numeric(value, fallback = 0) {
   const parsed = Number(value);
@@ -142,14 +166,23 @@ function renderUnifiedTimeline() {
   const filter = document.getElementById("timeline-severity-filter").value;
   const items = unifiedTimeline.filter((item) => !filter || item.severity === filter);
   const tbody = document.querySelector("#unified-timeline-table tbody");
-  if (!items.length) return showTableMessage(tbody, "Không có sự kiện phù hợp.", 5);
-  tbody.replaceChildren(...items.map((item) => {
+  if (!items.length) {
+    TableUI.hidePagination("unified-timeline-pagination");
+    return showTableMessage(tbody, "Không có sự kiện phù hợp.", 5);
+  }
+  const sorted = TableUI.sortItems(items, unifiedTableState, UNIFIED_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sorted, unifiedTableState);
+  tbody.replaceChildren(...pageData.items.map((item) => {
     const row = document.createElement("tr");
     [numeric(item.time).toFixed(1), item.source].forEach((value) => { const cell = document.createElement("td"); cell.textContent = value; row.appendChild(cell); });
     const severityCell = document.createElement("td"); const badge = document.createElement("span"); badge.className = `badge ${SEVERITY_BADGE_CLASS[item.severity] || "badge-low"}`; badge.textContent = SEVERITY_LABELS[item.severity] || item.severity; severityCell.appendChild(badge); row.appendChild(severityCell);
     [item.type, item.detail || "-"].forEach((value) => { const cell = document.createElement("td"); cell.textContent = value; row.appendChild(cell); });
     return row;
   }));
+  TableUI.renderPagination("unified-timeline-pagination", pageData, (nextPage) => {
+    unifiedTableState.page = nextPage;
+    renderUnifiedTimeline();
+  });
 }
 
 async function loadSnapshot(img, url) {
@@ -247,6 +280,38 @@ async function loadIncidentReviews() {
   reviews.forEach((review) => incidentReviews.set(review.violation_event_id, review));
 }
 
+function renderViolations() {
+  const tbody = document.querySelector("#violations-table tbody");
+  tbody.replaceChildren();
+  if (!violationData.length) {
+    TableUI.hidePagination("violations-pagination");
+    return showTableMessage(tbody, "Không có vi phạm nào được ghi nhận.", 5);
+  }
+  const sorted = TableUI.sortItems(violationData, violationTableState, VIOLATION_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sorted, violationTableState);
+  pageData.items.forEach((violation) => appendViolationRow(tbody, violation));
+  TableUI.renderPagination("violations-pagination", pageData, (nextPage) => {
+    violationTableState.page = nextPage;
+    renderViolations();
+  });
+}
+
+function renderBrowserEvents() {
+  const tbody = document.querySelector("#browser-events-table tbody");
+  tbody.replaceChildren();
+  if (!browserEventData.length) {
+    TableUI.hidePagination("browser-events-pagination");
+    return showTableMessage(tbody, "Không có sự kiện trình duyệt nào được ghi nhận.", 5);
+  }
+  const sorted = TableUI.sortItems(browserEventData, browserEventTableState, BROWSER_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sorted, browserEventTableState);
+  pageData.items.forEach((browserEvent) => appendBrowserEventRow(tbody, browserEvent));
+  TableUI.renderPagination("browser-events-pagination", pageData, (nextPage) => {
+    browserEventTableState.page = nextPage;
+    renderBrowserEvents();
+  });
+}
+
 async function loadDetail() {
   const response = await API.request(`/sessions/${encodeURIComponent(SESSION_ID)}/detail`);
   if (!response.ok) throw new Error("Không tải được chi tiết phiên.");
@@ -256,6 +321,7 @@ async function loadDetail() {
   const meta = detail.session_meta || {};
   const durationLabel = meta.duration_sec != null ? `${numeric(meta.duration_sec).toFixed(1)}s` : "đang diễn ra";
   const violations = Array.isArray(detail.violations) ? detail.violations : [];
+  violationData = violations;
   document.getElementById("session-summary").textContent =
     `Trạng thái: ${SESSION_STATUS_LABELS[detail.status] || detail.status} · Xác thực: ${AUTHENTICATION_LABELS[detail.authentication_method] || detail.authentication_method} · Thiết bị: ${CLIENT_LABELS[detail.client_type] || detail.client_type}`
     + ` · Thời lượng: ${durationLabel} · Vi phạm hình ảnh: ${violations.length}`
@@ -265,27 +331,16 @@ async function loadDetail() {
     + `${detail.reset_count ? ` · Đã cấp lại ${detail.reset_count} lần` : ""}`;
 
   renderRiskChart(detail.risk_timeline);
-  const tbody = document.querySelector("#violations-table tbody");
-  tbody.replaceChildren();
-  if (violations.length === 0) {
-    showTableMessage(tbody, "Không có vi phạm nào được ghi nhận.", 5);
-  } else {
-    violations.forEach((violation) => appendViolationRow(tbody, violation));
-  }
+  renderViolations();
 
   const browserEvents = Array.isArray(detail.browser_events) ? detail.browser_events : [];
+  browserEventData = browserEvents;
   unifiedTimeline = [
     ...violations.map((item) => ({ time: item.video_time_sec, source: "Phân tích hình ảnh", severity: String(item.severity || "LOW"), type: VIOLATION_LABELS[item.primary_violation] || String(item.primary_violation || "-"), detail: item.risk_score != null ? `Điểm rủi ro ${numeric(item.risk_score).toFixed(1)}` : "" })),
     ...browserEvents.map((item) => ({ time: item.video_time_sec, source: "Trình duyệt", severity: String(item.severity || "LOW"), type: BROWSER_EVENT_LABELS[item.event_type] || String(item.event_type || "-"), detail: item.observed_origin || (item.server_duration_ms != null ? `${(numeric(item.server_duration_ms) / 1000).toFixed(1)}s` : "") })),
   ].sort((left, right) => left.time - right.time);
   renderUnifiedTimeline();
-  const browserTbody = document.querySelector("#browser-events-table tbody");
-  browserTbody.replaceChildren();
-  if (browserEvents.length === 0) {
-    showTableMessage(browserTbody, "Không có sự kiện trình duyệt nào được ghi nhận.", 5);
-  } else {
-    browserEvents.forEach((browserEvent) => appendBrowserEventRow(browserTbody, browserEvent));
-  }
+  renderBrowserEvents();
 }
 
 function setReportStatus(text, isError = false) {
@@ -339,7 +394,10 @@ async function createReport(format) {
 
 document.getElementById("report-html-button").addEventListener("click", () => createReport("html"));
 document.getElementById("report-pdf-button").addEventListener("click", () => createReport("pdf"));
-document.getElementById("timeline-severity-filter").addEventListener("change", renderUnifiedTimeline);
+document.getElementById("timeline-severity-filter").addEventListener("change", () => {
+  unifiedTableState.page = 1;
+  renderUnifiedTimeline();
+});
 window.addEventListener("unload", () => {
   snapshotObjectUrls.forEach((url) => URL.revokeObjectURL(url));
   reportPollTimers.forEach((timer) => clearTimeout(timer));
@@ -356,4 +414,7 @@ async function initializeDetail() {
   }
 }
 
+TableUI.bindSort("unified-timeline-table", unifiedTableState, renderUnifiedTimeline);
+TableUI.bindSort("violations-table", violationTableState, renderViolations);
+TableUI.bindSort("browser-events-table", browserEventTableState, renderBrowserEvents);
 initializeDetail();

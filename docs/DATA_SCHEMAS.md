@@ -49,10 +49,9 @@ Interface thống nhất (theo kế hoạch chuẩn hoá ở Tuần 7), mọi si
 {
   "signal_name": "HEAD_POSE",          // enum mục 1.1
   "timestamp": 1721030455.812,          // unix epoch (float, giây) tại thời điểm frame được xử lý
-  "value": 27.4,                        // giá trị thô đặc thù signal (VD: độ yaw; với EYE_STATE là EAR; với OBJECT_PRESENCE là 1/0)
+  "value": 27.4,                        // giá trị thô đặc thù signal (VD: độ yaw; với EYE_STATE là EAR; với OBJECT_PRESENCE là số vật phát hiện)
   "exceeds_threshold": true,            // cờ nhị phân: value có vượt ngưỡng thô của riêng signal này không
   "confidence": 0.91,                   // độ tin cậy của model nền (VD: landmark detection confidence)
-  "state": "SUSPICIOUS",                // NORMAL | SUSPICIOUS | ALERT — do state machine của Risk Fusion Engine set (mục 3.1 DIAGRAMS.md)
   "metadata": {                         // dữ liệu phụ, đặc thù từng signal, phục vụ debug/report/luận văn
     "yaw": 27.4,
     "pitch": -3.1,
@@ -60,6 +59,12 @@ Interface thống nhất (theo kế hoạch chuẩn hoá ở Tuần 7), mọi si
   }
 }
 ```
+
+`SignalResult` chỉ chứa kết quả thô của extractor và **không có** field
+`state`. Trạng thái `NORMAL | SUSPICIOUS | ALERT` thuộc tầng state machine
+của Risk Fusion Engine; khi cần lưu trạng thái hiện hành, telemetry mạng đặt
+nó trong map `signal_states`, còn các lần đổi trạng thái được ghi riêng vào
+`state_transitions.jsonl`.
 
 **Ví dụ `metadata` theo từng signal** (không bắt buộc field cố định — mỗi signal tự định nghĩa nội dung `metadata`, chỉ 5 field đầu là bắt buộc chung):
 
@@ -69,9 +74,9 @@ Interface thống nhất (theo kế hoạch chuẩn hoá ở Tuần 7), mọi si
 | `MULTI_FACE` | số khuôn mặt phát hiện được | `{"face_boxes": [[x,y,w,h], ...]}` |
 | `EYE_STATE` | giá trị EAR trung bình 2 mắt | `{"ear_left": 0.18, "ear_right": 0.21}` |
 | `MOUTH_STATE` | độ mở miệng chuẩn hoá (giá trị tức thời) | `{"mouth_open_ratio": 0.42, "activity_ratio": 0.55}` — `exceeds_threshold` dựa trên `activity_ratio` (tỉ lệ % thời gian mở trong cửa sổ trượt ~2s), không phải `mouth_open_ratio` tức thời, để bắt được cả kiểu nói chuyện (mở/ngậm xen kẽ liên tục) lẫn há miệng giữ nguyên |
-| `OBJECT_PRESENCE` | 1 nếu phát hiện vật cấm, 0 nếu không | `{"object_class": "cell phone", "bbox": [x,y,w,h]}` |
+| `OBJECT_PRESENCE` | số vật cấm phát hiện được (0 nếu không có) | `{"object_class": "cell phone", "bbox": [x,y,w,h], "num_objects": 1, "present_duration_sec": 1.2}` |
 | `HEAD_POSE` | góc yaw (độ) | `{"yaw": 27.4, "pitch": -3.1, "roll": 1.8}` |
-| `IDENTITY` | cosine similarity với embedding enrollment | `{"cosine_similarity": 0.42, "last_verified_at": 1721030400.0}` |
+| `IDENTITY` | cosine similarity với embedding enrollment | `{"enrolled": true, "similarity": 0.42, "warning": false, "consecutive_failures": 2}` |
 
 ---
 

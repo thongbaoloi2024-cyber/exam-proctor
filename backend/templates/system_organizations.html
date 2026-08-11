@@ -23,14 +23,11 @@
     <label class="compact-field"><span class="sr-only">Lọc trạng thái</span>
       <select id="organization-status"><option value="">Tất cả trạng thái</option><option value="active">Hoạt động</option><option value="suspended">Tạm khóa</option></select>
     </label>
-    <label class="compact-field"><span class="sr-only">Sắp xếp</span>
-      <select id="organization-sort"><option value="created_desc">Mới nhất</option><option value="created_asc">Cũ nhất</option><option value="name_asc">Tên A–Z</option><option value="name_desc">Tên Z–A</option></select>
-    </label>
     <button type="submit" class="secondary-button">Áp dụng</button>
   </form>
   <div class="table-scroll">
     <table class="data-table admin-table" id="system-organizations-table">
-      <thead><tr><th>Tổ chức</th><th>Trạng thái</th><th>Người dùng</th><th>Kỳ thi</th><th>Phiên hoạt động</th><th>Hạn mức phiên</th><th><span class="sr-only">Thao tác</span></th></tr></thead>
+      <thead><tr><th data-sort-key="name">Tổ chức</th><th data-sort-key="status">Trạng thái</th><th data-sort-key="user_count" data-sort-default="descending">Người dùng</th><th data-sort-key="exam_count" data-sort-default="descending">Kỳ thi</th><th data-sort-key="active_session_count" data-sort-default="descending">Phiên hoạt động</th><th data-sort-key="quota" data-sort-default="descending">Hạn mức phiên</th><th><span class="sr-only">Thao tác</span></th></tr></thead>
       <tbody><tr><td colspan="7"><div class="table-loading">Đang tải tổ chức...</div></td></tr></tbody>
     </table>
   </div>
@@ -67,5 +64,5 @@
 {% endblock %}
 {% block scripts %}
 <script src="/static/system-common.js"></script>
-<script src="/static/system-organizations.js?v=20260812-table-layout-1"></script>
+<script src="/static/system-organizations.js?v=20260812-table-sort-1"></script>
 {% endblock %}

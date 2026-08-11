@@ -339,6 +339,19 @@ Lệnh refresh sao lưu SQLite và thư mục CSV/manifest trước khi đổi t
 kỳ thi, candidate identity, session metadata, browser event, audit log,
 snapshot và các báo cáo mẫu.
 
+Sinh lại riêng model evidence của batch hiện có bằng đúng state machine và
+`RiskFusionEngine` trong `config/fusion.yaml`:
+
+```bash
+python scripts/generate_report_dataset.py --regenerate-model-evidence --batch-id report-2026 --session-count 1000
+```
+
+Chế độ này giữ nguyên ID tài khoản/kỳ thi/phiên và browser event, dựng evidence
+ở staging, kiểm tra đủ 7 signal mỗi tick cùng risk/transition/primary violation,
+rồi mới thay batch hiện tại. Script tạo backup SQLite, output CSV/manifest và
+archive evidence trước khi cập nhật. Dữ liệu tổng hợp phù hợp kiểm thử tải và
+báo cáo; đánh giá độ chính xác model vẫn cần clip thật có ground truth.
+
 ## Test
 
 Cài `requirements.txt`, sau đó:

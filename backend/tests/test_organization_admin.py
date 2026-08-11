@@ -117,6 +117,15 @@ def test_organization_audit_is_paged_and_resolves_actor_identity(client):
     assert first_body["items"][0]["actor_display_name"] == "Nguyen Audit"
     assert first_body["items"][0]["actor_email"] == "audit-admin@test.local"
 
+    sorted_page = client.get(
+        "/organizations/current/audit/page"
+        "?search=org.audit.pagination&page=1&page_size=10"
+        "&sort_by=resource&sort_order=asc",
+        headers=headers,
+    )
+    assert sorted_page.status_code == 200
+    assert sorted_page.json()["items"][0]["resource_id"] == "resource-00"
+
     last_page = client.get(
         "/organizations/current/audit/page"
         "?search=org.audit.pagination&page=3&page_size=10",

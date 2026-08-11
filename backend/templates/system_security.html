@@ -130,12 +130,12 @@ content %}
     <table class="data-table admin-table" id="security-grants-table">
       <thead>
         <tr>
-          <th>Tổ chức</th>
-          <th>Người yêu cầu</th>
-          <th>Lý do</th>
-          <th>Trạng thái</th>
-          <th>Khởi tạo</th>
-          <th>Hết hạn</th>
+          <th data-sort-key="organization">Tổ chức</th>
+          <th data-sort-key="requester">Người yêu cầu</th>
+          <th data-sort-key="reason">Lý do</th>
+          <th data-sort-key="status">Trạng thái</th>
+          <th data-sort-key="created_at" data-sort-default="descending">Khởi tạo</th>
+          <th data-sort-key="expires_at" data-sort-default="descending">Hết hạn</th>
         </tr>
       </thead>
       <tbody>
@@ -195,5 +195,5 @@ content %}
 </dialog>
 {% endblock %} {% block scripts %}
 <script src="/static/system-common.js"></script>
-<script src="/static/system-security.js?v=20260812-workspace-1"></script>
+<script src="/static/system-security.js?v=20260812-table-sort-1"></script>
 {% endblock %}

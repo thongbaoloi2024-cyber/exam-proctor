@@ -576,7 +576,9 @@ def page_organizations(
     page_size: int = Query(default=10, ge=5, le=100),
     search: str = Query(default="", max_length=100),
     organization_status: Literal["active", "suspended"] | None = Query(default=None, alias="status"),
-    sort: Literal["created_desc", "created_asc", "name_asc", "name_desc"] = "created_desc",
+    sort: Literal["created_desc", "created_asc", "name_asc", "name_desc"] | None = None,
+    sort_by: Literal["created_at", "name", "status", "user_count", "exam_count", "active_session_count", "quota"] = "created_at",
+    sort_order: Literal["asc", "desc"] = "desc",
     db: Session = Depends(get_db),
     _user: models.User = Depends(require_system_permission(Permission.SYSTEM_ORGANIZATIONS_READ)),
 ) -> SystemOrganizationPageResponse:
@@ -594,13 +596,47 @@ def page_organizations(
     if organization_status:
         query = query.filter(models.Organization.status == organization_status)
     total = query.count()
-    order_by = {
-        "created_desc": models.Organization.created_at.desc(),
-        "created_asc": models.Organization.created_at.asc(),
-        "name_asc": models.Organization.name.asc(),
-        "name_desc": models.Organization.name.desc(),
-    }[sort]
-    organizations = query.order_by(order_by).offset((page - 1) * page_size).limit(page_size).all()
+    if sort:
+        order_by = {
+            "created_desc": models.Organization.created_at.desc(),
+            "created_asc": models.Organization.created_at.asc(),
+            "name_asc": models.Organization.name.asc(),
+            "name_desc": models.Organization.name.desc(),
+        }[sort]
+    else:
+        user_count = (
+            db.query(func.count(models.User.id))
+            .filter(models.User.org_id == models.Organization.id)
+            .correlate(models.Organization)
+            .scalar_subquery()
+        )
+        exam_count = (
+            db.query(func.count(models.Exam.id))
+            .filter(models.Exam.org_id == models.Organization.id)
+            .correlate(models.Organization)
+            .scalar_subquery()
+        )
+        active_session_count = (
+            db.query(func.count(models.ExamSession.id))
+            .join(models.Exam, models.ExamSession.exam_id == models.Exam.id)
+            .filter(
+                models.Exam.org_id == models.Organization.id,
+                models.ExamSession.status.in_(["pending", "active", "disconnected"]),
+            )
+            .correlate(models.Organization)
+            .scalar_subquery()
+        )
+        sort_column = {
+            "created_at": models.Organization.created_at,
+            "name": models.Organization.name,
+            "status": models.Organization.status,
+            "user_count": user_count,
+            "exam_count": exam_count,
+            "active_session_count": active_session_count,
+            "quota": models.Organization.quota_concurrent_sessions,
+        }[sort_by]
+        order_by = sort_column.desc() if sort_order == "desc" else sort_column.asc()
+    organizations = query.order_by(order_by, models.Organization.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     stats = _organization_stat_maps(db, [organization.id for organization in organizations])
     return SystemOrganizationPageResponse(
         items=[_organization_item(organization, stats) for organization in organizations],
@@ -889,6 +925,8 @@ def page_access_grants(
         alias="status",
     ),
     organization_id: str | None = Query(default=None, alias="org_id", max_length=36),
+    sort_by: Literal["organization", "requester", "reason", "status", "created_at", "expires_at"] = "created_at",
+    sort_order: Literal["asc", "desc"] = "desc",
     db: Session = Depends(get_db),
     _user: models.User = Depends(require_system_permission(Permission.SYSTEM_SECURITY_READ)),
 ) -> AccessGrantPageResponse:
@@ -909,8 +947,17 @@ def page_access_grants(
         if grant_status in {"pending", "active"}:
             query = query.filter(models.AccessGrant.expires_at > _now())
     total = query.count()
+    sort_column = {
+        "organization": models.Organization.name,
+        "requester": models.User.email,
+        "reason": models.AccessGrant.reason,
+        "status": models.AccessGrant.status,
+        "created_at": models.AccessGrant.created_at,
+        "expires_at": models.AccessGrant.expires_at,
+    }[sort_by]
+    order_by = sort_column.desc() if sort_order == "desc" else sort_column.asc()
     rows = (
-        query.order_by(models.AccessGrant.created_at.desc())
+        query.order_by(order_by, models.AccessGrant.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -1030,12 +1077,15 @@ def page_audit_logs(
     search: str = Query(default="", max_length=100),
     outcome: str | None = Query(default=None, max_length=20),
     org_id: str | None = Query(default=None, max_length=36),
+    sort_by: Literal["created_at", "actor", "action", "resource", "organization", "outcome"] = "created_at",
+    sort_order: Literal["asc", "desc"] = "desc",
     db: Session = Depends(get_db),
     _user: models.User = Depends(require_system_permission(Permission.SYSTEM_SECURITY_READ)),
 ) -> AuditLogPageResponse:
     query = (
         db.query(models.AuditLog)
         .outerjoin(models.User, models.AuditLog.actor_user_id == models.User.id)
+        .outerjoin(models.Organization, models.AuditLog.org_id == models.Organization.id)
         .filter(models.AuditLog.created_at >= _day_start(days))
     )
     normalized_search = search.strip()
@@ -1054,8 +1104,17 @@ def page_audit_logs(
     if org_id:
         query = query.filter(models.AuditLog.org_id == org_id)
     total = query.count()
+    sort_column = {
+        "created_at": models.AuditLog.created_at,
+        "actor": func.coalesce(models.User.display_name, models.User.email, ""),
+        "action": models.AuditLog.action,
+        "resource": models.AuditLog.resource_type,
+        "organization": models.Organization.name,
+        "outcome": models.AuditLog.outcome,
+    }[sort_by]
+    order_by = sort_column.desc() if sort_order == "desc" else sort_column.asc()
     entries = (
-        query.order_by(models.AuditLog.created_at.desc())
+        query.order_by(order_by, models.AuditLog.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()

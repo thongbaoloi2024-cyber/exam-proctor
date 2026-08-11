@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -829,6 +829,8 @@ def page_organization_audit(
     actor_user_id: str | None = None,
     outcome: str | None = None,
     search: str | None = Query(default=None, max_length=100),
+    sort_by: Literal["created_at", "actor", "action", "resource", "outcome", "reason"] = "created_at",
+    sort_order: Literal["asc", "desc"] = "desc",
     db: Session = Depends(get_db),
     user: models.User = Depends(require_permission(Permission.ORG_AUDIT_READ)),
 ) -> AuditLogPageResponse:
@@ -842,8 +844,17 @@ def page_organization_audit(
         search=search,
     )
     total = query.count()
+    sort_column = {
+        "created_at": models.AuditLog.created_at,
+        "actor": func.coalesce(models.User.display_name, models.User.email, ""),
+        "action": models.AuditLog.action,
+        "resource": models.AuditLog.resource_type,
+        "outcome": models.AuditLog.outcome,
+        "reason": models.AuditLog.reason,
+    }[sort_by]
+    order_by = sort_column.desc() if sort_order == "desc" else sort_column.asc()
     entries = (
-        query.order_by(models.AuditLog.created_at.desc())
+        query.order_by(order_by, models.AuditLog.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()

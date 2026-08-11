@@ -40,20 +40,12 @@
         <option value="ended">Đã kết thúc</option>
       </select>
     </label>
-    <label>Sắp xếp
-      <select id="session-sort">
-        <option value="alert">Ưu tiên cảnh báo</option>
-        <option value="risk">Điểm rủi ro cao nhất</option>
-        <option value="name">Tên thí sinh</option>
-        <option value="recent">Cập nhật gần nhất</option>
-      </select>
-    </label>
   </div>
 
   <div class="table-scroll">
     <table id="sessions-table" class="data-table workspace-table workspace-table-wide">
       <thead>
-        <tr><th>Thí sinh</th><th>Mã/Email</th><th>Xác thực · Thiết bị</th><th>Trạng thái</th><th>Rủi ro hình ảnh</th><th>Trình duyệt</th><th></th></tr>
+        <tr><th data-sort-key="student">Thí sinh</th><th data-sort-key="identity">Mã/Email</th><th data-sort-key="client">Xác thực · Thiết bị</th><th data-sort-key="status" data-sort-default="descending">Trạng thái</th><th data-sort-key="risk" data-sort-default="descending">Rủi ro hình ảnh</th><th data-sort-key="integrity" data-sort-default="descending">Trình duyệt</th><th></th></tr>
       </thead>
       <tbody>
         <tr class="loading-row"><td colspan="7">Đang tải...</td></tr>
@@ -76,7 +68,7 @@
   </div>
   <div class="table-scroll">
     <table id="incidents-table" class="data-table workspace-table">
-      <thead><tr><th>Thí sinh</th><th>Mức độ</th><th>Sự cố</th><th>Trạng thái</th><th>Người duyệt</th><th></th></tr></thead>
+      <thead><tr><th data-sort-key="student">Thí sinh</th><th data-sort-key="severity" data-sort-default="descending">Mức độ</th><th data-sort-key="violation">Sự cố</th><th data-sort-key="status">Trạng thái</th><th data-sort-key="reviewer">Người duyệt</th><th></th></tr></thead>
       <tbody><tr><td colspan="6" class="muted">Đang tải...</td></tr></tbody>
     </table>
   </div>
@@ -103,5 +95,5 @@
 </dialog>
 {% endblock %}
 {% block scripts %}
-<script src="/static/dashboard.js?v=20260812-dashboard-pagination-1"></script>
+<script src="/static/dashboard.js?v=20260812-table-sort-1"></script>
 {% endblock %}

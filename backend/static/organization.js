@@ -18,7 +18,33 @@ function orgSelect(options, selectedValue) {
 }
 
 let selectedGrantDecision = null;
-const organizationAuditState = { page: 1, pageSize: 20 };
+let organizationMembers = [];
+let organizationInvitations = [];
+let organizationAccessGrants = [];
+const memberTableState = TableUI.createState({ pageSize: 10, sortKey: "email" });
+const invitationTableState = TableUI.createState({ pageSize: 10, sortKey: "created", sortDirection: "descending" });
+const accessGrantTableState = TableUI.createState({ pageSize: 10, sortKey: "created", sortDirection: "descending" });
+const organizationAuditState = TableUI.createState({ pageSize: 20, sortKey: "created_at", sortDirection: "descending" });
+const MEMBER_SORT_COLUMNS = {
+  email: (member) => member.email,
+  role: (member) => member.role,
+  status: (member) => member.membership_status,
+};
+const INVITATION_SORT_COLUMNS = {
+  email: (invitation) => invitation.email,
+  role: (invitation) => invitation.role,
+  status: (invitation) => invitation.status,
+  created: { value: (invitation) => invitation.created_at, type: "date" },
+  expires: { value: (invitation) => invitation.expires_at, type: "date" },
+};
+const ACCESS_GRANT_SORT_COLUMNS = {
+  requester: (grant) => grant.requester_email,
+  reason: (grant) => grant.reason,
+  scope: (grant) => grant.scope,
+  created: { value: (grant) => grant.created_at, type: "date" },
+  status: (grant) => grant.effective_status,
+  expires: { value: (grant) => grant.expires_at, type: "date" },
+};
 const LEGACY_ORGANIZATION_HASH_PATHS = {
   policy: "/ui/organization/policy",
   "break-glass": "/ui/organization/break-glass",
@@ -120,8 +146,23 @@ async function updateMember(userId, role, status) {
 async function loadMembers() {
   const response = await API.request("/organizations/current/members");
   if (!response.ok) throw new Error("Không tải được thành viên.");
-  const members = await response.json();
-  const rows = members.map((member) => {
+  organizationMembers = await response.json();
+  renderMembers();
+}
+
+function renderMembers() {
+  const tbody = document.querySelector("#members-table tbody");
+  if (!organizationMembers.length) {
+    TableUI.hidePagination("members-pagination");
+    const row = document.createElement("tr");
+    const cell = orgCell(row, "Chưa có thành viên.");
+    cell.colSpan = 4;
+    tbody.replaceChildren(row);
+    return;
+  }
+  const sorted = TableUI.sortItems(organizationMembers, memberTableState, MEMBER_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sorted, memberTableState);
+  const rows = pageData.items.map((member) => {
     const row = document.createElement("tr");
     const emailCell = orgCell(row, member.email);
     if (member.mfa_enabled) { const badge = document.createElement("span"); badge.className = "badge badge-low member-mfa-badge"; badge.textContent = "MFA"; emailCell.appendChild(badge); }
@@ -147,18 +188,29 @@ async function loadMembers() {
     row.appendChild(actionCell);
     return row;
   });
-  document.querySelector("#members-table tbody").replaceChildren(...rows);
+  tbody.replaceChildren(...rows);
+  TableUI.renderPagination("members-pagination", pageData, (nextPage) => {
+    memberTableState.page = nextPage;
+    renderMembers();
+  });
 }
 
 async function loadInvitations() {
   const response = await API.request("/organizations/current/invitations");
   if (!response.ok) return;
-  const invitations = await response.json();
+  organizationInvitations = await response.json();
+  renderInvitations();
+}
+
+function renderInvitations() {
   const tbody = document.querySelector("#invitations-table tbody");
-  if (!invitations.length) {
+  if (!organizationInvitations.length) {
+    TableUI.hidePagination("invitations-pagination");
     const row = document.createElement("tr"); const cell = orgCell(row, "Không có lời mời."); cell.colSpan = 6; tbody.replaceChildren(row); return;
   }
-  tbody.replaceChildren(...invitations.map((invitation) => {
+  const sorted = TableUI.sortItems(organizationInvitations, invitationTableState, INVITATION_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sorted, invitationTableState);
+  tbody.replaceChildren(...pageData.items.map((invitation) => {
     const row = document.createElement("tr");
     orgCell(row, invitation.email);
     orgCell(row, { exam_manager: "Quản lý kỳ thi", org_admin: "Quản trị tổ chức" }[invitation.role] || invitation.role);
@@ -168,6 +220,10 @@ async function loadInvitations() {
     if (invitation.status === "pending") { const revoke = document.createElement("button"); revoke.type = "button"; revoke.className = "secondary-button"; revoke.textContent = "Thu hồi"; revoke.addEventListener("click", () => revokeInvitation(invitation.id)); action.appendChild(revoke); }
     row.appendChild(action); return row;
   }));
+  TableUI.renderPagination("invitations-pagination", pageData, (nextPage) => {
+    invitationTableState.page = nextPage;
+    renderInvitations();
+  });
 }
 
 async function revokeInvitation(id) {
@@ -240,8 +296,23 @@ async function grantAction(event) {
 async function loadAccessGrants() {
   const response = await API.request("/organizations/current/access-grants");
   if (!response.ok) return;
-  const grants = await response.json();
-  const rows = grants.map((grant) => {
+  organizationAccessGrants = await response.json();
+  renderAccessGrants();
+}
+
+function renderAccessGrants() {
+  const tbody = document.querySelector("#access-grants-table tbody");
+  if (!organizationAccessGrants.length) {
+    TableUI.hidePagination("access-grants-pagination");
+    const row = document.createElement("tr");
+    const cell = orgCell(row, "Không có yêu cầu quyền truy cập.");
+    cell.colSpan = 7;
+    tbody.replaceChildren(row);
+    return;
+  }
+  const sorted = TableUI.sortItems(organizationAccessGrants, accessGrantTableState, ACCESS_GRANT_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sorted, accessGrantTableState);
+  const rows = pageData.items.map((grant) => {
     const row = document.createElement("tr");
     orgCell(row, grant.requester_email);
     orgCell(row, grant.reason);
@@ -264,7 +335,11 @@ async function loadAccessGrants() {
     row.appendChild(actions);
     return row;
   });
-  document.querySelector("#access-grants-table tbody").replaceChildren(...rows);
+  tbody.replaceChildren(...rows);
+  TableUI.renderPagination("access-grants-pagination", pageData, (nextPage) => {
+    accessGrantTableState.page = nextPage;
+    renderAccessGrants();
+  });
 }
 
 function appendOrganizationAuditUserCell(row, entry) {
@@ -325,6 +400,8 @@ async function loadOrganizationAudit() {
   const params = new URLSearchParams({
     page: String(organizationAuditState.page),
     page_size: String(organizationAuditState.pageSize),
+    sort_by: organizationAuditState.sortKey,
+    sort_order: organizationAuditState.sortDirection === "descending" ? "desc" : "asc",
   });
   const search = document.getElementById("audit-search").value.trim();
   const outcome = document.getElementById("audit-outcome").value;
@@ -356,6 +433,8 @@ async function loadOrganizationAudit() {
 }
 
 function bindOrganizationPage() {
+  TableUI.bindSort("members-table", memberTableState, renderMembers);
+  TableUI.bindSort("invitations-table", invitationTableState, renderInvitations);
   bindInvitationDialog();
   document.getElementById("invitation-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -409,11 +488,15 @@ function bindPolicyPage() {
 }
 
 function bindBreakGlassPage() {
+  TableUI.bindSort("access-grants-table", accessGrantTableState, renderAccessGrants);
   bindGrantDecisionDialog();
   document.getElementById("grant-decision-form").addEventListener("submit", grantAction);
 }
 
 function bindAuditPage() {
+  TableUI.bindSort("organization-audit-table", organizationAuditState, () => {
+    loadOrganizationAudit().catch((error) => showToast(error.message, "error"));
+  });
   document.getElementById("audit-filter-button").addEventListener(
     "click",
     () => {

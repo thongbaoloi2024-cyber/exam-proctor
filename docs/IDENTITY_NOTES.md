@@ -69,8 +69,8 @@ yêu cầu.
 ## 4. Ngưỡng cosine similarity — CÓ BIÊN ĐỘ, không phải 1 ngưỡng nhị phân
 
 ```python
-cosine_threshold_warn = 0.60   # >= mức này: khớp bình thường
-cosine_threshold_alert = 0.45  # < mức này: tính là 1 lần "fail"
+cosine_threshold_warn = 0.55   # >= mức này: khớp bình thường
+cosine_threshold_alert = 0.40  # < mức này: tính là 1 lần "fail"
 consecutive_failures_required = 2  # cần >=2 lần fail LIÊN TIẾP mới kết luận
 ```
 
@@ -79,8 +79,8 @@ mục 5.2.2, ngưỡng cosine similarity "cùng 1 người" cho embedding
 facenet-pytorch không có 1 hằng số phổ quát — phụ thuộc mô hình/tập huấn
 luyện, cộng đồng `facenet-pytorch` thường dùng khoảng 0.5–0.7. Đồ án không
 có bộ benchmark lớn (kiểu LFW) để tính Equal Error Rate chính xác như cách
-làm chuẩn học thuật, nên chọn 2 mức khởi tạo trong khoảng đó (0.60 khớp,
-0.45 fail) — đây là điểm khởi tạo hợp lý theo kinh nghiệm cộng đồng, **chưa
+làm chuẩn học thuật, nên chọn 2 mức khởi tạo trong khoảng đó (0.55 khớp,
+0.40 fail) — đây là điểm khởi tạo hợp lý theo kinh nghiệm cộng đồng, **chưa
 có cơ sở thực nghiệm riêng của đồ án**, sẽ tinh chỉnh ở Tuần 14 bằng bộ test
 có kịch bản "đổi người" (`KE_HOACH_DO_AN.md` mục 3.3).
 
@@ -89,7 +89,7 @@ edge case "ánh sáng thay đổi, tránh false positive quá nhạy" — ánh s
 nghiêng thay đổi tự nhiên trong lúc thi (thí sinh cử động, đèn phòng thay
 đổi) làm giảm cosine similarity dù vẫn là cùng 1 người. Nếu chỉ có 1 ngưỡng
 duy nhất, một lần giảm nhẹ do ánh sáng có thể vô tình vượt qua và bị kết
-luận nhầm là đổi người. Vùng đệm (0.45–0.60) được gắn cờ `warning=True`
+luận nhầm là đổi người. Vùng đệm (0.40–0.55) được gắn cờ `warning=True`
 trong `metadata` nhưng KHÔNG kết luận `IDENTITY_MISMATCH` — chỉ là tín hiệu
 "độ giống có giảm", dữ liệu này có thể hữu ích cho Risk Fusion Engine (Tuần
 9) sau này kết hợp với tín hiệu khác, dù bản thân nó chưa đủ để cảnh báo.
@@ -103,7 +103,7 @@ thấp liên tục) mới kết luận — nếu có 1 lần khớp lại ở gi
 
 ## 5. Giới hạn của phương pháp
 
-1. **Ngưỡng chưa hiệu chỉnh bằng thực nghiệm thật** (mục 4) — 0.60/0.45 là
+1. **Ngưỡng chưa hiệu chỉnh bằng thực nghiệm thật** (mục 4) — 0.55/0.40 là
    điểm khởi tạo theo kinh nghiệm cộng đồng, không phải kết quả đo trên dữ
    liệu của chính đồ án. Rủi ro đã lường trước ở `KE_HOACH_DO_AN.md` mục 5
    ("Facenet embedding nhạy với ánh sáng/góc nghiêng, có thể false reject

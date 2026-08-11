@@ -784,7 +784,7 @@ def get_exam_workspace_overview(
         open_reviews=len(reviews),
         exam_status=exam_status,
         assignment_roles=assignment_roles,
-        items=workspace_items[:8],
+        items=workspace_items,
     )
 
 

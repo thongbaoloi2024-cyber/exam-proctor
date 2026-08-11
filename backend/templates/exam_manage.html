@@ -59,10 +59,11 @@
   </form>
   <div class="table-scroll">
     <table class="data-table workspace-table" id="assignments-table">
-      <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Hết hạn</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th data-sort-key="email">Email</th><th data-sort-key="role">Vai trò</th><th data-sort-key="status">Trạng thái</th><th data-sort-key="expires" data-sort-default="descending">Hết hạn</th><th>Thao tác</th></tr></thead>
       <tbody><tr><td colspan="5">Đang tải...</td></tr></tbody>
     </table>
   </div>
+  <nav id="assignments-pagination" class="pagination hidden" aria-label="Phân trang nhân sự kỳ thi"></nav>
 </section>
 {% endblock %}
-{% block scripts %}<script src="/static/exam_manage.js?v=20260811-exam-detail-4"></script>{% endblock %}
+{% block scripts %}<script src="/static/exam_manage.js?v=20260812-table-sort-1"></script>{% endblock %}

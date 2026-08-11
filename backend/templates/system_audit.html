@@ -39,7 +39,7 @@
   </form>
   <div class="table-scroll">
     <table class="data-table admin-table" id="system-audit-table">
-      <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Tài nguyên</th><th>Tổ chức</th><th>Kết quả</th><th><span class="sr-only">Chi tiết</span></th></tr></thead>
+      <thead><tr><th data-sort-key="created_at" data-sort-default="descending">Thời gian</th><th data-sort-key="actor">Người dùng</th><th data-sort-key="action">Hành động</th><th data-sort-key="resource">Tài nguyên</th><th data-sort-key="organization">Tổ chức</th><th data-sort-key="outcome">Kết quả</th><th><span class="sr-only">Chi tiết</span></th></tr></thead>
       <tbody><tr><td colspan="7"><div class="table-loading">Đang tải nhật ký...</div></td></tr></tbody>
     </table>
   </div>
@@ -60,5 +60,5 @@
 {% endblock %}
 {% block scripts %}
 <script src="/static/system-common.js"></script>
-<script src="/static/system-audit.js"></script>
+<script src="/static/system-audit.js?v=20260812-table-sort-1"></script>
 {% endblock %}

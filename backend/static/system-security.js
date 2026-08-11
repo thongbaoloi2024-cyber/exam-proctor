@@ -1,9 +1,11 @@
-const securityState = { page: 1, pageSize: 15, organizations: [] };
+const securityState = { page: 1, pageSize: 15, organizations: [], sortKey: "created_at", sortDirection: "descending" };
 
 function grantQuery() {
   const params = new URLSearchParams({
     page: String(securityState.page),
     page_size: String(securityState.pageSize),
+    sort_by: securityState.sortKey,
+    sort_order: securityState.sortDirection === "descending" ? "desc" : "asc",
   });
   const status = document.getElementById("security-status-filter").value;
   const organization = document.getElementById("security-organization-filter").value;
@@ -120,6 +122,9 @@ async function submitSecurityRequest(event) {
 async function initializeSystemSecurity() {
   const user = await SystemUI.initialize("system.security.read");
   if (!user) return;
+  TableUI.bindSort("security-grants-table", securityState, () => {
+    loadSecurityGrants().catch((error) => showToast(error.message, "error"));
+  });
   try {
     securityState.organizations = await SystemUI.fetchJson("/system/organizations");
     populateSecurityOrganizations(securityState.organizations);

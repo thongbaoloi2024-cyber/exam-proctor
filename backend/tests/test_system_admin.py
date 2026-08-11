@@ -263,6 +263,14 @@ def test_system_admin_analytics_and_paged_directories(client):
     assert directory.json()["items"][0]["exam_count"] == 1
     assert directory.json()["items"][0]["active_session_count"] == 1
 
+    sorted_directory = client.get(
+        "/system/organizations/page?page=1&page_size=5"
+        "&sort_by=exam_count&sort_order=desc",
+        headers=system_headers,
+    )
+    assert sorted_directory.status_code == 200
+    assert sorted_directory.json()["items"][0]["name"] == "Analytics Target"
+
     detail = client.get(f"/system/organizations/{target_org_id}", headers=system_headers)
     assert detail.status_code == 200
     assert detail.json()["organization"]["name"] == "Analytics Target"
@@ -279,12 +287,16 @@ def test_system_admin_analytics_and_paged_directories(client):
         headers=system_headers,
     )
     assert requested.status_code == 201
-    grants = client.get("/system/access-grants?status=pending", headers=system_headers)
+    grants = client.get(
+        "/system/access-grants?status=pending&sort_by=organization&sort_order=asc",
+        headers=system_headers,
+    )
     assert grants.status_code == 200
     assert grants.json()["items"][0]["organization_name"] == "Analytics Target"
 
     audit_page = client.get(
-        "/system/audit/page?search=system.break_glass&page_size=10",
+        "/system/audit/page?search=system.break_glass&page_size=10"
+        "&sort_by=actor&sort_order=asc",
         headers=system_headers,
     )
     assert audit_page.status_code == 200

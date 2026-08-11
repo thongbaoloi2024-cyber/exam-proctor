@@ -1,7 +1,6 @@
 const dashboardRoot = document.getElementById("dashboard-root");
 const EXAM_ID = dashboardRoot.dataset.examId;
 const sessionData = new Map();
-const TABLE_PAGE_SIZE = 10;
 let initialLoadDone = false;
 let lastUpdatedId = null;
 let reconnectTimer = null;
@@ -10,9 +9,9 @@ let canEndSessions = false;
 let canResetSessions = false;
 let endingSessionId = null;
 let dashboardExam = null;
-let sessionPage = 1;
-let incidentPage = 1;
 let incidentData = [];
+const sessionTableState = TableUI.createState({ pageSize: 10, sortKey: "status", sortDirection: "descending" });
+const incidentTableState = TableUI.createState({ pageSize: 10, sortKey: "severity", sortDirection: "descending" });
 const SEVERITY_LABELS = { LOW: "Thông tin", MEDIUM: "Cảnh báo", HIGH: "Nghiêm trọng" };
 const VIOLATION_LABELS = {
   FACE_ABSENT: "Vắng mặt",
@@ -23,6 +22,37 @@ const VIOLATION_LABELS = {
   OBJECT_DETECTED: "Phát hiện vật thể cấm",
   HEAD_POSE_AWAY: "Quay đầu khỏi màn hình",
   IDENTITY_MISMATCH: "Nghi ngờ đổi người",
+};
+const SEVERITY_ORDER = { LOW: 1, MEDIUM: 2, HIGH: 3 };
+const INCIDENT_STATUS_ORDER = { dismissed: 1, confirmed: 2, in_review: 3, new: 4 };
+
+function sessionClientText(session) {
+  const client = session.clientType === "browser_extension"
+    ? `${session.browserName || "Trình duyệt"} ${session.browserVersion || ""} · Tiện ích ${session.extensionVersion || "-"}`
+    : "Ứng dụng giám sát máy tính";
+  return `${session.authenticationMethod === "google" ? "Google" : "Thủ công"} · ${client}${session.platform ? ` · ${session.platform}` : ""}`;
+}
+
+function sessionPriority(session) {
+  return (session.sessionState === "SESSION_ALERT" ? 4 : 0)
+    + (session.integrityStatus === "alert" ? 2 : 0)
+    + ([session.cameraStatus, session.microphoneStatus, session.screenShareStatus].includes("issue") ? 1 : 0);
+}
+
+const SESSION_SORT_COLUMNS = {
+  student: (session) => session.studentName,
+  identity: (session) => session.candidateIdentity,
+  client: sessionClientText,
+  status: { value: sessionPriority, type: "number" },
+  risk: { value: (session) => session.riskScore, type: "number" },
+  integrity: { value: (session) => ({ healthy: 1, warning: 2, alert: 3 }[session.integrityStatus] || 0), type: "number" },
+};
+const INCIDENT_SORT_COLUMNS = {
+  student: (item) => item.student_name,
+  severity: { value: (item) => SEVERITY_ORDER[item.severity] || 0, type: "number" },
+  violation: (item) => VIOLATION_LABELS[item.primary_violation] || item.primary_violation,
+  status: { value: (item) => INCIDENT_STATUS_ORDER[item.status] || 0, type: "number" },
+  reviewer: (item) => item.reviewed_by_email,
 };
 
 function stateBadgeInfo(status, sessionState) {
@@ -48,48 +78,6 @@ function showTableMessage(tbody, message, columns = 7) {
   cell.textContent = message;
   row.appendChild(cell);
   tbody.replaceChildren(row);
-}
-
-function paginateItems(items, requestedPage) {
-  const totalPages = Math.max(1, Math.ceil(items.length / TABLE_PAGE_SIZE));
-  const page = Math.min(Math.max(1, requestedPage), totalPages);
-  const start = (page - 1) * TABLE_PAGE_SIZE;
-  return {
-    items: items.slice(start, start + TABLE_PAGE_SIZE),
-    page,
-    totalPages,
-    firstItem: items.length ? start + 1 : 0,
-    lastItem: Math.min(start + TABLE_PAGE_SIZE, items.length),
-  };
-}
-
-function hidePagination(containerId) {
-  const container = document.getElementById(containerId);
-  container.classList.add("hidden");
-  container.replaceChildren();
-}
-
-function renderPagination(containerId, pageData, totalItems, onPageChange) {
-  const container = document.getElementById(containerId);
-  if (!totalItems) return hidePagination(containerId);
-  const label = document.createElement("span");
-  label.textContent = `Hiển thị ${pageData.firstItem}–${pageData.lastItem} / ${totalItems} · Trang ${pageData.page} / ${pageData.totalPages}`;
-  const actions = document.createElement("div");
-  const previous = document.createElement("button");
-  previous.type = "button";
-  previous.className = "secondary-button pagination-button";
-  previous.textContent = "← Trước";
-  previous.disabled = pageData.page <= 1;
-  previous.addEventListener("click", () => onPageChange(pageData.page - 1));
-  const next = document.createElement("button");
-  next.type = "button";
-  next.className = "secondary-button pagination-button";
-  next.textContent = "Sau →";
-  next.disabled = pageData.page >= pageData.totalPages;
-  next.addEventListener("click", () => onPageChange(pageData.page + 1));
-  actions.append(previous, next);
-  container.replaceChildren(label, actions);
-  container.classList.remove("hidden");
 }
 
 function renderKpis() {
@@ -196,7 +184,6 @@ async function closeDashboardExam() {
 function filteredSessions() {
   const query = document.getElementById("session-search").value.trim().toLocaleLowerCase("vi");
   const status = document.getElementById("session-status-filter").value;
-  const sort = document.getElementById("session-sort").value;
   const items = [...sessionData.entries()].filter(([, session]) => {
     const haystack = `${session.studentName} ${session.candidateIdentity || ""}`.toLocaleLowerCase("vi");
     if (query && !haystack.includes(query)) return false;
@@ -204,38 +191,31 @@ function filteredSessions() {
     if (status === "alert") return session.sessionState === "SESSION_ALERT" || session.integrityStatus === "alert";
     return session.status === status;
   });
-  const priority = (item) => (item.sessionState === "SESSION_ALERT" ? 4 : 0) + (item.integrityStatus === "alert" ? 2 : 0) + ([item.cameraStatus, item.microphoneStatus, item.screenShareStatus].includes("issue") ? 1 : 0);
-  items.sort(([, a], [, b]) => {
-    if (sort === "risk") return b.riskScore - a.riskScore;
-    if (sort === "name") return a.studentName.localeCompare(b.studentName, "vi");
-    if (sort === "recent") return new Date(b.lastSeenAt || 0) - new Date(a.lastSeenAt || 0);
-    return priority(b) - priority(a) || b.riskScore - a.riskScore;
-  });
-  return items;
+  return TableUI.sortItems(items, sessionTableState, Object.fromEntries(
+    Object.entries(SESSION_SORT_COLUMNS).map(([key, column]) => [key, typeof column === "function"
+      ? ([, session]) => column(session)
+      : { ...column, value: ([, session]) => column.value(session) }]),
+  ));
 }
 
 function renderTable() {
   const tbody = document.querySelector("#sessions-table tbody");
   if (!initialLoadDone) {
-    hidePagination("session-pagination");
+    TableUI.hidePagination("session-pagination");
     return showTableMessage(tbody, "Đang tải...");
   }
   const items = filteredSessions();
   if (!items.length) {
-    hidePagination("session-pagination");
+    TableUI.hidePagination("session-pagination");
     return showTableMessage(tbody, sessionData.size ? "Không có phiên phù hợp bộ lọc." : "Chưa có thí sinh nào tham gia kỳ thi này.");
   }
-  const pageData = paginateItems(items, sessionPage);
-  sessionPage = pageData.page;
+  const pageData = TableUI.paginate(items, sessionTableState);
   const rows = pageData.items.map(([id, session]) => {
     const row = document.createElement("tr");
     if (id === lastUpdatedId) row.classList.add("updated");
     appendTextCell(row, session.studentName);
     appendTextCell(row, session.candidateIdentity || "-");
-    const client = session.clientType === "browser_extension"
-      ? `${session.browserName || "Trình duyệt"} ${session.browserVersion || ""} · Tiện ích ${session.extensionVersion || "-"}`
-      : "Ứng dụng giám sát máy tính";
-    appendTextCell(row, `${session.authenticationMethod === "google" ? "Google" : "Thủ công"} · ${client}${session.platform ? ` · ${session.platform}` : ""}`);
+    appendTextCell(row, sessionClientText(session));
     const statusCell = document.createElement("td");
     const badgeInfo = stateBadgeInfo(session.status, session.sessionState);
     const badge = document.createElement("span"); badge.className = `badge ${badgeInfo.cls}`; badge.textContent = badgeInfo.label;
@@ -265,8 +245,8 @@ function renderTable() {
     actions.appendChild(actionGroup); row.appendChild(actions); return row;
   });
   tbody.replaceChildren(...rows);
-  renderPagination("session-pagination", pageData, items.length, (nextPage) => {
-    sessionPage = nextPage;
+  TableUI.renderPagination("session-pagination", pageData, (nextPage) => {
+    sessionTableState.page = nextPage;
     renderTable();
   });
 }
@@ -340,7 +320,7 @@ async function loadIncidents() {
   const tbody = document.querySelector("#incidents-table tbody");
   if (!response.ok) {
     incidentData = [];
-    hidePagination("incident-pagination");
+    TableUI.hidePagination("incident-pagination");
     return showTableMessage(tbody, response.status === 403 ? "Bạn không có quyền duyệt sự cố." : "Không tải được hàng đợi sự cố.", 6);
   }
   incidentData = await response.json();
@@ -350,11 +330,11 @@ async function loadIncidents() {
 function renderIncidents() {
   const tbody = document.querySelector("#incidents-table tbody");
   if (!incidentData.length) {
-    hidePagination("incident-pagination");
+    TableUI.hidePagination("incident-pagination");
     return showTableMessage(tbody, "Không có sự cố phù hợp.", 6);
   }
-  const pageData = paginateItems(incidentData, incidentPage);
-  incidentPage = pageData.page;
+  const sortedIncidents = TableUI.sortItems(incidentData, incidentTableState, INCIDENT_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sortedIncidents, incidentTableState);
   tbody.replaceChildren(...pageData.items.map((item) => {
     const row = document.createElement("tr"); appendTextCell(row, item.student_name);
     const severity = document.createElement("td"); const badge = document.createElement("span"); badge.className = `badge badge-${String(item.severity).toLowerCase()}`; badge.textContent = SEVERITY_LABELS[item.severity] || item.severity; severity.appendChild(badge); row.appendChild(severity);
@@ -365,8 +345,8 @@ function renderIncidents() {
     const link = document.createElement("a"); link.href = `/ui/exams/${encodeURIComponent(EXAM_ID)}/sessions/${encodeURIComponent(item.session_id)}`; link.textContent = "Xem và duyệt";
     actionGroup.appendChild(link); action.appendChild(actionGroup); row.appendChild(action); return row;
   }));
-  renderPagination("incident-pagination", pageData, incidentData.length, (nextPage) => {
-    incidentPage = nextPage;
+  TableUI.renderPagination("incident-pagination", pageData, (nextPage) => {
+    incidentTableState.page = nextPage;
     renderIncidents();
   });
 }
@@ -407,12 +387,12 @@ async function initializeDashboard() {
   } catch (error) { initialLoadDone = true; renderAll(); showToast(error.message || "Không tải được bảng giám sát.", "error"); }
 }
 
-["session-search", "session-status-filter", "session-sort"].forEach((id) => document.getElementById(id).addEventListener("input", () => {
-  sessionPage = 1;
+["session-search", "session-status-filter"].forEach((id) => document.getElementById(id).addEventListener("input", () => {
+  sessionTableState.page = 1;
   renderTable();
 }));
 document.getElementById("incident-status-filter").addEventListener("change", () => {
-  incidentPage = 1;
+  incidentTableState.page = 1;
   loadIncidents().catch(() => {});
 });
 document.getElementById("end-session-form").addEventListener("submit", submitEndSession);
@@ -424,4 +404,6 @@ document.getElementById("detail-close-exam").addEventListener("click", () => {
 document.getElementById("detail-join-code").addEventListener("click", () => {
   copyDashboardJoinCode().catch((error) => showToast(error.message, "error"));
 });
+TableUI.bindSort("sessions-table", sessionTableState, renderTable);
+TableUI.bindSort("incidents-table", incidentTableState, renderIncidents);
 initializeDashboard();

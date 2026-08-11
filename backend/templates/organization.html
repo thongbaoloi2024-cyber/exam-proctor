@@ -15,17 +15,19 @@
   </div>
   <div class="table-scroll">
     <table class="data-table workspace-table" id="members-table">
-      <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th data-sort-key="email">Email</th><th data-sort-key="role">Vai trò</th><th data-sort-key="status">Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody><tr><td colspan="4">Đang tải...</td></tr></tbody>
     </table>
   </div>
+  <nav id="members-pagination" class="pagination hidden" aria-label="Phân trang thành viên"></nav>
   <h2 class="subsection-title">Lời mời đang chờ</h2>
   <div class="table-scroll">
     <table class="data-table workspace-table" id="invitations-table">
-      <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Ngày tạo</th><th>Hết hạn</th><th></th></tr></thead>
+      <thead><tr><th data-sort-key="email">Email</th><th data-sort-key="role">Vai trò</th><th data-sort-key="status">Trạng thái</th><th data-sort-key="created" data-sort-default="descending">Ngày tạo</th><th data-sort-key="expires" data-sort-default="descending">Hết hạn</th><th></th></tr></thead>
       <tbody><tr><td colspan="6">Đang tải...</td></tr></tbody>
     </table>
   </div>
+  <nav id="invitations-pagination" class="pagination hidden" aria-label="Phân trang lời mời"></nav>
 </section>
 {% endif %}
 
@@ -57,10 +59,11 @@
   <h2>Yêu cầu quyền truy cập ngoại lệ</h2>
   <div class="table-scroll">
     <table class="data-table workspace-table workspace-table-wide" id="access-grants-table">
-      <thead><tr><th>Người yêu cầu</th><th>Lý do</th><th>Phạm vi</th><th>Khởi tạo</th><th>Trạng thái</th><th>Hết hạn</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th data-sort-key="requester">Người yêu cầu</th><th data-sort-key="reason">Lý do</th><th data-sort-key="scope">Phạm vi</th><th data-sort-key="created" data-sort-default="descending">Khởi tạo</th><th data-sort-key="status">Trạng thái</th><th data-sort-key="expires" data-sort-default="descending">Hết hạn</th><th>Thao tác</th></tr></thead>
       <tbody><tr><td colspan="7">Đang tải...</td></tr></tbody>
     </table>
   </div>
+  <nav id="access-grants-pagination" class="pagination hidden" aria-label="Phân trang quyền truy cập ngoại lệ"></nav>
 </section>
 {% endif %}
 
@@ -74,7 +77,7 @@
   </div>
   <div class="table-scroll">
     <table class="data-table admin-table workspace-table workspace-table-wide" id="organization-audit-table">
-      <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Tài nguyên</th><th>Kết quả</th><th>Lý do</th></tr></thead>
+      <thead><tr><th data-sort-key="created_at" data-sort-default="descending">Thời gian</th><th data-sort-key="actor">Người dùng</th><th data-sort-key="action">Hành động</th><th data-sort-key="resource">Tài nguyên</th><th data-sort-key="outcome">Kết quả</th><th data-sort-key="reason">Lý do</th></tr></thead>
       <tbody><tr><td colspan="6">Đang tải...</td></tr></tbody>
     </table>
   </div>
@@ -128,4 +131,4 @@
 </dialog>
 {% endif %}
 {% endblock %}
-{% block scripts %}<script src="/static/system-common.js"></script><script src="/static/organization.js?v=20260811-path-routes-1"></script>{% endblock %}
+{% block scripts %}<script src="/static/system-common.js"></script><script src="/static/organization.js?v=20260812-table-sort-1"></script>{% endblock %}

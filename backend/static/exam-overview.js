@@ -10,6 +10,15 @@ const WORKSPACE_ROLE_LABELS = {
   manager: "Quản lý",
   proctor: "Giám thị",
 };
+let workspaceExamItems = [];
+const workspaceTableState = TableUI.createState({ pageSize: 10, sortKey: "attention", sortDirection: "descending" });
+const WORKSPACE_SORT_COLUMNS = {
+  name: (item) => item.name,
+  role: (item) => WORKSPACE_ROLE_LABELS[item.assignment_role] || item.assignment_role,
+  status: (item) => WORKSPACE_STATUS_LABELS[item.status] || item.status,
+  sessions: { value: (item) => item.active_sessions, type: "number" },
+  attention: { value: (item) => item.alert_sessions + item.disconnected_sessions + item.open_reviews, type: "number" },
+};
 
 function workspaceChartItems(values, labels) {
   return Object.entries(values || {}).map(([key, value]) => ({
@@ -68,9 +77,10 @@ function workspaceCell(row, value) {
   return cell;
 }
 
-function renderWorkspaceItems(items) {
+function renderWorkspaceItems() {
   const body = document.getElementById("workspace-exams-body");
-  if (!items.length) {
+  if (!workspaceExamItems.length) {
+    TableUI.hidePagination("workspace-exams-pagination");
     const row = document.createElement("tr");
     const cell = document.createElement("td");
     cell.colSpan = 6;
@@ -80,7 +90,9 @@ function renderWorkspaceItems(items) {
     body.replaceChildren(row);
     return;
   }
-  const rows = items.map((item) => {
+  const sorted = TableUI.sortItems(workspaceExamItems, workspaceTableState, WORKSPACE_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sorted, workspaceTableState);
+  const rows = pageData.items.map((item) => {
     const row = document.createElement("tr");
     const examCopy = document.createElement("span");
     examCopy.className = "overview-exam-copy";
@@ -111,6 +123,10 @@ function renderWorkspaceItems(items) {
     return row;
   });
   body.replaceChildren(...rows);
+  TableUI.renderPagination("workspace-exams-pagination", pageData, (nextPage) => {
+    workspaceTableState.page = nextPage;
+    renderWorkspaceItems();
+  });
 }
 
 async function initializeExamOverview() {
@@ -153,7 +169,9 @@ async function initializeExamOverview() {
   document.getElementById("workspace-attention-list").replaceChildren(
     ...(attentionItems.length ? attentionItems.slice(0, 6) : [workspaceSuccessAttention()]),
   );
-  renderWorkspaceItems(data.items);
+  workspaceExamItems = data.items;
+  renderWorkspaceItems();
 }
 
+TableUI.bindSort("workspace-exams-table", workspaceTableState, renderWorkspaceItems);
 initializeExamOverview().catch((error) => showToast(error.message, "error"));

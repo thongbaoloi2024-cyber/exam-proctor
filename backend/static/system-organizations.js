@@ -1,6 +1,8 @@
 const organizationState = {
   page: 1,
   pageSize: 15,
+  sortKey: "name",
+  sortDirection: "ascending",
   selected: null,
   nextStatus: null,
 };
@@ -10,7 +12,8 @@ function organizationQuery() {
     page: String(organizationState.page),
     page_size: String(organizationState.pageSize),
     search: document.getElementById("organization-search").value.trim(),
-    sort: document.getElementById("organization-sort").value,
+    sort_by: organizationState.sortKey,
+    sort_order: organizationState.sortDirection === "descending" ? "desc" : "asc",
   });
   const status = document.getElementById("organization-status").value;
   if (status) params.set("status", status);
@@ -165,6 +168,9 @@ async function initializeSystemOrganizations() {
   if (["active", "suspended"].includes(initialStatus)) {
     document.getElementById("organization-status").value = initialStatus;
   }
+  TableUI.bindSort("system-organizations-table", organizationState, () => {
+    loadOrganizationDirectory().catch((error) => showToast(error.message, "error"));
+  });
   document.getElementById("open-create-organization").addEventListener("click", () => {
     const form = document.getElementById("system-create-org");
     form.reset();

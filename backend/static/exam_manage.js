@@ -5,6 +5,14 @@ let canAssign = false;
 let managePolicyFloor = null;
 let manageActiveSessions = null;
 let manageConfigurationEditable = false;
+let assignmentData = [];
+const assignmentTableState = TableUI.createState({ pageSize: 10, sortKey: "email" });
+const ASSIGNMENT_SORT_COLUMNS = {
+  email: (assignment) => assignment.email,
+  role: (assignment) => assignment.assignment_role,
+  status: (assignment) => assignment.status,
+  expires: { value: (assignment) => assignment.expires_at, type: "date" },
+};
 
 function manageCell(row, value) {
   const cell = document.createElement("td");
@@ -251,8 +259,23 @@ async function revokeAssignment(userId) {
 async function loadAssignments() {
   const response = await API.request(`/exams/${encodeURIComponent(MANAGE_EXAM_ID)}/assignments`);
   if (!response.ok) return;
-  const assignments = await response.json();
-  const rows = assignments.map((assignment) => {
+  assignmentData = await response.json();
+  renderAssignments();
+}
+
+function renderAssignments() {
+  const tbody = document.querySelector("#assignments-table tbody");
+  if (!assignmentData.length) {
+    TableUI.hidePagination("assignments-pagination");
+    const row = document.createElement("tr");
+    const cell = manageCell(row, "Chưa có nhân sự được phân công.");
+    cell.colSpan = 5;
+    tbody.replaceChildren(row);
+    return;
+  }
+  const sorted = TableUI.sortItems(assignmentData, assignmentTableState, ASSIGNMENT_SORT_COLUMNS);
+  const pageData = TableUI.paginate(sorted, assignmentTableState);
+  const rows = pageData.items.map((assignment) => {
     const row = document.createElement("tr");
     manageCell(row, assignment.email);
     manageCell(row, { owner: "Chủ kỳ thi", manager: "Quản lý", proctor: "Giám thị" }[assignment.assignment_role] || assignment.assignment_role);
@@ -268,7 +291,11 @@ async function loadAssignments() {
     row.appendChild(actions);
     return row;
   });
-  document.querySelector("#assignments-table tbody").replaceChildren(...rows);
+  tbody.replaceChildren(...rows);
+  TableUI.renderPagination("assignments-pagination", pageData, (nextPage) => {
+    assignmentTableState.page = nextPage;
+    renderAssignments();
+  });
 }
 
 async function loadEligibleMembers() {
@@ -348,6 +375,7 @@ async function initializeExamManage() {
   await loadAssignments();
 }
 
+TableUI.bindSort("assignments-table", assignmentTableState, renderAssignments);
 initializeExamManage().catch((error) => showToast(error.message, "error"));
 document.getElementById("manage-auth-mode").addEventListener("change", syncManageAuthMode);
 document.getElementById("manage-require-extension").addEventListener("change", syncManageAuthMode);

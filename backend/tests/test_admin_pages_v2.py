@@ -187,9 +187,11 @@ def test_data_workspaces_use_wide_responsive_containers(client):
     assert 'id="incident-pagination" class="pagination dashboard-pagination hidden"' in dashboard
 
     dashboard_script = client.get("/static/dashboard.js").text
-    assert "const TABLE_PAGE_SIZE = 10" in dashboard_script
-    assert 'renderPagination("session-pagination"' in dashboard_script
-    assert 'renderPagination("incident-pagination"' in dashboard_script
+    assert "TableUI.createState({ pageSize: 10" in dashboard_script
+    assert 'TableUI.renderPagination("session-pagination"' in dashboard_script
+    assert 'TableUI.renderPagination("incident-pagination"' in dashboard_script
+    assert 'TableUI.bindSort("sessions-table"' in dashboard_script
+    assert 'TableUI.bindSort("incidents-table"' in dashboard_script
 
     session_detail = workspace_pages[2].text
     assert session_detail.count('class="data-table workspace-table"') == 3
@@ -205,6 +207,43 @@ def test_data_workspaces_use_wide_responsive_containers(client):
     security_script = client.get("/static/system-security.js").text
     assert "pageSize: 15" in organizations_script
     assert "pageSize: 15" in security_script
+
+
+def test_all_data_tables_expose_sorting_and_pagination(client):
+    page_expectations = {
+        "/ui/exams/exam-id/detail": (
+            "sessions-table", "session-pagination", "incidents-table", "incident-pagination",
+        ),
+        "/ui/exams/exam-id/detail?tab=manage": (
+            "assignments-table", "assignments-pagination",
+        ),
+        "/ui/exams/overview": ("workspace-exams-table", "workspace-exams-pagination"),
+        "/ui/organization": (
+            "members-table", "members-pagination", "invitations-table", "invitations-pagination",
+        ),
+        "/ui/organization/break-glass": ("access-grants-table", "access-grants-pagination"),
+        "/ui/organization/audit": ("organization-audit-table", "organization-audit-pagination"),
+        "/ui/exams/exam-id/sessions/session-id": (
+            "unified-timeline-table", "unified-timeline-pagination",
+            "violations-table", "violations-pagination",
+            "browser-events-table", "browser-events-pagination",
+        ),
+        "/ui/system/organizations": ("system-organizations-table", "organization-pagination"),
+        "/ui/system/security": ("security-grants-table", "security-pagination"),
+        "/ui/system/audit": ("system-audit-table", "audit-pagination"),
+    }
+    for path, element_ids in page_expectations.items():
+        page = client.get(path)
+        assert page.status_code == 200
+        assert 'data-sort-key="' in page.text
+        for element_id in element_ids:
+            assert f'id="{element_id}"' in page.text
+
+    table_ui = client.get("/static/table-ui.js")
+    assert table_ui.status_code == 200
+    assert "sortItems(items, state, columns)" in table_ui.text
+    assert "paginate(items, state)" in table_ui.text
+    assert "bindSort(tableId, state, onChange)" in table_ui.text
 
 
 def test_organization_sidebar_uses_real_paths_and_each_route_renders_one_panel(client):
@@ -240,7 +279,7 @@ def test_organization_sidebar_uses_real_paths_and_each_route_renders_one_panel(c
     assert 'data-section="audit"' in audit.text
     assert 'data-organization-panel="audit"' in audit.text
     assert 'id="grant-decision-dialog"' not in audit.text
-    assert '<th>Người dùng</th>' in audit.text
+    assert 'data-sort-key="actor">Người dùng</th>' in audit.text
     assert '<th>Request ID</th>' not in audit.text
     assert 'id="organization-audit-pagination"' in audit.text
 
@@ -340,3 +379,18 @@ def test_shared_pages_include_and_persist_accessible_theme_toggle(client):
     assert "position: fixed" in stylesheet
     assert ".theme-icon-sun" in stylesheet
     assert ".theme-icon-moon" in stylesheet
+
+
+def test_form_controls_use_theme_specific_backgrounds(client):
+    stylesheet_response = client.get("/static/style.css")
+    assert stylesheet_response.status_code == 200
+    stylesheet = stylesheet_response.text
+
+    assert "--control-bg: #11151c" in stylesheet
+    assert "--control-bg: #f8fafc" in stylesheet
+    assert "--control-bg-focus: #151a23" in stylesheet
+    assert "--control-bg-focus: #ffffff" in stylesheet
+    assert "background: var(--control-bg)" in stylesheet
+    assert "background: var(--control-bg-focus)" in stylesheet
+    assert "background: var(--control-bg-disabled)" in stylesheet
+    assert "color: var(--control-placeholder)" in stylesheet

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import dataclasses
 import hashlib
 import io
 import json
@@ -28,6 +29,7 @@ import secrets
 import shutil
 import sys
 import uuid
+import zipfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -44,21 +46,33 @@ from backend import models  # noqa: E402
 from backend.auth import hash_password  # noqa: E402
 from backend.db import Base, DATABASE_URL, SessionLocal, engine  # noqa: E402
 from backend.db_migrations import apply_additive_migrations  # noqa: E402
+from src.fusion.config import load_session_thresholds  # noqa: E402
+from src.fusion.engine import RiskFusionEngine  # noqa: E402
+from src.fusion.risk_score_logger import RiskScoreLogger  # noqa: E402
+from src.fusion.state_transition_logger import StateTransitionLogger  # noqa: E402
 from src.reporting.report_generator import generate_report  # noqa: E402
+from src.signals.base import SignalResult  # noqa: E402
 
 
 UTC = timezone.utc
 NAMESPACE = uuid.UUID("90256b54-b586-4bd0-bb99-fca0eeb74adc")
 
-VIOLATION_SPECS: tuple[tuple[str, str, float, float], ...] = (
-    ("FACE_PRESENCE", "FACE_ABSENT", 2.0, 0.0),
-    ("MULTI_FACE", "MULTIPLE_FACES", 2.0, 2.0),
-    ("EYE_STATE", "EYES_CLOSED", 1.0, 0.16),
-    ("MOUTH_STATE", "TALKING", 1.0, 0.48),
-    ("OBJECT_PRESENCE", "OBJECT_DETECTED", 2.5, 1.0),
-    ("HEAD_POSE", "HEAD_POSE_AWAY", 1.0, 31.0),
-    ("IDENTITY", "IDENTITY_MISMATCH", 3.0, 0.34),
+SIGNAL_NAMES = (
+    "FACE_PRESENCE", "MULTI_FACE", "EYE_STATE", "MOUTH_STATE",
+    "OBJECT_PRESENCE", "HEAD_POSE", "IDENTITY",
 )
+SIGNAL_METADATA_KEYS = {
+    "FACE_PRESENCE": {"consecutive_absent_sec"},
+    "MULTI_FACE": {"face_boxes"},
+    "EYE_STATE": {"ear_left", "ear_right", "closed_duration_sec"},
+    "MOUTH_STATE": {"mouth_open_ratio", "activity_ratio", "window_samples"},
+    "OBJECT_PRESENCE": {"object_class", "bbox", "num_objects", "present_duration_sec"},
+    "HEAD_POSE": {
+        "yaw", "pitch", "roll", "away_duration_sec", "rotation_vector",
+        "translation_vector", "camera_matrix", "nose_2d_px",
+    },
+    "IDENTITY": {"enrolled", "similarity", "warning", "consecutive_failures"},
+}
 NORMAL_SIGNAL_VALUES = {
     "FACE_PRESENCE": 1.0,
     "MULTI_FACE": 1.0,
@@ -67,6 +81,21 @@ NORMAL_SIGNAL_VALUES = {
     "OBJECT_PRESENCE": 0.0,
     "HEAD_POSE": 3.0,
     "IDENTITY": 0.82,
+}
+SCENARIO_WEIGHTS = {
+    "low": (
+        ("face_absent", 0.30), ("eyes_closed", 0.25), ("head_pose", 0.20),
+        ("talking", 0.15), ("object", 0.05), ("multi_face", 0.04), ("identity", 0.01),
+    ),
+    "medium": (
+        ("face_absent", 0.25), ("eyes_closed", 0.20), ("head_pose", 0.18),
+        ("talking", 0.15), ("object", 0.12), ("multi_face", 0.07), ("identity", 0.03),
+    ),
+    "high": (
+        ("face_absent", 0.18), ("eyes_closed", 0.15), ("head_pose", 0.12),
+        ("talking", 0.12), ("object", 0.15), ("multi_face", 0.10),
+        ("identity", 0.05), ("mixed_high", 0.13),
+    ),
 }
 BROWSER_SEVERITY = {
     "MEDIA_READY": "LOW",
@@ -164,6 +193,14 @@ class Config:
     student_domain: str
     exam_domain: str
     refresh_existing: bool
+    regenerate_model_evidence: bool
+
+
+@dataclass(frozen=True)
+class BehaviorScenario:
+    start_sec: float
+    kind: str
+    ordinal: int
 
 
 @dataclass
@@ -279,39 +316,197 @@ def snapshot_bytes(severity: str) -> bytes:
     return buffer.getvalue()
 
 
-def signal_metadata(signal_name: str, value: float, timestamp: float) -> dict[str, Any]:
-    if signal_name == "FACE_PRESENCE":
-        return {"consecutive_absent_sec": 3.2 if value == 0 else 0.0}
-    if signal_name == "MULTI_FACE":
-        return {"face_count": int(value)}
-    if signal_name == "EYE_STATE":
-        return {"ear_left": value, "ear_right": round(value + 0.01, 3)}
-    if signal_name == "MOUTH_STATE":
-        return {"mouth_open_ratio": value, "activity_ratio": min(1.0, value + 0.12)}
-    if signal_name == "OBJECT_PRESENCE":
-        return {"object_class": "cell phone" if value else None, "confidence": 0.93}
-    if signal_name == "HEAD_POSE":
-        return {"yaw": value, "pitch": round(value / 5, 2), "roll": 1.2}
-    return {"cosine_similarity": value, "last_verified_at": timestamp}
+def build_scenarios(
+    rng: random.Random,
+    profile: str,
+    duration_sec: float,
+    desired_count: int,
+) -> list[BehaviorScenario]:
+    """Place non-overlapping behavior windows across one exam session."""
+    capacity = max(0, int((duration_sec - 20.0) // 12.0))
+    count = min(desired_count, capacity)
+    if count <= 0:
+        return []
+    weights = SCENARIO_WEIGHTS.get(profile) or SCENARIO_WEIGHTS["medium"]
+    usable = max(1.0, duration_sec - 20.0)
+    scenarios: list[BehaviorScenario] = []
+    for index in range(count):
+        start = 10.0 + usable * (index + 1) / (count + 1)
+        kind = choose_weighted(rng, weights)
+        if kind in {"identity", "mixed_high"} and start < 32.0:
+            kind = "face_absent"
+        scenarios.append(BehaviorScenario(round(start, 3), kind, index))
+    return scenarios
 
 
-def make_signal_row(
-    signal_name: str,
-    value: float,
+def scenario_conditions(
+    video_time_sec: float,
+    scenarios: Sequence[BehaviorScenario],
+) -> tuple[dict[str, float], str | None]:
+    """Return active signal ages and the current identity verification phase."""
+    active: dict[str, float] = {}
+    identity_phase: str | None = None
+
+    def mark(name: str, age: float) -> None:
+        active[name] = max(active.get(name, 0.0), max(0.0, age))
+
+    for scenario in scenarios:
+        offset = video_time_sec - scenario.start_sec
+        if scenario.kind in {"identity", "mixed_high"} and -30.0 <= offset < 0.0:
+            identity_phase = "first_failure"
+        if not 0.0 <= offset <= 3.0:
+            continue
+        if scenario.kind == "face_absent":
+            mark("FACE_PRESENCE", offset)
+            if offset < 0.5:
+                mark("HEAD_POSE", offset)
+        elif scenario.kind == "multi_face":
+            mark("MULTI_FACE", offset)
+            if offset < 0.5:
+                mark("EYE_STATE", offset)
+        elif scenario.kind == "eyes_closed":
+            for name in ("EYE_STATE", "MOUTH_STATE", "HEAD_POSE"):
+                mark(name, offset)
+        elif scenario.kind == "talking":
+            for name in ("MOUTH_STATE", "HEAD_POSE"):
+                mark(name, offset)
+            if offset < 0.5:
+                mark("EYE_STATE", offset)
+        elif scenario.kind == "head_pose":
+            mark("HEAD_POSE", offset)
+            if offset < 0.5:
+                mark("FACE_PRESENCE", offset)
+                mark("MOUTH_STATE", offset)
+        elif scenario.kind == "object":
+            mark("OBJECT_PRESENCE", offset)
+        elif scenario.kind == "identity":
+            mark("IDENTITY", offset)
+            identity_phase = "confirmed_mismatch"
+        else:  # mixed_high: enough simultaneous SUSPICIOUS states for HIGH.
+            for name in ("FACE_PRESENCE", "MULTI_FACE", "EYE_STATE", "OBJECT_PRESENCE", "IDENTITY"):
+                mark(name, offset)
+            identity_phase = "confirmed_mismatch"
+    return active, identity_phase
+
+
+def make_signal_results(
+    rng: random.Random,
     timestamp: float,
-    *,
-    exceeds: bool,
-    state: str,
-) -> dict[str, Any]:
-    return {
-        "signal_name": signal_name,
-        "timestamp": round(timestamp, 3),
-        "value": value,
-        "exceeds_threshold": exceeds,
-        "confidence": 0.94,
-        "state": state,
-        "metadata": signal_metadata(signal_name, value, timestamp),
-    }
+    active: dict[str, float],
+    identity_phase: str | None,
+) -> list[SignalResult]:
+    """Build all seven raw SignalResult objects using production metadata shapes."""
+    results: list[SignalResult] = []
+    for name in SIGNAL_NAMES:
+        is_active = name in active
+        age = active.get(name, 0.0)
+        if name == "FACE_PRESENCE":
+            value = 0.0 if is_active else 1.0
+            confidence = 0.0 if is_active else round(rng.uniform(0.93, 0.998), 4)
+            metadata = {"consecutive_absent_sec": round(age + 2.1, 2) if is_active else 0.0}
+        elif name == "MULTI_FACE":
+            count = rng.choice((2, 2, 2, 3)) if is_active else 1
+            value = float(count)
+            confidence = round(rng.uniform(0.91, 0.995), 4)
+            metadata = {
+                "face_boxes": [
+                    [45.0 + box_index * 180.0, 36.0, 180.0 + box_index * 180.0, 240.0]
+                    for box_index in range(count)
+                ]
+            }
+        elif name == "EYE_STATE":
+            if is_active:
+                left = rng.uniform(0.12, 0.19)
+                right = rng.uniform(0.12, 0.19)
+            else:
+                left = rng.uniform(0.24, 0.34)
+                right = rng.uniform(0.24, 0.34)
+            value = round((left + right) / 2.0, 4)
+            confidence = 1.0
+            metadata = {
+                "ear_left": round(left, 4),
+                "ear_right": round(right, 4),
+                "closed_duration_sec": round(age + 1.1, 2) if is_active else 0.0,
+            }
+        elif name == "MOUTH_STATE":
+            value = round(rng.uniform(0.18, 0.55) if is_active else rng.uniform(0.04, 0.13), 4)
+            activity_ratio = rng.uniform(0.36, 0.9) if is_active else rng.uniform(0.0, 0.18)
+            confidence = 1.0
+            metadata = {
+                "mouth_open_ratio": value,
+                "activity_ratio": round(activity_ratio, 4),
+                "window_samples": rng.randint(12, 32),
+            }
+        elif name == "OBJECT_PRESENCE":
+            count = rng.choice((1, 1, 1, 2)) if is_active else 0
+            value = float(count)
+            confidence = round(rng.uniform(0.6, 0.98), 4) if is_active else 0.0
+            object_class = rng.choice(("cell phone", "cell phone", "cell phone", "book")) if is_active else None
+            metadata = {
+                "object_class": object_class,
+                "bbox": [220.0, 145.0, 355.0, 330.0] if is_active else None,
+                "num_objects": count,
+                "present_duration_sec": round(age + 1.1, 2) if is_active else 0.0,
+            }
+        elif name == "HEAD_POSE":
+            if is_active and rng.random() < 0.75:
+                yaw = rng.choice((-1.0, 1.0)) * rng.uniform(22.0, 55.0)
+                pitch = rng.uniform(-12.0, 12.0)
+            elif is_active:
+                yaw = rng.uniform(-9.0, 9.0)
+                pitch = rng.choice((-1.0, 1.0)) * rng.uniform(22.0, 42.0)
+            else:
+                yaw = rng.uniform(-8.0, 8.0)
+                pitch = rng.uniform(-8.0, 8.0)
+            value = round(yaw, 2)
+            confidence = 1.0
+            metadata = {
+                "yaw": value,
+                "pitch": round(pitch, 2),
+                "roll": round(rng.uniform(-4.0, 4.0), 2),
+                "away_duration_sec": round(age + 1.1, 2) if is_active else 0.0,
+                "rotation_vector": [0.01, 0.02, 0.03],
+                "translation_vector": [0.0, 0.0, 1000.0],
+                "camera_matrix": [[640.0, 0.0, 320.0], [0.0, 640.0, 180.0], [0.0, 0.0, 1.0]],
+                "nose_2d_px": [320.0, 180.0],
+            }
+        else:  # IDENTITY
+            if identity_phase == "confirmed_mismatch":
+                similarity = rng.uniform(0.16, 0.38)
+                failures = 2
+                exceeds = True
+                warning = False
+            elif identity_phase == "first_failure":
+                similarity = rng.uniform(0.16, 0.38)
+                failures = 1
+                exceeds = False
+                warning = False
+            else:
+                warning = rng.random() < 0.03
+                similarity = rng.uniform(0.42, 0.54) if warning else rng.uniform(0.62, 0.9)
+                failures = 0
+                exceeds = False
+            value = round(similarity, 4)
+            confidence = 1.0
+            metadata = {
+                "enrolled": True,
+                "similarity": value,
+                "warning": warning,
+                "consecutive_failures": failures,
+            }
+            results.append(SignalResult(name, timestamp, value, exceeds, confidence, metadata))
+            continue
+        results.append(SignalResult(name, timestamp, value, is_active, confidence, metadata))
+    return results
+
+
+def signal_log_record(result: SignalResult, video_time_sec: float, received_at: datetime) -> dict[str, Any]:
+    record = dataclasses.asdict(result)
+    record["client_timestamp"] = record.pop("timestamp")
+    record["timestamp"] = received_at.timestamp()
+    record["video_time_sec"] = round(video_time_sec, 3)
+    record["server_received_at"] = iso(received_at)
+    return record
 
 
 def make_browser_events(
@@ -369,98 +564,100 @@ def make_session_evidence(
     ended_at: datetime | None,
     duration_sec: float,
     snapshot_payloads: dict[str, bytes],
+    desired_violation_count: int | None = None,
+    replace_existing: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], int, int]:
     session_dir = config.sessions_root / session_id
     snapshot_dir = session_dir / "snapshots"
-    snapshot_dir.mkdir(parents=True, exist_ok=False)
+    if replace_existing:
+        session_dir.mkdir(parents=True, exist_ok=True)
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
+        for evidence_name in (
+            "signals.jsonl", "state_transitions.jsonl", "violations.jsonl",
+            "browser_events.jsonl", "risk_score_timeline.jsonl",
+        ):
+            path = session_dir / evidence_name
+            if path.is_file():
+                path.unlink()
+        for snapshot in snapshot_dir.glob("evt_*.png"):
+            snapshot.unlink()
+    else:
+        snapshot_dir.mkdir(parents=True, exist_ok=False)
 
-    violation_count = rng.randint(*VIOLATION_RANGES[profile])
-    violation_times = sorted(
-        rng.uniform(15.0, max(16.0, duration_sec - 10.0)) for _ in range(violation_count)
+    requested_count = (
+        desired_violation_count
+        if desired_violation_count is not None
+        else rng.randint(*VIOLATION_RANGES[profile])
     )
-    violations: list[dict[str, Any]] = []
-    signals = [
-        make_signal_row(name, value, started_at.timestamp(), exceeds=False, state="NORMAL")
-        for name, value in NORMAL_SIGNAL_VALUES.items()
-    ]
-    transitions: list[dict[str, Any]] = []
-    snapshots = 0
+    scenarios = build_scenarios(rng, profile, duration_sec, requested_count)
+    tick_times = {round(value, 3) for value in range(0, max(1, int(duration_sec)) + 1, 30)}
+    for scenario in scenarios:
+        tick_times.update(
+            round(scenario.start_sec + offset, 3)
+            for offset in range(0, 11)
+            if scenario.start_sec + offset <= duration_sec
+        )
+        if scenario.kind in {"identity", "mixed_high"}:
+            tick_times.add(round(max(0.0, scenario.start_sec - 30.0), 3))
 
-    for index, video_time in enumerate(violation_times):
-        signal_name, violation_type, weight, signal_value = rng.choice(VIOLATION_SPECS)
-        is_high = profile == "high" and rng.random() < 0.72 or profile == "medium" and rng.random() < 0.25
-        risk_score = round(rng.uniform(10.0, 15.0) if is_high else rng.uniform(5.0, 9.9), 2)
-        severity = "HIGH" if risk_score >= 10.0 else "MEDIUM"
-        event_id = stable_id(config.batch_id, "violation", f"{session_id}:{index}")
-        event_at = started_at + timedelta(seconds=video_time)
-        contributions = [{
-            "signal_name": signal_name,
-            "violation_type": violation_type,
-            "state": "ALERT",
-            "value": signal_value,
-            "weight": weight,
-        }]
-        if rng.random() < (0.50 if profile == "high" else 0.22):
-            secondary = rng.choice([item for item in VIOLATION_SPECS if item[0] != signal_name])
-            contributions.append({
-                "signal_name": secondary[0],
-                "violation_type": secondary[1],
-                "state": "SUSPICIOUS",
-                "value": secondary[3],
-                "weight": secondary[2],
-            })
-        snapshot_path = None
-        if rng.random() < config.snapshot_rate:
-            filename = f"evt_{event_id}.png"
-            (snapshot_dir / filename).write_bytes(snapshot_payloads[severity])
-            snapshot_path = f"snapshots/{filename}"
-            snapshots += 1
-        violations.append({
-            "event_id": event_id,
-            "session_id": session_id,
-            "video_time_sec": round(video_time, 3),
-            "timestamp": iso(event_at),
-            "risk_score": risk_score,
-            "severity": severity,
-            "primary_violation": violation_type,
-            "contributing_signals": contributions,
-            "snapshot_path": snapshot_path,
-            "metadata": {"fusion_config_version": "v1", "capture_source": "risk_fusion_engine"},
-        })
-        signals.append(make_signal_row(
-            signal_name, signal_value, event_at.timestamp(), exceeds=True, state="ALERT"
-        ))
-        transitions.extend((
-            {
-                "timestamp": event_at.timestamp(), "scope": "signal", "signal_name": signal_name,
-                "from_state": "NORMAL", "to_state": "ALERT", "exceed_ratio": round(rng.uniform(0.62, 1.0), 2),
-            },
-            {
-                "timestamp": event_at.timestamp(), "scope": "session",
-                "from_state": "SESSION_NORMAL", "to_state": "SESSION_ALERT", "risk_score": risk_score,
-            },
-            {
-                "timestamp": (event_at + timedelta(seconds=4)).timestamp(), "scope": "session",
-                "from_state": "SESSION_ALERT", "to_state": "SESSION_NORMAL", "risk_score": round(rng.uniform(0.0, 2.4), 2),
-            },
-        ))
+    violations: list[dict[str, Any]] = []
+    signals: list[dict[str, Any]] = []
+    snapshots = 0
+    transition_path = session_dir / "state_transitions.jsonl"
+    risk_path = session_dir / "risk_score_timeline.jsonl"
+    transition_logger = StateTransitionLogger(transition_path)
+    risk_logger = RiskScoreLogger(risk_path)
+    fusion = RiskFusionEngine.from_config(
+        ROOT / "config" / "fusion.yaml",
+        session_id=session_id,
+        session_start_ts=started_at.timestamp(),
+        logger=transition_logger,
+        risk_score_logger=risk_logger,
+    )
+    try:
+        for video_time in sorted(tick_times):
+            observed_at = started_at + timedelta(seconds=video_time)
+            active, identity_phase = scenario_conditions(video_time, scenarios)
+            results = make_signal_results(
+                rng, observed_at.timestamp(), active, identity_phase
+            )
+            signals.extend(signal_log_record(result, video_time, observed_at) for result in results)
+            event = fusion.update(results, frame_bgr=None)
+            if event is None:
+                continue
+            event_id = stable_id(config.batch_id, "violation", f"{session_id}:{len(violations)}")
+            snapshot_path = None
+            if rng.random() < config.snapshot_rate:
+                filename = f"evt_{event_id}.png"
+                (snapshot_dir / filename).write_bytes(snapshot_payloads[event.severity])
+                snapshot_path = f"snapshots/{filename}"
+                snapshots += 1
+            event_at = started_at + timedelta(seconds=event.video_time_sec)
+            event = dataclasses.replace(
+                event,
+                event_id=event_id,
+                timestamp=iso(event_at),
+                snapshot_path=snapshot_path,
+                metadata={
+                    "fusion_config_version": "v1",
+                    "capture_source": "risk_fusion_engine",
+                },
+            )
+            violations.append(dataclasses.asdict(event))
+    finally:
+        transition_logger.close()
+        risk_logger.close()
+
+    if len(violations) != len(scenarios):
+        raise RuntimeError(
+            f"Fusion engine sinh sai số event cho {session_id}: "
+            f"{len(violations)} != {len(scenarios)}"
+        )
 
     browser_count = rng.randint(*BROWSER_RANGES[profile]) if client_type == "browser_extension" else 0
     browser_events = make_browser_events(
         rng, config, session_id, started_at, duration_sec, browser_count
     )
-    risk_rows: list[dict[str, Any]] = []
-    for second in range(0, max(1, int(duration_sec)) + 1, 30):
-        nearby = [item["risk_score"] for item in violations if abs(item["video_time_sec"] - second) <= 20]
-        baseline_max = {"normal": 1.2, "low": 2.8, "medium": 4.2, "high": 5.5}[profile]
-        score = max(nearby, default=rng.uniform(0.0, baseline_max))
-        risk_rows.append({
-            "timestamp": (started_at + timedelta(seconds=second)).timestamp(),
-            "video_time_sec": float(second),
-            "risk_score": round(score, 2),
-            "session_state": "SESSION_ALERT" if score >= 5.0 else "SESSION_NORMAL",
-        })
-
     meta_end = ended_at or started_at + timedelta(seconds=duration_sec)
     meta = {
         "session_id": session_id,
@@ -475,15 +672,14 @@ def make_session_evidence(
         "authentication_method": authentication_method,
         "client_type": client_type,
         "extension_version": extension_version,
+        "telemetry_sampling": {"baseline_interval_sec": 30, "event_interval_sec": 1},
     }
     (session_dir / "session_meta.json").write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     jsonl_write(session_dir / "signals.jsonl", signals)
-    jsonl_write(session_dir / "state_transitions.jsonl", transitions)
     jsonl_write(session_dir / "violations.jsonl", violations)
     jsonl_write(session_dir / "browser_events.jsonl", browser_events)
-    jsonl_write(session_dir / "risk_score_timeline.jsonl", risk_rows)
     return meta, violations, browser_count, snapshots
 
 
@@ -904,6 +1100,86 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
+def validate_session_evidence(session_dir: Path) -> dict[str, int]:
+    """Validate generated evidence against the production model contracts."""
+    signals = _read_jsonl(session_dir / "signals.jsonl")
+    transitions = _read_jsonl(session_dir / "state_transitions.jsonl")
+    violations = _read_jsonl(session_dir / "violations.jsonl")
+    risk_rows = _read_jsonl(session_dir / "risk_score_timeline.jsonl")
+
+    signals_by_time: dict[float, list[dict[str, Any]]] = defaultdict(list)
+    for row in signals:
+        if "state" in row:
+            raise RuntimeError(f"SignalResult không được chứa state: {session_dir.name}")
+        signal_name = row.get("signal_name")
+        if signal_name not in SIGNAL_NAMES:
+            raise RuntimeError(f"Signal không hợp lệ trong {session_dir.name}: {signal_name}")
+        missing_metadata = SIGNAL_METADATA_KEYS[signal_name] - set(row.get("metadata", {}))
+        if missing_metadata:
+            raise RuntimeError(
+                f"{signal_name} thiếu metadata {sorted(missing_metadata)} trong {session_dir.name}"
+            )
+        signals_by_time[float(row["video_time_sec"])].append(row)
+    for video_time, rows in signals_by_time.items():
+        names = {row["signal_name"] for row in rows}
+        if len(rows) != len(SIGNAL_NAMES) or names != set(SIGNAL_NAMES):
+            raise RuntimeError(
+                f"Telemetry {session_dir.name}@{video_time} không đủ đúng 7 signal"
+            )
+
+    legal_signal_transitions = {
+        ("NORMAL", "SUSPICIOUS"),
+        ("SUSPICIOUS", "ALERT"),
+        ("SUSPICIOUS", "NORMAL"),
+        ("ALERT", "SUSPICIOUS"),
+    }
+    for row in transitions:
+        if row.get("scope") == "signal" and (
+            row.get("from_state"), row.get("to_state")
+        ) not in legal_signal_transitions:
+            raise RuntimeError(f"Transition signal không hợp lệ trong {session_dir.name}: {row}")
+
+    thresholds = load_session_thresholds(ROOT / "config" / "fusion.yaml")
+    state_value = {"SUSPICIOUS": 1, "ALERT": 2}
+    risk_by_time = {float(row["video_time_sec"]): float(row["risk_score"]) for row in risk_rows}
+    for event in violations:
+        contributions = event.get("contributing_signals", [])
+        if not contributions:
+            raise RuntimeError(f"Violation không có contributing signal: {event.get('event_id')}")
+        computed = sum(
+            float(item["weight"]) * state_value[item["state"]]
+            for item in contributions
+        )
+        if abs(computed - float(event["risk_score"])) > 1e-6:
+            raise RuntimeError(
+                f"Risk score sai ở {event.get('event_id')}: {event['risk_score']} != {computed}"
+            )
+        primary = max(
+            contributions,
+            key=lambda item: float(item["weight"]) * state_value[item["state"]],
+        )["violation_type"]
+        if event.get("primary_violation") != primary:
+            raise RuntimeError(f"Primary violation sai ở {event.get('event_id')}")
+        if computed < thresholds.t_enter:
+            raise RuntimeError(f"Violation dưới T_enter: {event.get('event_id')}")
+        expected_severity = "HIGH" if computed >= thresholds.severity_high_min else "MEDIUM"
+        if event.get("severity") != expected_severity:
+            raise RuntimeError(f"Severity sai ở {event.get('event_id')}")
+        logged_risk = risk_by_time.get(float(event["video_time_sec"]))
+        if logged_risk is None or abs(logged_risk - computed) > 1e-6:
+            raise RuntimeError(f"Risk timeline không khớp event {event.get('event_id')}")
+
+    if len(risk_rows) != len(signals_by_time):
+        raise RuntimeError(f"Risk timeline không phủ đủ telemetry trong {session_dir.name}")
+    return {
+        "signal_rows": len(signals),
+        "signal_ticks": len(signals_by_time),
+        "transitions": len(transitions),
+        "violations": len(violations),
+        "risk_rows": len(risk_rows),
+    }
+
+
 def refresh_output_files(
     config: Config,
     database_backup: Path | None,
@@ -1171,6 +1447,289 @@ def refresh_existing_dataset(config: Config) -> tuple[dict[str, int], Path | Non
     return counts, database_backup, output_backup
 
 
+def _backup_batch_evidence(config: Config, session_ids: Sequence[str], stamp: str) -> Path:
+    archive_path = config.output_root / f"{config.batch_id}-pre-model-evidence-{stamp}.zip"
+    with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for session_id in session_ids:
+            session_dir = config.sessions_root / session_id
+            for path in session_dir.rglob("*"):
+                if path.is_file():
+                    archive.write(path, Path(session_id) / path.relative_to(session_dir))
+    return archive_path
+
+
+def _rewrite_existing_batch_outputs(
+    config: Config,
+    stats: GenerationStats,
+    manifest: dict[str, Any],
+    database_backup: Path | None,
+    output_backup: Path,
+    evidence_backup: Path,
+) -> None:
+    output_dir = config.output_root / config.batch_id
+    csv_write(
+        output_dir / "sessions.csv",
+        ("session_id", "exam_id", "exam_name", "student_name", "candidate_number", "candidate_email", "authentication_method", "client_type", "status", "risk_profile", "risk_score_peak", "integrity_score", "violation_count", "browser_event_count", "started_at", "ended_at", "duration_sec"),
+        stats.sessions,
+    )
+    csv_write(
+        output_dir / "violations.csv",
+        ("exam_id", "session_id", "event_id", "student_name", "profile", "video_time_sec", "violation_type", "severity", "risk_score", "review_status", "timestamp"),
+        stats.violations,
+    )
+    exam_summary, violation_summary, daily_summary = aggregate_rows(stats)
+    csv_write(output_dir / "exam_summary.csv", tuple(exam_summary[0]), exam_summary)
+    csv_write(
+        output_dir / "violation_summary.csv",
+        ("violation_type", "severity", "review_status", "count"),
+        violation_summary,
+    )
+    csv_write(
+        output_dir / "daily_summary.csv",
+        ("date", "sessions", "violations", "browser_events", "high_risk_sessions"),
+        daily_summary,
+    )
+    manifest["model_evidence_regenerated_at"] = iso(utc_now())
+    manifest["model_evidence_profile"] = "risk_fusion_engine_v1"
+    manifest["telemetry_sampling"] = {
+        "baseline_interval_sec": 30,
+        "event_interval_sec": 1,
+        "signals_per_tick": len(SIGNAL_NAMES),
+    }
+    manifest["model_evidence_database_backup"] = str(database_backup) if database_backup else None
+    manifest["model_evidence_output_backup"] = str(output_backup)
+    manifest["model_evidence_archive"] = str(evidence_backup)
+    manifest["counts"].update({
+        "sessions": len(stats.sessions),
+        "violations": len(stats.violations),
+        "browser_events": stats.browser_events,
+        "incident_reviews": stats.incident_reviews,
+        "snapshots": stats.snapshots,
+    })
+    (output_dir / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    (output_dir / "README.md").write_text(
+        f"""# Bộ dữ liệu báo cáo `{config.batch_id}`
+
+- Tổ chức: **{stats.organization_name}**
+- Tài khoản: **{len(stats.users)}** (`accounts.csv`)
+- Kỳ thi: **{len(stats.exams)}**
+- Phiên thi: **{len(stats.sessions)}**
+- Vi phạm CV: **{len(stats.violations)}**
+- Sự kiện trình duyệt: **{stats.browser_events}**
+- Incident review đã lưu: **{stats.incident_reviews}**
+
+Evidence model được sinh bởi `RiskFusionEngine` theo `config/fusion.yaml`.
+Telemetry có đủ 7 signal mỗi tick, lấy mẫu nền mỗi 30 giây và mỗi giây trong
+cửa sổ hành vi. Đây là dữ liệu tổng hợp để kiểm thử dashboard/báo cáo, không
+phải ground truth dùng để đánh giá độ chính xác model trên video thật.
+
+Các file `exam_summary.csv`, `daily_summary.csv` và `violation_summary.csv` có
+thể nhập trực tiếp vào Excel/Google Sheets để dựng bảng và biểu đồ báo cáo.
+`sessions.csv` và `violations.csv` chứa dữ liệu chi tiết.
+""",
+        encoding="utf-8",
+    )
+
+
+def regenerate_existing_model_evidence(
+    config: Config,
+) -> tuple[dict[str, int], Path | None, Path, Path]:
+    """Regenerate an existing batch with production RiskFusionEngine semantics."""
+    output_dir = config.output_root / config.batch_id
+    manifest_path = output_dir / "manifest.json"
+    if not manifest_path.is_file():
+        raise RuntimeError(f"Không tìm thấy batch hiện có: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    session_ids = [str(value) for value in manifest.get("session_ids", [])]
+    if len(session_ids) != config.session_count:
+        raise RuntimeError(
+            f"session-count phải khớp manifest hiện có: {config.session_count} != {len(session_ids)}"
+        )
+    existing_session_rows = {row["session_id"]: row for row in _read_csv(output_dir / "sessions.csv")}
+    existing_violation_rows = {
+        row["event_id"]: row for row in _read_csv(output_dir / "violations.csv")
+    }
+    missing_dirs = [sid for sid in session_ids if not (config.sessions_root / sid).is_dir()]
+    if missing_dirs:
+        raise RuntimeError(f"Batch thiếu {len(missing_dirs)} thư mục session")
+
+    stamp = utc_now().strftime("%Y%m%dT%H%M%SZ")
+    staging_root = config.output_root / f".{config.batch_id}-model-evidence-staging-{stamp}"
+    staging_root.mkdir(parents=True, exist_ok=False)
+    staging_config = dataclasses.replace(config, sessions_root=staging_root)
+    snapshot_payloads = {severity: snapshot_bytes(severity) for severity in ("LOW", "MEDIUM", "HIGH")}
+    stats = GenerationStats(
+        organization_id=str(manifest["organization"]["id"]),
+        organization_name=str(manifest["organization"]["name"]),
+        users=_read_csv(output_dir / "accounts.csv"),
+        exams=_read_csv(output_dir / "exams.csv"),
+        session_ids=session_ids.copy(),
+        report_jobs=int(manifest.get("counts", {}).get("report_jobs", 0)),
+        reports=list(manifest.get("reports", [])),
+    )
+    database_backup: Path | None = None
+    output_backup: Path | None = None
+    evidence_backup: Path | None = None
+
+    Base.metadata.create_all(bind=engine)
+    apply_additive_migrations(engine)
+    try:
+        with SessionLocal() as db:
+            sessions_by_id = {
+                row.id: row
+                for row in db.query(models.ExamSession).filter(
+                    models.ExamSession.id.in_(session_ids)
+                ).all()
+            }
+            if len(sessions_by_id) != len(session_ids):
+                raise RuntimeError("Database không có đủ session của batch")
+
+            for index, session_id in enumerate(session_ids):
+                source_dir = config.sessions_root / session_id
+                source_meta = json.loads(
+                    (source_dir / "session_meta.json").read_text(encoding="utf-8")
+                )
+                old_violations = _read_jsonl(source_dir / "violations.jsonl")
+                old_browser_events = _read_jsonl(source_dir / "browser_events.jsonl")
+                csv_row = existing_session_rows[session_id]
+                exam_session = sessions_by_id[session_id]
+                started_at = exam_session.started_at
+                if started_at.tzinfo is None:
+                    started_at = started_at.replace(tzinfo=UTC)
+                ended_at = exam_session.ended_at
+                if ended_at is not None and ended_at.tzinfo is None:
+                    ended_at = ended_at.replace(tzinfo=UTC)
+                duration_sec = float(source_meta.get("duration_sec") or csv_row["duration_sec"])
+                rng = random.Random(config.seed * 1_000_003 + index + 9_173)
+                _, violations, _, snapshots = make_session_evidence(
+                    staging_config,
+                    rng,
+                    session_id,
+                    exam_session.student_name,
+                    exam_session.candidate_number or "",
+                    exam_session.candidate_email,
+                    exam_session.authentication_method,
+                    exam_session.client_type,
+                    exam_session.extension_version,
+                    csv_row["risk_profile"],
+                    started_at,
+                    ended_at,
+                    duration_sec,
+                    snapshot_payloads,
+                    desired_violation_count=len(old_violations),
+                )
+                jsonl_write(staging_root / session_id / "browser_events.jsonl", old_browser_events)
+                validate_session_evidence(staging_root / session_id)
+                risk_rows = _read_jsonl(staging_root / session_id / "risk_score_timeline.jsonl")
+                peak_risk = max((float(row["risk_score"]) for row in risk_rows), default=0.0)
+                last_risk = risk_rows[-1] if risk_rows else {
+                    "risk_score": 0.0, "session_state": "SESSION_NORMAL"
+                }
+                exam_session.risk_score_current = float(last_risk["risk_score"])
+                exam_session.session_state_current = str(last_risk["session_state"])
+                exam_session.browser_event_count = len(old_browser_events)
+
+                valid_event_ids = {row["event_id"] for row in violations}
+                reviews = db.query(models.IncidentReview).filter_by(
+                    exam_session_id=session_id
+                ).all()
+                for review in reviews:
+                    if review.violation_event_id not in valid_event_ids:
+                        db.delete(review)
+
+                stats.browser_events += len(old_browser_events)
+                stats.snapshots += snapshots
+                stats.sessions.append({
+                    "session_id": session_id,
+                    "exam_id": exam_session.exam_id,
+                    "exam_name": csv_row["exam_name"],
+                    "student_name": exam_session.student_name,
+                    "candidate_number": exam_session.candidate_number,
+                    "candidate_email": exam_session.candidate_email,
+                    "authentication_method": exam_session.authentication_method,
+                    "client_type": exam_session.client_type,
+                    "status": exam_session.status,
+                    "risk_profile": csv_row["risk_profile"],
+                    "risk_score_peak": round(peak_risk, 3),
+                    "integrity_score": float(exam_session.integrity_score_current),
+                    "violation_count": len(violations),
+                    "browser_event_count": len(old_browser_events),
+                    "started_at": iso(started_at),
+                    "ended_at": iso(ended_at) if ended_at else None,
+                    "duration_sec": duration_sec,
+                })
+                for violation in violations:
+                    old_row = existing_violation_rows.get(violation["event_id"], {})
+                    stats.violations.append({
+                        "exam_id": exam_session.exam_id,
+                        "session_id": session_id,
+                        "event_id": violation["event_id"],
+                        "student_name": exam_session.student_name,
+                        "profile": csv_row["risk_profile"],
+                        "video_time_sec": violation["video_time_sec"],
+                        "violation_type": violation["primary_violation"],
+                        "severity": violation["severity"],
+                        "risk_score": violation["risk_score"],
+                        "review_status": old_row.get("review_status", "new"),
+                        "timestamp": violation["timestamp"],
+                    })
+
+            db.flush()
+            stats.incident_reviews = db.query(models.IncidentReview).filter(
+                models.IncidentReview.exam_session_id.in_(session_ids)
+            ).count()
+
+            database_backup = backup_sqlite_database(f"{config.batch_id}-pre-model-evidence")
+            output_backup = config.output_root / f"{config.batch_id}-pre-model-evidence-{stamp}"
+            shutil.copytree(output_dir, output_backup)
+            evidence_backup = _backup_batch_evidence(config, session_ids, stamp)
+
+            evidence_files = (
+                "session_meta.json", "signals.jsonl", "state_transitions.jsonl",
+                "violations.jsonl", "browser_events.jsonl", "risk_score_timeline.jsonl",
+            )
+            for session_id in session_ids:
+                source_dir = staging_root / session_id
+                target_dir = config.sessions_root / session_id
+                for filename in evidence_files:
+                    shutil.copy2(source_dir / filename, target_dir / filename)
+                target_snapshots = target_dir / "snapshots"
+                target_snapshots.mkdir(parents=True, exist_ok=True)
+                for old_snapshot in target_snapshots.glob("evt_*"):
+                    if old_snapshot.is_file():
+                        old_snapshot.unlink()
+                for new_snapshot in (source_dir / "snapshots").glob("evt_*"):
+                    shutil.copy2(new_snapshot, target_snapshots / new_snapshot.name)
+
+            validation = validate_dataset(db, config, stats)
+            _rewrite_existing_batch_outputs(
+                config, stats, manifest, database_backup, output_backup, evidence_backup
+            )
+            for report in manifest.get("reports", []):
+                if report.get("format") in {"html", "pdf"}:
+                    generate_report(
+                        config.sessions_root / str(report["session_id"]),
+                        fusion_config_path=ROOT / "config" / "fusion.yaml",
+                        output_dir=config.sessions_root / str(report["session_id"]),
+                        formats=[str(report["format"])],
+                    )
+            db.commit()
+            counts = {
+                **validation,
+                "violations": len(stats.violations),
+                "browser_events": stats.browser_events,
+                "snapshots": stats.snapshots,
+            }
+    finally:
+        if staging_root.is_dir() and staging_root.resolve().parent == config.output_root.resolve():
+            shutil.rmtree(staging_root)
+
+    assert output_backup is not None and evidence_backup is not None
+    return counts, database_backup, output_backup, evidence_backup
+
+
 def generate_sample_reports(
     db: Any,
     config: Config,
@@ -1390,9 +1949,9 @@ def validate_dataset(db: Any, config: Config, stats: GenerationStats) -> dict[st
         meta = json.loads((session_dir / "session_meta.json").read_text(encoding="utf-8"))
         if meta.get("session_id") != session_id:
             raise RuntimeError(f"Metadata phiên không hợp lệ: {session_id}")
-        parsed_violations += len(_read_jsonl(session_dir / "violations.jsonl"))
+        evidence_counts = validate_session_evidence(session_dir)
+        parsed_violations += evidence_counts["violations"]
         _read_jsonl(session_dir / "browser_events.jsonl")
-        _read_jsonl(session_dir / "risk_score_timeline.jsonl")
     if parsed_violations != len(stats.violations):
         raise RuntimeError(f"Số violation JSONL sai: {parsed_violations} != {len(stats.violations)}")
     return counts
@@ -1515,8 +2074,15 @@ def parse_args() -> Config:
         action="store_true",
         help="Cập nhật tên/email/URL/audit/evidence của batch hiện có mà không đổi ID và số lượng",
     )
+    parser.add_argument(
+        "--regenerate-model-evidence",
+        action="store_true",
+        help="Sinh lại evidence của batch hiện có bằng RiskFusionEngine thực tế",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.refresh_existing and args.regenerate_model_evidence:
+        parser.error("chỉ chọn một trong --refresh-existing và --regenerate-model-evidence")
     if args.exam_count < 3 or args.session_count < 1 or args.days < 1:
         parser.error("exam-count >= 3, session-count >= 1 và days >= 1")
     if args.org_admins < 1 or args.managers < 2 or args.proctors < 1:
@@ -1560,6 +2126,7 @@ def parse_args() -> Config:
         student_domain=args.student_domain.strip().lower(),
         exam_domain=args.exam_domain.strip().lower(),
         refresh_existing=args.refresh_existing,
+        regenerate_model_evidence=args.regenerate_model_evidence,
     )
 
 
@@ -1575,6 +2142,15 @@ def main() -> None:
         if database_backup:
             print(f"Database backup: {database_backup}")
         print(f"Output backup: {output_backup}")
+        return
+    if config.regenerate_model_evidence:
+        counts, database_backup, output_backup, evidence_backup = regenerate_existing_model_evidence(config)
+        print(f"Đã sinh lại model evidence của batch: {config.batch_id}")
+        print(f"Kết quả: {counts}")
+        if database_backup:
+            print(f"Database backup: {database_backup}")
+        print(f"Output backup: {output_backup}")
+        print(f"Evidence backup: {evidence_backup}")
         return
     stats, backup_path, validation = generate(config)
     print(f"Hoàn tất batch: {config.batch_id}")

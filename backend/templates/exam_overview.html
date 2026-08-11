@@ -61,14 +61,15 @@
 <section class="panel">
   <div class="panel-heading"><div><h2>Kỳ thi ưu tiên</h2><p class="muted">Sắp xếp theo cảnh báo, trạng thái trực tiếp và lịch bắt đầu.</p></div></div>
   <div class="table-scroll">
-    <table class="data-table overview-table">
-      <thead><tr><th>Kỳ thi</th><th>Vai trò</th><th>Trạng thái</th><th>Phiên</th><th>Cần chú ý</th><th></th></tr></thead>
+    <table class="data-table overview-table" id="workspace-exams-table">
+      <thead><tr><th data-sort-key="name">Kỳ thi</th><th data-sort-key="role">Vai trò</th><th data-sort-key="status">Trạng thái</th><th data-sort-key="sessions" data-sort-default="descending">Phiên</th><th data-sort-key="attention" data-sort-default="descending">Cần chú ý</th><th></th></tr></thead>
       <tbody id="workspace-exams-body"><tr><td colspan="6">Đang tải...</td></tr></tbody>
     </table>
   </div>
+  <nav id="workspace-exams-pagination" class="pagination hidden" aria-label="Phân trang kỳ thi ưu tiên"></nav>
 </section>
 {% endblock %}
 {% block scripts %}
 <script src="/static/system-common.js"></script>
-<script src="/static/exam-overview.js"></script>
+<script src="/static/exam-overview.js?v=20260812-table-sort-1"></script>
 {% endblock %}

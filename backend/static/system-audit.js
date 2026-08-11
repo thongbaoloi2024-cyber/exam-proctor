@@ -1,4 +1,4 @@
-const auditState = { page: 1, pageSize: 20, organizations: new Map() };
+const auditState = { page: 1, pageSize: 20, organizations: new Map(), sortKey: "created_at", sortDirection: "descending" };
 
 function auditQuery() {
   const params = new URLSearchParams({
@@ -6,6 +6,8 @@ function auditQuery() {
     page_size: String(auditState.pageSize),
     days: document.getElementById("audit-range").value,
     search: document.getElementById("audit-search").value.trim(),
+    sort_by: auditState.sortKey,
+    sort_order: auditState.sortDirection === "descending" ? "desc" : "asc",
   });
   const outcome = document.getElementById("audit-outcome-filter").value;
   const organization = document.getElementById("audit-organization-filter").value;
@@ -139,6 +141,9 @@ async function loadAuditEntries() {
 async function initializeSystemAudit() {
   const user = await SystemUI.initialize("system.security.read");
   if (!user) return;
+  TableUI.bindSort("system-audit-table", auditState, () => {
+    loadAuditEntries().catch((error) => showToast(error.message, "error"));
+  });
   try {
     const organizations = await SystemUI.fetchJson("/system/organizations");
     populateAuditOrganizations(organizations);

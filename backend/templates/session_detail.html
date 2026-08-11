@@ -31,30 +31,33 @@
   </div>
   <div class="table-scroll">
     <table id="unified-timeline-table" class="data-table workspace-table">
-      <thead><tr><th>Thời điểm (s)</th><th>Nguồn</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th></tr></thead>
+      <thead><tr><th data-sort-key="time">Thời điểm (s)</th><th data-sort-key="source">Nguồn</th><th data-sort-key="severity" data-sort-default="descending">Mức độ</th><th data-sort-key="type">Sự kiện</th><th data-sort-key="detail">Chi tiết</th></tr></thead>
       <tbody><tr><td colspan="5" class="muted">Đang tải...</td></tr></tbody>
     </table>
   </div>
+  <nav id="unified-timeline-pagination" class="pagination hidden" aria-label="Phân trang dòng thời gian tổng hợp"></nav>
   <h2>Dòng thời gian vi phạm</h2>
   <div class="table-scroll">
     <table id="violations-table" class="data-table workspace-table">
-      <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Loại vi phạm chính</th><th>Ảnh chụp</th><th>Duyệt sự cố</th></tr></thead>
+      <thead><tr><th data-sort-key="time">Thời điểm (s)</th><th data-sort-key="severity" data-sort-default="descending">Mức độ</th><th data-sort-key="type">Loại vi phạm chính</th><th>Ảnh chụp</th><th>Duyệt sự cố</th></tr></thead>
       <tbody>
         <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
       </tbody>
     </table>
   </div>
+  <nav id="violations-pagination" class="pagination hidden" aria-label="Phân trang vi phạm"></nav>
   <h2>Sự kiện toàn vẹn trình duyệt</h2>
   <div class="table-scroll">
     <table id="browser-events-table" class="data-table workspace-table">
-      <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th><th>Ảnh</th></tr></thead>
+      <thead><tr><th data-sort-key="time">Thời điểm (s)</th><th data-sort-key="severity" data-sort-default="descending">Mức độ</th><th data-sort-key="type">Sự kiện</th><th data-sort-key="detail">Chi tiết</th><th>Ảnh</th></tr></thead>
       <tbody>
         <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
       </tbody>
     </table>
   </div>
+  <nav id="browser-events-pagination" class="pagination hidden" aria-label="Phân trang sự kiện trình duyệt"></nav>
 </section>
 {% endblock %}
 {% block scripts %}
-<script src="/static/session_detail.js"></script>
+<script src="/static/session_detail.js?v=20260812-table-sort-1"></script>
 {% endblock %}
