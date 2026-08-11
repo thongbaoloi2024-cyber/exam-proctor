@@ -185,6 +185,51 @@ class ExamResponse(BaseModel):
     assignment_role: Optional[str] = None
     allowed_actions: list[str] = Field(default_factory=list)
     allowed_transitions: list[str] = Field(default_factory=list)
+    is_pinned: bool = False
+    pinned_at: datetime | None = None
+
+
+class UpdateExamPinRequest(BaseModel):
+    is_pinned: bool
+
+
+class PinnedExamResponse(BaseModel):
+    id: str
+    name: str
+    status: str
+    assignment_role: str
+    pinned_at: datetime
+
+
+class ExamWorkspaceItem(BaseModel):
+    id: str
+    name: str
+    status: str
+    assignment_role: str
+    scheduled_start_at: datetime | None
+    scheduled_end_at: datetime | None
+    join_code_expires_at: datetime
+    active_sessions: int
+    disconnected_sessions: int
+    alert_sessions: int
+    open_reviews: int
+    allowed_actions: list[str]
+    attention: list[str]
+
+
+class ExamWorkspaceOverviewResponse(BaseModel):
+    assigned_exams_total: int
+    managed_exams: int
+    proctored_exams: int
+    open_exams: int
+    scheduled_exams: int
+    active_sessions: int
+    disconnected_sessions: int
+    alert_sessions: int
+    open_reviews: int
+    exam_status: dict[str, int]
+    assignment_roles: dict[str, int]
+    items: list[ExamWorkspaceItem]
 
 
 def _exam_response_for_user(
@@ -206,7 +251,15 @@ def _exam_response_for_user(
         "allowed_transitions": allowed_transitions,
     })
     if active_system_role(db, user) is None:
-        return response
+        assignment = db.query(models.ExamAssignment).filter_by(
+            exam_id=exam.id,
+            user_id=user.id,
+            status="active",
+        ).first()
+        return response.model_copy(update={
+            "is_pinned": bool(assignment and assignment.is_pinned),
+            "pinned_at": assignment.pinned_at if assignment and assignment.is_pinned else None,
+        })
     # Break-glass exposes monitoring/evidence metadata, never operational
     # credentials or the external exam destination.
     return response.model_copy(update={
@@ -506,6 +559,8 @@ def create_exam(
             assignment_role="owner",
             status="active",
             assigned_by_user_id=user.id,
+            is_pinned=True,
+            pinned_at=datetime.now(timezone.utc),
         )
     )
     record_audit(
@@ -529,9 +584,57 @@ def list_exams(
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
 ) -> list[ExamResponse]:
-    return [
+    responses = [
         _exam_response_for_user(db, user, exam)
         for exam in scoped_exam_query(db, user, Permission.EXAM_READ).all()
+    ]
+    responses.sort(key=lambda item: (
+        0 if item.is_pinned else 1,
+        -_as_utc(item.pinned_at).timestamp() if item.pinned_at else 0,
+        -_as_utc(item.updated_at).timestamp(),
+    ))
+    return responses
+
+
+@router.get("/pinned", response_model=list[PinnedExamResponse])
+def list_pinned_exams(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> list[PinnedExamResponse]:
+    if active_system_role(db, user) is not None:
+        return []
+    membership = active_membership(db, user)
+    if membership.role != "exam_manager":
+        return []
+    now = datetime.now(timezone.utc)
+    rows = (
+        db.query(models.ExamAssignment, models.Exam)
+        .join(models.Exam, models.Exam.id == models.ExamAssignment.exam_id)
+        .filter(
+            models.Exam.org_id == membership.org_id,
+            models.ExamAssignment.user_id == user.id,
+            models.ExamAssignment.status == "active",
+            models.ExamAssignment.is_pinned.is_(True),
+            (
+                models.ExamAssignment.expires_at.is_(None)
+                | (models.ExamAssignment.expires_at > now)
+            ),
+        )
+        .order_by(
+            models.ExamAssignment.pinned_at.desc(),
+            models.Exam.updated_at.desc(),
+        )
+        .all()
+    )
+    return [
+        PinnedExamResponse(
+            id=exam.id,
+            name=exam.name,
+            status=exam.status,
+            assignment_role=assignment.assignment_role,
+            pinned_at=assignment.pinned_at or assignment.updated_at,
+        )
+        for assignment, exam in rows
     ]
 
 
@@ -547,6 +650,134 @@ def get_exam_policy_defaults(
     return get_effective_organization_policy(db, organization)
 
 
+@router.get("/workspace/overview", response_model=ExamWorkspaceOverviewResponse)
+def get_exam_workspace_overview(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> ExamWorkspaceOverviewResponse:
+    """Role-aware landing data for an exam manager's active assignments."""
+
+    if active_system_role(db, user) is not None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Khong du quyen")
+    membership = active_membership(db, user)
+    if membership.role != "exam_manager":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Khong du quyen")
+
+    exams = scoped_exam_query(db, user, Permission.EXAM_READ).all()
+    exam_ids = [exam.id for exam in exams]
+    sessions = (
+        db.query(models.ExamSession)
+        .filter(models.ExamSession.exam_id.in_(exam_ids))
+        .all()
+        if exam_ids else []
+    )
+    reviews = (
+        db.query(models.IncidentReview)
+        .join(
+            models.ExamSession,
+            models.ExamSession.id == models.IncidentReview.exam_session_id,
+        )
+        .filter(
+            models.ExamSession.exam_id.in_(exam_ids),
+            models.IncidentReview.status.in_(["new", "in_review"]),
+        )
+        .all()
+        if exam_ids else []
+    )
+
+    sessions_by_exam: dict[str, list[models.ExamSession]] = {exam_id: [] for exam_id in exam_ids}
+    for exam_session in sessions:
+        sessions_by_exam.setdefault(exam_session.exam_id, []).append(exam_session)
+    reviews_by_session: dict[str, int] = {}
+    for review in reviews:
+        reviews_by_session[review.exam_session_id] = reviews_by_session.get(review.exam_session_id, 0) + 1
+
+    now = datetime.now(timezone.utc)
+    workspace_items: list[ExamWorkspaceItem] = []
+    assignment_roles = {"owner": 0, "manager": 0, "proctor": 0}
+    exam_status = {
+        item: sum(exam.status == item for exam in exams)
+        for item in ("draft", "scheduled", "open", "closed", "archived")
+    }
+
+    for exam in exams:
+        response = _exam_response_for_user(db, user, exam)
+        assignment_role = response.assignment_role or "proctor"
+        assignment_roles[assignment_role] = assignment_roles.get(assignment_role, 0) + 1
+        exam_sessions = sessions_by_exam.get(exam.id, [])
+        active_count = sum(
+            exam_session.status in {"pending", "active", "disconnected"}
+            for exam_session in exam_sessions
+        )
+        disconnected_count = sum(
+            exam_session.status == "disconnected" for exam_session in exam_sessions
+        )
+        alert_count = sum(
+            exam_session.session_state_current == "SESSION_ALERT"
+            or exam_session.integrity_status_current == "alert"
+            for exam_session in exam_sessions
+            if exam_session.status in {"pending", "active", "disconnected"}
+        )
+        review_count = sum(reviews_by_session.get(exam_session.id, 0) for exam_session in exam_sessions)
+        attention: list[str] = []
+        if alert_count:
+            attention.append(f"{alert_count} phiên đang cảnh báo")
+        if disconnected_count:
+            attention.append(f"{disconnected_count} phiên mất kết nối")
+        if review_count:
+            attention.append(f"{review_count} incident đang xử lý")
+        if (
+            Permission.EXAM_MANAGE.value in response.allowed_actions
+            and exam.status in {"draft", "scheduled", "open"}
+            and _as_utc(exam.join_code_expires_at) <= now + timedelta(hours=24)
+        ):
+            attention.append("Mã tham gia sắp hết hạn")
+        workspace_items.append(ExamWorkspaceItem(
+            id=exam.id,
+            name=exam.name,
+            status=exam.status,
+            assignment_role=assignment_role,
+            scheduled_start_at=exam.scheduled_start_at,
+            scheduled_end_at=exam.scheduled_end_at,
+            join_code_expires_at=exam.join_code_expires_at,
+            active_sessions=active_count,
+            disconnected_sessions=disconnected_count,
+            alert_sessions=alert_count,
+            open_reviews=review_count,
+            allowed_actions=response.allowed_actions,
+            attention=attention,
+        ))
+
+    status_priority = {"open": 0, "scheduled": 1, "draft": 2, "closed": 3, "archived": 4}
+    workspace_items.sort(key=lambda item: (
+        0 if item.attention else 1,
+        status_priority.get(item.status, 9),
+        _as_utc(item.scheduled_start_at).timestamp() if item.scheduled_start_at else float("inf"),
+        item.name.casefold(),
+    ))
+    live_statuses = {"pending", "active", "disconnected"}
+    return ExamWorkspaceOverviewResponse(
+        assigned_exams_total=len(exams),
+        managed_exams=assignment_roles.get("owner", 0) + assignment_roles.get("manager", 0),
+        proctored_exams=assignment_roles.get("proctor", 0),
+        open_exams=exam_status["open"],
+        scheduled_exams=exam_status["scheduled"],
+        active_sessions=sum(exam_session.status in live_statuses for exam_session in sessions),
+        disconnected_sessions=sum(exam_session.status == "disconnected" for exam_session in sessions),
+        alert_sessions=sum(
+            exam_session.status in live_statuses and (
+                exam_session.session_state_current == "SESSION_ALERT"
+                or exam_session.integrity_status_current == "alert"
+            )
+            for exam_session in sessions
+        ),
+        open_reviews=len(reviews),
+        exam_status=exam_status,
+        assignment_roles=assignment_roles,
+        items=workspace_items[:8],
+    )
+
+
 @router.get("/{exam_id}", response_model=ExamResponse)
 def get_exam(
     exam_id: str,
@@ -554,6 +785,32 @@ def get_exam(
     user: models.User = Depends(get_current_user),
 ) -> ExamResponse:
     exam = authorize_exam(db, user, exam_id, Permission.EXAM_READ)
+    return _exam_response_for_user(db, user, exam)
+
+
+@router.patch("/{exam_id}/pin", response_model=ExamResponse)
+def update_exam_pin(
+    exam_id: str,
+    payload: UpdateExamPinRequest,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> ExamResponse:
+    exam = authorize_exam(db, user, exam_id, Permission.EXAM_READ)
+    if active_system_role(db, user) is not None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Khong du quyen")
+    assignment = db.query(models.ExamAssignment).filter_by(
+        exam_id=exam.id,
+        user_id=user.id,
+        status="active",
+    ).first()
+    if assignment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay phan cong")
+    if assignment.is_pinned != payload.is_pinned:
+        assignment.is_pinned = payload.is_pinned
+        assignment.pinned_at = datetime.now(timezone.utc) if payload.is_pinned else None
+        assignment.updated_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(assignment)
     return _exam_response_for_user(db, user, exam)
 
 

@@ -172,6 +172,132 @@ def test_assignment_api_controls_exam_scope(client):
     assert client.get("/exams", headers=_headers(teacher_token)).json() == []
 
 
+def test_exam_pins_are_default_ordered_and_private_to_each_assignment(client):
+    admin_token, owner_token = _register_exam_owner(client, "pins-admin@test.local")
+    owner_headers = _headers(owner_token)
+    first_exam = client.post(
+        "/exams",
+        json={"name": "First Pinned Exam"},
+        headers=owner_headers,
+    ).json()
+    second_exam = client.post(
+        "/exams",
+        json={"name": "Newest Pinned Exam"},
+        headers=owner_headers,
+    ).json()
+    assert first_exam["is_pinned"] is True
+    assert first_exam["pinned_at"]
+    assert second_exam["is_pinned"] is True
+
+    owner_list = client.get("/exams", headers=owner_headers).json()
+    assert [item["id"] for item in owner_list[:2]] == [second_exam["id"], first_exam["id"]]
+    owner_pins = client.get("/exams/pinned", headers=owner_headers)
+    assert owner_pins.status_code == 200
+    assert [item["id"] for item in owner_pins.json()] == [second_exam["id"], first_exam["id"]]
+
+    teacher_id, teacher_token = _create_teacher(
+        client,
+        admin_token,
+        "pins-teacher@test.local",
+    )
+    assert client.put(
+        f"/exams/{first_exam['id']}/assignments",
+        json={"user_id": teacher_id, "assignment_role": "proctor"},
+        headers=owner_headers,
+    ).status_code == 200
+    teacher_headers = _headers(teacher_token)
+    assert client.get("/exams/pinned", headers=teacher_headers).json() == []
+
+    teacher_pin = client.patch(
+        f"/exams/{first_exam['id']}/pin",
+        json={"is_pinned": True},
+        headers=teacher_headers,
+    )
+    assert teacher_pin.status_code == 200
+    assert teacher_pin.json()["is_pinned"] is True
+    owner_unpin = client.patch(
+        f"/exams/{first_exam['id']}/pin",
+        json={"is_pinned": False},
+        headers=owner_headers,
+    )
+    assert owner_unpin.status_code == 200
+    assert owner_unpin.json()["pinned_at"] is None
+
+    assert [item["id"] for item in client.get(
+        "/exams/pinned",
+        headers=owner_headers,
+    ).json()] == [second_exam["id"]]
+    assert [item["id"] for item in client.get(
+        "/exams/pinned",
+        headers=teacher_headers,
+    ).json()] == [first_exam["id"]]
+
+
+def test_exam_workspace_overview_adapts_to_per_exam_assignment(client):
+    admin_token, owner_token = _register_exam_owner(client, "workspace-admin@test.local")
+    owner_headers = _headers(owner_token)
+    managed_exam = client.post(
+        "/exams",
+        json={"name": "Managed Workspace Exam"},
+        headers=owner_headers,
+    ).json()
+    proctored_exam = client.post(
+        "/exams",
+        json={"name": "Proctored Workspace Exam"},
+        headers=owner_headers,
+    ).json()
+    teacher_id, teacher_token = _create_teacher(
+        client,
+        admin_token,
+        "workspace-teacher@test.local",
+    )
+    assert client.put(
+        f"/exams/{managed_exam['id']}/assignments",
+        json={"user_id": teacher_id, "assignment_role": "manager"},
+        headers=owner_headers,
+    ).status_code == 200
+    assert client.put(
+        f"/exams/{proctored_exam['id']}/assignments",
+        json={"user_id": teacher_id, "assignment_role": "proctor"},
+        headers=owner_headers,
+    ).status_code == 200
+
+    joined = client.post(
+        "/exams/join",
+        json={"join_code": proctored_exam["join_code"], "student_name": "Workspace Student"},
+    ).json()
+    with SessionLocal() as db:
+        exam_session = db.get(models.ExamSession, joined["session_id"])
+        exam_session.status = "disconnected"
+        exam_session.session_state_current = "SESSION_ALERT"
+        exam_session.integrity_status_current = "alert"
+        db.commit()
+
+    overview = client.get(
+        "/exams/workspace/overview",
+        headers=_headers(teacher_token),
+    )
+    assert overview.status_code == 200
+    body = overview.json()
+    assert body["assigned_exams_total"] == 2
+    assert body["managed_exams"] == 1
+    assert body["proctored_exams"] == 1
+    assert body["active_sessions"] == 1
+    assert body["disconnected_sessions"] == 1
+    assert body["alert_sessions"] == 1
+    by_name = {item["name"]: item for item in body["items"]}
+    assert by_name["Managed Workspace Exam"]["assignment_role"] == "manager"
+    assert "exam.manage" in by_name["Managed Workspace Exam"]["allowed_actions"]
+    assert by_name["Proctored Workspace Exam"]["assignment_role"] == "proctor"
+    assert "exam.manage" not in by_name["Proctored Workspace Exam"]["allowed_actions"]
+    assert by_name["Proctored Workspace Exam"]["alert_sessions"] == 1
+
+    assert client.get(
+        "/exams/workspace/overview",
+        headers=_headers(admin_token),
+    ).status_code == 403
+
+
 def test_incident_review_is_separate_from_violation_log(client, tmp_path, monkeypatch):
     monkeypatch.setattr(session_materializer, "SESSIONS_ROOT", tmp_path)
     _, token = _register_exam_owner(client, "review-admin@test.local")

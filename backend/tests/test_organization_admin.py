@@ -68,6 +68,42 @@ def test_org_admin_invites_new_member_and_last_admin_is_protected(client):
     assert protected.status_code == 409
 
 
+def test_organization_overview_aggregates_exam_and_session_status(client):
+    admin_token, _ = _register(
+        client,
+        "overview-admin@test.local",
+        "Overview Organization",
+    )
+    manager_token = create_exam_manager(
+        client,
+        admin_token,
+        email="overview-manager@test.local",
+    )
+    exam = client.post(
+        "/exams",
+        json={"name": "Organization Overview Exam"},
+        headers=_headers(manager_token),
+    ).json()
+    assert client.post(
+        "/exams/join",
+        json={"join_code": exam["join_code"], "student_name": "Overview Student"},
+    ).status_code == 200
+
+    overview = client.get(
+        "/organizations/current/overview",
+        headers=_headers(admin_token),
+    )
+    assert overview.status_code == 200
+    body = overview.json()
+    assert body["members_total"] == 2
+    assert body["members_active"] == 2
+    assert body["exams_total"] == 1
+    assert body["sessions_active"] == 1
+    assert body["exam_status"]["open"] == 1
+    assert body["session_status"]["pending"] == 1
+    assert "quota_usage_percent" in body
+
+
 def test_existing_user_can_join_and_switch_between_organizations(client):
     first_admin_token, first_org_id = _register(
         client,

@@ -837,16 +837,16 @@ def web_google_callback(
         set_auth_flow_cookie(redirect, challenge_token, _AUTH_CHALLENGE_TTL_MINUTES * 60)
         return redirect
 
-    redirect = RedirectResponse("/ui/exams", status_code=status.HTTP_302_FOUND)
+    redirect = RedirectResponse("/ui/exams/overview", status_code=status.HTTP_302_FOUND)
     login_data = _issue_login_session(db, user, redirect)
     redirect.headers["location"] = (
         "/ui/mfa"
         if login_data.mfa_setup_required
         else "/ui/system"
         if login_data.role == "system_admin"
-        else "/ui/organization"
+        else "/ui/organization/overview"
         if login_data.role in {"admin", "org_admin"}
-        else "/ui/exams"
+        else "/ui/exams/overview"
     )
     return redirect
 

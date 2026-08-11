@@ -24,7 +24,7 @@ templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 
 @router.get("/", response_class=RedirectResponse)
 def root() -> RedirectResponse:
-    return RedirectResponse(url="/ui/exams")
+    return RedirectResponse(url="/ui/exams/overview")
 
 
 @router.get("/ui/login", response_class=HTMLResponse)
@@ -73,9 +73,50 @@ def exams_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "exams.html")
 
 
+@router.get("/ui/exams/overview", response_class=HTMLResponse)
+def exam_overview_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "exam_overview.html")
+
+
 @router.get("/ui/organization", response_class=HTMLResponse)
 def organization_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "organization.html")
+    return templates.TemplateResponse(
+        request,
+        "organization.html",
+        {"organization_section": "organization"},
+    )
+
+
+@router.get("/ui/organization/policy", response_class=HTMLResponse)
+def organization_policy_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "organization.html",
+        {"organization_section": "policy"},
+    )
+
+
+@router.get("/ui/organization/break-glass", response_class=HTMLResponse)
+def organization_break_glass_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "organization.html",
+        {"organization_section": "break-glass"},
+    )
+
+
+@router.get("/ui/organization/audit", response_class=HTMLResponse)
+def organization_audit_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "organization.html",
+        {"organization_section": "audit"},
+    )
+
+
+@router.get("/ui/organization/overview", response_class=HTMLResponse)
+def organization_overview_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "organization_overview.html")
 
 
 @router.get("/ui/system", response_class=HTMLResponse)

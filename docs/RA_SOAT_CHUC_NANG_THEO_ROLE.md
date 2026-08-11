@@ -224,36 +224,11 @@ rotate code tự thay đổi lifecycle ngoài ý muốn.
 - Resume/rejoin test sau crash/mất local state và chống duplicate/replay.
 - Dashboard test cho force-end, sorting alert, disconnected state và report job.
 
-## 6. Trạng thái triển khai và xác minh
+## 6. Trạng thái xác minh
 
-Đã triển khai các hạng mục P0 và luồng vận hành P1 chính:
-
-- Permission/capability theo từng kỳ thi; lifecycle action và optimistic locking.
-- Policy resolution `platform → organization → exam`, System Policy UI và kiểm
-  tra không cho hạ security floor.
-- Break-glass có đủ ngữ cảnh, re-auth, reason và audit gắn access grant.
-- Multi-organization switcher; Organization overview/settings/invitation/MFA
-  posture/audit filter.
-- Exam wizard, draft config đầy đủ, readiness checklist, TTL join code và ca
-  phân công có expiry.
-- Dashboard lọc/sắp xếp, telemetry thiết bị/heartbeat, force-end có lý do,
-  incident queue, timeline hợp nhất và report job nền.
-- Candidate safe-resume theo đúng device, preflight từng bước, active-session
-  actions, trạng thái offline queue và mã hỗ trợ.
-- Reset phiên lỗi có audit; evidence attempt trước được lưu tại
-  `.reset_archives` thay vì trộn vào attempt mới.
-- System Operations Center, quản lý security floor, Organization Admin invitation
-  và security events cho login/MFA.
-
-Các mục P2 ở phần 3 là roadmap mở rộng sản phẩm (cohort/template/calendar,
-notification delivery đa kênh, branding/i18n và analytics không định danh),
-không phải tiêu chí độ đúng RBAC/P1 của đợt triển khai này.
-
-Kết quả xác minh ngày 2026-08-11:
-
-- Backend: `89 passed` bằng `.venv\Scripts\python.exe -m pytest backend/tests -q`.
-- Extension: `6 passed` bằng `npm test`.
-- Extension build: tạo thành công `dist/chrome` và `dist/firefox` bằng
-  `npm run build`.
-- `python -m compileall backend`, kiểm tra cú pháp toàn bộ JavaScript đã sửa và
-  `git diff --check`: thành công.
+- Đã rà soát tĩnh code backend, frontend, extension, tài liệu RBAC và các test
+  hiện có.
+- Extension test: 6/6 test pass bằng `npm test`.
+- Chưa chạy được backend test trong môi trường hiện tại vì Python đang dùng chưa
+  cài package `pytest`; đây là giới hạn môi trường, không phải kết luận test fail.
+- Không thay đổi mã nguồn chức năng trong đợt rà soát này.

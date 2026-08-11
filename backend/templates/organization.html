@@ -1,6 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Quản trị tổ chức · Giám Thị Số{% endblock %}
+{% block title %}{{ {'organization': 'Quản trị tổ chức', 'policy': 'Chính sách tổ chức', 'break-glass': 'Yêu cầu break-glass', 'audit': 'Audit tổ chức'}[organization_section] }} · Giám Thị Số{% endblock %}
 {% block content %}
+<div id="organization-page" data-section="{{ organization_section }}" hidden></div>
+{% if organization_section == "organization" %}
 <section class="card organization-panel" data-organization-panel="organization">
   <div id="organization-kpis" class="kpi-row"></div>
   <form id="organization-settings-form" class="inline-settings-form">
@@ -25,8 +27,10 @@
     </table>
   </div>
 </section>
+{% endif %}
 
-<section class="card organization-panel hidden" data-organization-panel="policy">
+{% if organization_section == "policy" %}
+<section class="card organization-panel" data-organization-panel="policy">
   <h2>Chính sách mặc định</h2>
   <p class="muted">Kỳ thi kế thừa các giá trị này. Các yêu cầu đã bật là mức tối thiểu và Exam Manager không thể tắt.</p>
   <form id="policy-form" class="form-grid">
@@ -46,8 +50,10 @@
     <div><button type="submit">Lưu chính sách</button></div>
   </form>
 </section>
+{% endif %}
 
-<section class="card organization-panel hidden" data-organization-panel="break-glass">
+{% if organization_section == "break-glass" %}
+<section class="card organization-panel" data-organization-panel="break-glass">
   <h2>Yêu cầu break-glass</h2>
   <div class="table-scroll">
     <table class="data-table" id="access-grants-table">
@@ -56,8 +62,10 @@
     </table>
   </div>
 </section>
+{% endif %}
 
-<section class="card organization-panel hidden" data-organization-panel="audit">
+{% if organization_section == "audit" %}
+<section class="card organization-panel" data-organization-panel="audit">
   <h2>Audit gần nhất</h2>
   <div class="filter-bar">
     <label class="grow">Tìm kiếm<input id="audit-search" type="search" placeholder="Hành động, tài nguyên, request ID"></label>
@@ -71,7 +79,9 @@
     </table>
   </div>
 </section>
+{% endif %}
 
+{% if organization_section == "organization" %}
 <dialog id="invitation-dialog" class="admin-dialog admin-dialog-small">
   <form id="invitation-form">
     <div class="dialog-header">
@@ -92,7 +102,9 @@
     </div>
   </form>
 </dialog>
+{% endif %}
 
+{% if organization_section == "break-glass" %}
 <dialog id="grant-decision-dialog" class="admin-dialog admin-dialog-small">
   <form id="grant-decision-form">
     <div class="dialog-header">
@@ -113,5 +125,6 @@
     <div class="dialog-actions"><button type="button" class="secondary-button dialog-close">Hủy</button><button type="submit" id="grant-decision-submit">Xác nhận</button></div>
   </form>
 </dialog>
+{% endif %}
 {% endblock %}
-{% block scripts %}<script src="/static/organization.js?v=20260807-2"></script>{% endblock %}
+{% block scripts %}<script src="/static/organization.js?v=20260811-path-routes-1"></script>{% endblock %}

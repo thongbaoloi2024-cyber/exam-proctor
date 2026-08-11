@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Giám Thị Số{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%81%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/style.css?v=20260809-auth-ui-2">
+  <link rel="stylesheet" href="/static/style.css?v=20260811-pinned-exams-1">
 </head>
 <body class="{{ 'no-sidebar' if hide_sidebar else '' }} {% block body_class %}{% endblock %}">
   {% if not hide_sidebar %}
   <aside class="sidebar" id="app-sidebar">
-    <a class="sidebar-brand" id="sidebar-home-link" href="/ui/exams" aria-label="Giám Thị Số - Trang chủ">
+    <a class="sidebar-brand" id="sidebar-home-link" href="/ui/exams/overview" aria-label="Giám Thị Số - Trang chủ">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">
           <path d="M2.75 12C5.04 7.72 8.12 5.58 12 5.58S18.96 7.72 21.25 12C18.96 16.28 15.88 18.42 12 18.42S5.04 16.28 2.75 12Z" stroke="currentColor" stroke-width="1.55"/>
@@ -30,26 +30,44 @@
       <div class="nav-group" id="tenant-nav-group">
         <div class="system-nav-section" id="exam-nav-section">
           <div class="nav-section-label">Vận hành kỳ thi</div>
-          <a href="/ui/exams" class="nav-item" id="nav-exams">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 2.75V6M16 2.75V6M3.5 9h17M8 13h3M8 16h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
-            <span class="nav-copy"><strong>Kỳ thi</strong><small>Danh sách, phân công và phiên thi</small></span>
+          <a href="/ui/exams/overview" class="nav-item" id="nav-exam-overview">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3.5" width="7" height="4" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="10.5" width="7" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg></span>
+            <span class="nav-copy"><strong>Tổng quan</strong><small>Lịch thi, phiên live và cảnh báo</small></span>
           </a>
+          <div class="nav-expandable" id="exam-nav-expandable">
+            <div class="nav-expandable-trigger">
+              <a href="/ui/exams" class="nav-item" id="nav-exams">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 2.75V6M16 2.75V6M3.5 9h17M8 13h3M8 16h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                <span class="nav-copy"><strong>Kỳ thi</strong><small>Danh sách, phân công và phiên thi</small></span>
+              </a>
+              <button type="button" id="pinned-exams-toggle" class="nav-expand-toggle" aria-expanded="false" aria-controls="pinned-exams-list" aria-label="Mở danh sách kỳ thi đã ghim" title="Kỳ thi đã ghim">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6.5 8 3.5 3.5L13.5 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <div id="pinned-exams-list" class="pinned-exams-list hidden" aria-label="Kỳ thi đã ghim">
+              <span class="pinned-exams-empty">Chưa có kỳ thi được ghim</span>
+            </div>
+          </div>
         </div>
         <div class="system-nav-section hidden" id="organization-nav-section">
           <div class="nav-section-label">Quản trị tổ chức</div>
-          <a href="/ui/organization" class="nav-item" id="nav-organization" data-organization-nav="organization">
+          <a href="/ui/organization/overview" class="nav-item" id="nav-organization-overview">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="3.5" width="7" height="4" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="13.5" y="10.5" width="7" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg></span>
+            <span class="nav-copy"><strong>Tổng quan</strong><small>Nhân sự, quota và vận hành</small></span>
+          </a>
+          <a href="/ui/organization" class="nav-item" id="nav-organization">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20V8l8-4 8 4v12M8 20v-7h8v7M2.5 20h19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             <span class="nav-copy"><strong>Tổ chức</strong><small>Thành viên và vai trò</small></span>
           </a>
-          <a href="/ui/organization#policy" class="nav-item" id="nav-organization-policy" data-organization-nav="policy">
+          <a href="/ui/organization/policy" class="nav-item" id="nav-organization-policy">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3.5h10a2 2 0 0 1 2 2v15l-3-2-4 2-4-2-3 2v-15a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
             <span class="nav-copy"><strong>Chính sách</strong><small>Cấu hình mặc định</small></span>
           </a>
-          <a href="/ui/organization#break-glass" class="nav-item" id="nav-organization-break-glass" data-organization-nav="break-glass">
+          <a href="/ui/organization/break-glass" class="nav-item" id="nav-organization-break-glass">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12.5 12H21M18 12v3M15 12v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
             <span class="nav-copy"><strong>Yêu cầu break-glass</strong><small>Phê duyệt quyền đặc biệt</small></span>
           </a>
-          <a href="/ui/organization#audit" class="nav-item" id="nav-organization-audit" data-organization-nav="audit">
+          <a href="/ui/organization/audit" class="nav-item" id="nav-organization-audit">
             <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
             <span class="nav-copy"><strong>Audit gần nhất</strong><small>Hoạt động của tổ chức</small></span>
           </a>
@@ -119,7 +137,7 @@
     </main>
   </div>
   <div id="toast-region" aria-live="polite"></div>
-  <script src="/static/api.js"></script>
+  <script src="/static/api.js?v=20260811-pinned-exams-1"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

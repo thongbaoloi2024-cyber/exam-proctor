@@ -38,13 +38,13 @@ const API = {
     if (sidebarHomeLink) {
       sidebarHomeLink.href = isSystemAdmin
         ? "/ui/system"
-        : isOrganizationAdmin ? "/ui/organization" : "/ui/exams";
+        : isOrganizationAdmin ? "/ui/organization/overview" : "/ui/exams/overview";
       sidebarHomeLink.setAttribute(
         "aria-label",
         `Giám Thị Số - ${
           isSystemAdmin
             ? "Tổng quan hệ thống"
-            : isOrganizationAdmin ? "Quản trị tổ chức" : "Trang kỳ thi"
+            : isOrganizationAdmin ? "Tổng quan tổ chức" : "Tổng quan kỳ thi"
         }`,
       );
     }
@@ -143,6 +143,7 @@ const API = {
       this.setSession(this.currentUser.role, this.currentUser.org_id);
       this.updateAuthUi();
       await this.loadOrganizationSwitcher();
+      await this.loadPinnedExams();
       return this.currentUser;
     } catch (error) {
       this.clearSession();
@@ -180,11 +181,115 @@ const API = {
       if (switched.ok) {
         const body = await switched.json();
         const destination = body.role === "admin" || body.role === "org_admin"
-          ? "/ui/organization"
-          : "/ui/exams";
+          ? "/ui/organization/overview"
+          : "/ui/exams/overview";
         window.location.replace(destination);
       }
     }, { once: true });
+  },
+
+  pinnedExamsStorageKey() {
+    const userId = this.currentUser?.id || this.currentUser?.email || "anonymous";
+    const organizationId = this.currentUser?.active_org_id || this.currentUser?.org_id || "none";
+    return `pinned-exams-expanded:${userId}:${organizationId}`;
+  },
+
+  setPinnedExamsExpanded(expanded, persist = true) {
+    const list = document.getElementById("pinned-exams-list");
+    const toggle = document.getElementById("pinned-exams-toggle");
+    if (!list || !toggle) return;
+    list.classList.toggle("hidden", !expanded);
+    toggle.classList.toggle("expanded", expanded);
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.setAttribute(
+      "aria-label",
+      expanded ? "Thu gọn danh sách kỳ thi đã ghim" : "Mở danh sách kỳ thi đã ghim",
+    );
+    if (persist) sessionStorage.setItem(this.pinnedExamsStorageKey(), String(expanded));
+  },
+
+  bindPinnedExamsToggle() {
+    const toggle = document.getElementById("pinned-exams-toggle");
+    if (!toggle || toggle.dataset.bound === "true") return;
+    toggle.dataset.bound = "true";
+    toggle.addEventListener("click", () => {
+      this.setPinnedExamsExpanded(toggle.getAttribute("aria-expanded") !== "true");
+    });
+  },
+
+  pinnedExamItem(exam) {
+    const item = document.createElement("div");
+    item.className = "pinned-exam-item";
+    const link = document.createElement("a");
+    link.href = `/ui/exams/${encodeURIComponent(exam.id)}/dashboard`;
+    link.className = "pinned-exam-link";
+    link.title = exam.name;
+    const marker = document.createElement("span");
+    marker.className = `pinned-exam-status status-${exam.status}`;
+    marker.setAttribute("aria-hidden", "true");
+    const name = document.createElement("span");
+    name.textContent = exam.name;
+    link.append(marker, name);
+    const unpin = document.createElement("button");
+    unpin.type = "button";
+    unpin.className = "pinned-exam-unpin";
+    unpin.title = `Bỏ ghim ${exam.name}`;
+    unpin.setAttribute("aria-label", `Bỏ ghim ${exam.name}`);
+    unpin.textContent = "📌";
+    unpin.addEventListener("click", async () => {
+      unpin.disabled = true;
+      try {
+        await this.setExamPinned(exam.id, false);
+        showToast(`Đã bỏ ghim “${exam.name}”.`, "success");
+      } catch (error) {
+        unpin.disabled = false;
+        showToast(error.message || "Không bỏ ghim được kỳ thi.", "error");
+      }
+    });
+    item.append(link, unpin);
+    return item;
+  },
+
+  async loadPinnedExams({ forceOpen = false } = {}) {
+    const list = document.getElementById("pinned-exams-list");
+    if (!list || !this.currentUser) return [];
+    this.bindPinnedExamsToggle();
+    const canUsePinnedExams = !this.currentUser.is_system_admin
+      && (this.getRole() === "exam_manager" || this.getRole() === "proctor")
+      && (this.hasCapability("exam.read") || this.hasCapability("exam.create"));
+    if (!canUsePinnedExams) {
+      list.replaceChildren();
+      this.setPinnedExamsExpanded(false, false);
+      return [];
+    }
+    const response = await this.request("/exams/pinned");
+    if (!response.ok) return [];
+    const exams = await response.json();
+    if (exams.length) {
+      list.replaceChildren(...exams.map((exam) => this.pinnedExamItem(exam)));
+    } else {
+      const empty = document.createElement("span");
+      empty.className = "pinned-exams-empty";
+      empty.textContent = "Chưa có kỳ thi được ghim";
+      list.replaceChildren(empty);
+    }
+    const stored = sessionStorage.getItem(this.pinnedExamsStorageKey());
+    const expanded = forceOpen || (stored == null ? exams.length > 0 : stored === "true");
+    this.setPinnedExamsExpanded(expanded, forceOpen || stored == null);
+    this.updateActiveNavigation();
+    return exams;
+  },
+
+  async setExamPinned(examId, isPinned) {
+    const response = await this.request(`/exams/${encodeURIComponent(examId)}/pin`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_pinned: isPinned }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || "Không cập nhật được ghim kỳ thi.");
+    await this.loadPinnedExams({ forceOpen: isPinned });
+    document.dispatchEvent(new CustomEvent("exam-pin-changed", { detail: body }));
+    return body;
   },
 
   async request(path, options = {}) {

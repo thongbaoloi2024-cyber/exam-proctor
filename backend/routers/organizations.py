@@ -74,6 +74,9 @@ class OrganizationOverviewResponse(BaseModel):
     sessions_active: int
     concurrent_session_quota: int | None
     retention_days: int
+    exam_status: dict[str, int]
+    session_status: dict[str, int]
+    quota_usage_percent: float | None
 
 
 class UpdateMemberRequest(BaseModel):
@@ -263,19 +266,37 @@ def get_organization_overview(
     organization = _current_org(db, user)
     memberships = db.query(models.OrganizationMembership).filter_by(org_id=organization.id)
     member_rows = memberships.all()
-    member_ids = [item.user_id for item in member_rows]
+    active_member_ids = [item.user_id for item in member_rows if item.status == "active"]
     mfa_count = (
-        db.query(models.User).filter(models.User.id.in_(member_ids), models.User.mfa_enabled.is_(True)).count()
-        if member_ids else 0
+        db.query(models.User).filter(
+            models.User.id.in_(active_member_ids),
+            models.User.mfa_enabled.is_(True),
+        ).count()
+        if active_member_ids else 0
     )
-    active_sessions = (
+    exams = db.query(models.Exam).filter_by(org_id=organization.id).all()
+    exam_ids = [exam.id for exam in exams]
+    sessions = (
         db.query(models.ExamSession)
-        .join(models.Exam, models.Exam.id == models.ExamSession.exam_id)
-        .filter(
-            models.Exam.org_id == organization.id,
-            models.ExamSession.status.in_(["pending", "active", "disconnected"]),
-        )
-        .count()
+        .filter(models.ExamSession.exam_id.in_(exam_ids))
+        .all()
+        if exam_ids else []
+    )
+    active_sessions = sum(
+        exam_session.status in {"pending", "active", "disconnected"}
+        for exam_session in sessions
+    )
+    exam_status = {
+        item: sum(exam.status == item for exam in exams)
+        for item in ("draft", "scheduled", "open", "closed", "archived")
+    }
+    session_status = {
+        item: sum(exam_session.status == item for exam_session in sessions)
+        for item in ("pending", "active", "disconnected", "ended")
+    }
+    quota_usage_percent = (
+        round(active_sessions / organization.quota_concurrent_sessions * 100, 1)
+        if organization.quota_concurrent_sessions else None
     )
     return OrganizationOverviewResponse(
         members_total=len(member_rows),
@@ -283,10 +304,13 @@ def get_organization_overview(
         members_suspended=sum(item.status in {"suspended", "revoked"} for item in member_rows),
         members_with_mfa=mfa_count,
         pending_invitations=db.query(models.Invitation).filter_by(org_id=organization.id, status="pending").count(),
-        exams_total=db.query(models.Exam).filter_by(org_id=organization.id).count(),
+        exams_total=len(exams),
         sessions_active=active_sessions,
         concurrent_session_quota=organization.quota_concurrent_sessions,
         retention_days=organization.retention_days,
+        exam_status=exam_status,
+        session_status=session_status,
+        quota_usage_percent=quota_usage_percent,
     )
 
 

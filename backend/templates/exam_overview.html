@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Tổng quan kỳ thi · Giám Thị Số{% endblock %}
+{% block body_class %}tenant-overview-page{% endblock %}
+{% block container_class %}system-container{% endblock %}
+{% block content %}
+<header class="system-page-header">
+  <div>
+    <div class="breadcrumb"><span>Exam Workspace</span><span aria-hidden="true">/</span><strong>Tổng quan</strong></div>
+    <h1>Tổng quan kỳ thi</h1>
+    <p class="muted" id="workspace-role-summary">Theo dõi các kỳ thi và phiên thi được phân công.</p>
+  </div>
+  <a class="primary-action button-link" href="/ui/exams">Mở danh sách kỳ thi <span aria-hidden="true">→</span></a>
+</header>
+
+<section class="metric-grid metric-grid-five" aria-label="Chỉ số tổng quan kỳ thi">
+  <article class="metric-card">
+    <div class="metric-card-top"><span class="metric-icon metric-blue">▦</span><span class="metric-label">Kỳ thi được phân công</span></div>
+    <strong class="metric-value" id="workspace-kpi-exams">–</strong>
+    <span class="metric-caption" id="workspace-caption-exams">Đang tải dữ liệu</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-card-top"><span class="metric-icon metric-violet">◷</span><span class="metric-label">Đang mở / sắp diễn ra</span></div>
+    <strong class="metric-value" id="workspace-kpi-ready">–</strong>
+    <span class="metric-caption">Cần theo dõi trong workspace</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-card-top"><span class="metric-icon metric-green">●</span><span class="metric-label">Phiên đang hoạt động</span></div>
+    <strong class="metric-value" id="workspace-kpi-sessions">–</strong>
+    <span class="metric-caption">Gồm chờ kết nối và mất kết nối</span>
+  </article>
+  <article class="metric-card metric-card-warning">
+    <div class="metric-card-top"><span class="metric-icon metric-amber">!</span><span class="metric-label">Phiên cảnh báo</span></div>
+    <strong class="metric-value" id="workspace-kpi-alerts">–</strong>
+    <span class="metric-caption" id="workspace-caption-alerts">Ưu tiên xử lý</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-card-top"><span class="metric-icon metric-cyan">✓</span><span class="metric-label">Incident đang review</span></div>
+    <strong class="metric-value" id="workspace-kpi-reviews">–</strong>
+    <span class="metric-caption">Trạng thái new hoặc in-review</span>
+  </article>
+</section>
+
+<section class="chart-grid">
+  <article class="panel chart-panel">
+    <div class="panel-heading"><div><h2>Trạng thái kỳ thi</h2><p class="muted">Chỉ gồm các kỳ thi bạn được phân công</p></div></div>
+    <div id="workspace-status-chart" class="chart-canvas" role="img" aria-label="Biểu đồ trạng thái kỳ thi"></div>
+  </article>
+  <article class="panel chart-panel">
+    <div class="panel-heading"><div><h2>Vai trò trong kỳ thi</h2><p class="muted">Một tài khoản có thể giữ vai trò khác nhau theo từng kỳ thi</p></div></div>
+    <div id="workspace-role-chart" class="chart-canvas chart-donut" role="img" aria-label="Biểu đồ vai trò phân công"></div>
+  </article>
+</section>
+
+<section class="panel attention-panel">
+  <div class="panel-heading">
+    <div><h2>Cần chú ý</h2><p class="muted">Cảnh báo được ưu tiên trên toàn bộ assignment của bạn</p></div>
+    <a href="/ui/exams" class="text-link">Tất cả kỳ thi <span aria-hidden="true">→</span></a>
+  </div>
+  <div id="workspace-attention-list" class="attention-list"><div class="empty-state compact">Đang tổng hợp cảnh báo...</div></div>
+</section>
+
+<section class="panel">
+  <div class="panel-heading"><div><h2>Kỳ thi ưu tiên</h2><p class="muted">Sắp xếp theo cảnh báo, trạng thái live và lịch bắt đầu.</p></div></div>
+  <div class="table-scroll">
+    <table class="data-table overview-table">
+      <thead><tr><th>Kỳ thi</th><th>Vai trò</th><th>Trạng thái</th><th>Phiên</th><th>Cần chú ý</th><th></th></tr></thead>
+      <tbody id="workspace-exams-body"><tr><td colspan="6">Đang tải...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/system-common.js"></script>
+<script src="/static/exam-overview.js"></script>
+{% endblock %}

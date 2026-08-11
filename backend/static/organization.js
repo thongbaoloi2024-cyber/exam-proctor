@@ -17,42 +17,23 @@ function orgSelect(options, selectedValue) {
   return select;
 }
 
-const ORGANIZATION_SECTIONS = new Set(["organization", "policy", "break-glass", "audit"]);
 let selectedGrantDecision = null;
-let currentOrganization = null;
+const LEGACY_ORGANIZATION_HASH_PATHS = {
+  policy: "/ui/organization/policy",
+  "break-glass": "/ui/organization/break-glass",
+  audit: "/ui/organization/audit",
+};
+
+function redirectLegacyOrganizationHash() {
+  if (window.location.pathname !== "/ui/organization") return false;
+  const legacyPath = LEGACY_ORGANIZATION_HASH_PATHS[window.location.hash.slice(1)];
+  if (!legacyPath) return false;
+  window.location.replace(`${legacyPath}${window.location.search}`);
+  return true;
+}
 
 function getOrganizationSection() {
-  const requestedSection = window.location.hash.slice(1);
-  return ORGANIZATION_SECTIONS.has(requestedSection) ? requestedSection : "organization";
-}
-
-function updateOrganizationSection() {
-  const currentSection = getOrganizationSection();
-  document.querySelectorAll("[data-organization-panel]").forEach((panel) => {
-    panel.classList.toggle("hidden", panel.dataset.organizationPanel !== currentSection);
-  });
-  document.querySelectorAll("#organization-nav-section .nav-item").forEach((item) => {
-    const section = item.dataset.organizationNav || "organization";
-    const isActive = section === currentSection;
-    item.classList.toggle("active", isActive);
-    if (isActive) item.setAttribute("aria-current", "page");
-    else item.removeAttribute("aria-current");
-  });
-}
-
-function bindOrganizationNavigation() {
-  document.querySelectorAll("#organization-nav-section [data-organization-nav]").forEach((item) => {
-    item.addEventListener("click", (event) => {
-      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      event.preventDefault();
-      const section = item.dataset.organizationNav;
-      const nextHash = section === "organization" ? "" : `#${section}`;
-      const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
-      const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      if (nextUrl !== currentUrl) window.history.pushState(null, "", nextUrl);
-      updateOrganizationSection();
-    });
-  });
+  return document.getElementById("organization-page")?.dataset.section || "organization";
 }
 
 function bindInvitationDialog() {
@@ -86,7 +67,6 @@ async function loadOrganization() {
   const response = await API.request("/organizations/current");
   if (!response.ok) throw new Error("Không tải được tổ chức.");
   const organization = await response.json();
-  currentOrganization = organization;
   document.getElementById("organization-name").value = organization.name;
   const title = document.getElementById("sidebar-brand-title");
   const meta = document.getElementById("sidebar-brand-context");
@@ -132,7 +112,7 @@ async function updateMember(userId, role, status) {
     return;
   }
   showToast("Đã cập nhật thành viên và thu hồi phiên cũ.", "success");
-  await Promise.all([loadMembers(), loadOrganizationAudit()]);
+  await Promise.all([loadMembers(), loadOrganizationOverview()]);
 }
 
 async function loadMembers() {
@@ -190,7 +170,7 @@ async function revokeInvitation(id) {
   if (!confirm("Thu hồi lời mời này?")) return;
   const response = await API.request(`/organizations/current/invitations/${encodeURIComponent(id)}`, { method: "DELETE" });
   if (!response.ok) return showToast("Không thu hồi được lời mời.", "error");
-  showToast("Đã thu hồi lời mời.", "success"); await Promise.all([loadInvitations(), loadOrganizationOverview(), loadOrganizationAudit()]);
+  showToast("Đã thu hồi lời mời.", "success"); await Promise.all([loadInvitations(), loadOrganizationOverview()]);
 }
 
 async function loadPolicy() {
@@ -250,7 +230,7 @@ async function grantAction(event) {
   }
   document.getElementById("grant-decision-dialog").close();
   showToast(action === "approve" ? "Đã phê duyệt quyền chỉ đọc." : "Đã thu hồi quyền break-glass.", "success");
-  await Promise.all([loadAccessGrants(), loadOrganizationAudit()]);
+  await loadAccessGrants();
 }
 
 async function loadAccessGrants() {
@@ -305,75 +285,114 @@ async function loadOrganizationAudit() {
   document.querySelector("#organization-audit-table tbody").replaceChildren(...rows);
 }
 
-document.getElementById("invitation-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const response = await API.request("/organizations/current/invitations", {
-    method: "POST",
-    body: JSON.stringify({
-      email: document.getElementById("invitation-email").value,
-      role: document.getElementById("invitation-role").value,
-    }),
+function bindOrganizationPage() {
+  bindInvitationDialog();
+  document.getElementById("invitation-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const response = await API.request("/organizations/current/invitations", {
+      method: "POST",
+      body: JSON.stringify({
+        email: document.getElementById("invitation-email").value,
+        role: document.getElementById("invitation-role").value,
+      }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(body.detail || "Không tạo được lời mời.", "error");
+      return;
+    }
+    const result = document.getElementById("invitation-result");
+    result.classList.remove("hidden");
+    result.textContent = `Token lời mời (chỉ hiển thị lần này): ${body.invitation_token}`;
+    document.getElementById("invitation-email").value = "";
+    await Promise.all([loadInvitations(), loadOrganizationOverview()]);
   });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    showToast(body.detail || "Không tạo được lời mời.", "error");
-    return;
-  }
-  const result = document.getElementById("invitation-result");
-  result.classList.remove("hidden");
-  result.textContent = `Token lời mời (chỉ hiển thị lần này): ${body.invitation_token}`;
-  document.getElementById("invitation-email").value = "";
-  await Promise.all([loadInvitations(), loadOrganizationOverview(), loadOrganizationAudit()]);
-});
-
-document.getElementById("organization-settings-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const response = await API.request("/organizations/current", { method: "PATCH", body: JSON.stringify({ name: document.getElementById("organization-name").value }) });
-  if (!response.ok) return showToast("Không lưu được cài đặt tổ chức.", "error");
-  showToast("Đã cập nhật tổ chức.", "success"); await Promise.all([loadOrganization(), loadOrganizationAudit()]);
-});
-
-document.getElementById("policy-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const response = await API.request("/organizations/current/policy", {
-    method: "PUT",
-    body: JSON.stringify({
-      default_candidate_auth_mode: document.getElementById("policy-auth-mode").value,
-      min_extension_version: document.getElementById("policy-extension-version").value,
-      require_extension: document.getElementById("policy-require-extension").checked,
-      require_fullscreen: document.getElementById("policy-require-fullscreen").checked,
-      require_camera: document.getElementById("policy-require-camera").checked,
-      require_microphone: document.getElementById("policy-require-microphone").checked,
-      require_screen_share: document.getElementById("policy-require-screen-share").checked,
-      block_clipboard: document.getElementById("policy-block-clipboard").checked,
-      max_focus_loss_seconds: Number(document.getElementById("policy-focus").value),
-      retention_days: Number(document.getElementById("policy-retention").value),
-    }),
+  document.getElementById("organization-settings-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const response = await API.request("/organizations/current", {
+      method: "PATCH",
+      body: JSON.stringify({ name: document.getElementById("organization-name").value }),
+    });
+    if (!response.ok) return showToast("Không lưu được cài đặt tổ chức.", "error");
+    showToast("Đã cập nhật tổ chức.", "success");
+    await loadOrganization();
   });
-  showToast(response.ok ? "Đã lưu chính sách." : "Không lưu được chính sách.", response.ok ? "success" : "error");
-  if (response.ok) await loadOrganizationAudit();
-});
+}
 
-document.getElementById("policy-auth-mode").addEventListener("change", syncOrganizationPolicyConstraints);
-document.getElementById("grant-decision-form").addEventListener("submit", grantAction);
-document.getElementById("audit-filter-button").addEventListener("click", () => loadOrganizationAudit());
-document.getElementById("audit-search").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); loadOrganizationAudit(); } });
+function bindPolicyPage() {
+  document.getElementById("policy-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const response = await API.request("/organizations/current/policy", {
+      method: "PUT",
+      body: JSON.stringify({
+        default_candidate_auth_mode: document.getElementById("policy-auth-mode").value,
+        min_extension_version: document.getElementById("policy-extension-version").value,
+        require_extension: document.getElementById("policy-require-extension").checked,
+        require_fullscreen: document.getElementById("policy-require-fullscreen").checked,
+        require_camera: document.getElementById("policy-require-camera").checked,
+        require_microphone: document.getElementById("policy-require-microphone").checked,
+        require_screen_share: document.getElementById("policy-require-screen-share").checked,
+        block_clipboard: document.getElementById("policy-block-clipboard").checked,
+        max_focus_loss_seconds: Number(document.getElementById("policy-focus").value),
+        retention_days: Number(document.getElementById("policy-retention").value),
+      }),
+    });
+    showToast(
+      response.ok ? "Đã lưu chính sách." : "Không lưu được chính sách.",
+      response.ok ? "success" : "error",
+    );
+  });
+  document.getElementById("policy-auth-mode").addEventListener(
+    "change",
+    syncOrganizationPolicyConstraints,
+  );
+}
+
+function bindBreakGlassPage() {
+  bindGrantDecisionDialog();
+  document.getElementById("grant-decision-form").addEventListener("submit", grantAction);
+}
+
+function bindAuditPage() {
+  document.getElementById("audit-filter-button").addEventListener(
+    "click",
+    () => loadOrganizationAudit(),
+  );
+  document.getElementById("audit-search").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      loadOrganizationAudit();
+    }
+  });
+}
 
 async function initializeOrganization() {
-  bindOrganizationNavigation();
-  updateOrganizationSection();
+  if (redirectLegacyOrganizationHash()) return;
+  const section = getOrganizationSection();
   const user = await API.requireAuth();
   if (!user) return;
   if (!API.hasCapability("org.members.read")) {
-    window.location.replace("/ui/exams");
+    window.location.replace("/ui/exams/overview");
     return;
   }
-  updateOrganizationSection();
-  bindInvitationDialog();
-  bindGrantDecisionDialog();
-  await Promise.all([loadOrganization(), loadOrganizationOverview(), loadMembers(), loadInvitations(), loadPolicy(), loadAccessGrants(), loadOrganizationAudit()]);
+  if (section === "organization") {
+    bindOrganizationPage();
+    await Promise.all([
+      loadOrganization(),
+      loadOrganizationOverview(),
+      loadMembers(),
+      loadInvitations(),
+    ]);
+  } else if (section === "policy") {
+    bindPolicyPage();
+    await loadPolicy();
+  } else if (section === "break-glass") {
+    bindBreakGlassPage();
+    await loadAccessGrants();
+  } else if (section === "audit") {
+    bindAuditPage();
+    await loadOrganizationAudit();
+  }
 }
 
-window.addEventListener("hashchange", updateOrganizationSection);
-window.addEventListener("popstate", updateOrganizationSection);
 initializeOrganization().catch((error) => showToast(error.message, "error"));

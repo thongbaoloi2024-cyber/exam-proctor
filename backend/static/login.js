@@ -34,8 +34,8 @@ document.getElementById("login-form").addEventListener("submit", async (event) =
       : body.role === "system_admin"
         ? "/ui/system"
         : body.role === "admin" || body.role === "org_admin"
-          ? "/ui/organization"
-          : "/ui/exams";
+          ? "/ui/organization/overview"
+          : "/ui/exams/overview";
   } catch (_error) {
     errorEl.textContent = "Không kết nối được máy chủ. Vui lòng thử lại.";
     errorEl.hidden = false;

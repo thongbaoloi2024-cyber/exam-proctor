@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Tổng quan tổ chức · Giám Thị Số{% endblock %}
+{% block body_class %}tenant-overview-page{% endblock %}
+{% block container_class %}system-container{% endblock %}
+{% block content %}
+<header class="system-page-header">
+  <div>
+    <div class="breadcrumb"><span>Organization Admin</span><span aria-hidden="true">/</span><strong>Tổng quan</strong></div>
+    <h1 id="organization-overview-name">Tổng quan tổ chức</h1>
+    <p class="muted">Theo dõi nhân sự, mức sử dụng và trạng thái vận hành trong tổ chức.</p>
+  </div>
+  <a class="primary-action button-link" href="/ui/organization">Quản lý tổ chức <span aria-hidden="true">→</span></a>
+</header>
+
+<section class="metric-grid metric-grid-five" aria-label="Chỉ số tổng quan tổ chức">
+  <article class="metric-card">
+    <div class="metric-card-top"><span class="metric-icon metric-blue">◎</span><span class="metric-label">Thành viên hoạt động</span></div>
+    <strong class="metric-value" id="org-kpi-members">–</strong>
+    <span class="metric-caption" id="org-caption-members">Đang tải dữ liệu</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-card-top"><span class="metric-icon metric-violet">◆</span><span class="metric-label">Độ phủ MFA</span></div>
+    <strong class="metric-value" id="org-kpi-mfa">–</strong>
+    <span class="metric-caption" id="org-caption-mfa">Đang tải dữ liệu</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-card-top"><span class="metric-icon metric-cyan">▦</span><span class="metric-label">Kỳ thi</span></div>
+    <strong class="metric-value" id="org-kpi-exams">–</strong>
+    <span class="metric-caption" id="org-caption-exams">Tất cả trạng thái</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-card-top"><span class="metric-icon metric-green">●</span><span class="metric-label">Phiên đang hoạt động</span></div>
+    <strong class="metric-value" id="org-kpi-sessions">–</strong>
+    <span class="metric-caption" id="org-caption-sessions">Theo quota đồng thời</span>
+  </article>
+  <article class="metric-card metric-card-warning">
+    <div class="metric-card-top"><span class="metric-icon metric-amber">!</span><span class="metric-label">Lời mời chờ xử lý</span></div>
+    <strong class="metric-value" id="org-kpi-invitations">–</strong>
+    <a class="metric-link" href="/ui/organization">Xem lời mời <span aria-hidden="true">→</span></a>
+  </article>
+</section>
+
+<section class="chart-grid">
+  <article class="panel chart-panel">
+    <div class="panel-heading"><div><h2>Kỳ thi theo trạng thái</h2><p class="muted">Phân bổ lifecycle trong tổ chức</p></div></div>
+    <div id="organization-exam-chart" class="chart-canvas" role="img" aria-label="Biểu đồ kỳ thi theo trạng thái"></div>
+  </article>
+  <article class="panel chart-panel">
+    <div class="panel-heading"><div><h2>Trạng thái phiên thi</h2><p class="muted">Tổng hợp kết nối của các phiên</p></div></div>
+    <div id="organization-session-chart" class="chart-canvas chart-donut" role="img" aria-label="Biểu đồ trạng thái phiên thi"></div>
+  </article>
+</section>
+
+<section class="panel attention-panel">
+  <div class="panel-heading">
+    <div><h2>Cần chú ý</h2><p class="muted">Các trạng thái Organization Admin nên xử lý</p></div>
+    <a href="/ui/organization/audit" class="text-link">Xem audit <span aria-hidden="true">→</span></a>
+  </div>
+  <div id="organization-attention-list" class="attention-list"><div class="empty-state compact">Đang tổng hợp cảnh báo...</div></div>
+</section>
+
+<section class="panel">
+  <div class="panel-heading"><div><h2>Thao tác nhanh</h2><p class="muted">Đi đến các khu vực quản trị thường dùng.</p></div></div>
+  <div class="quick-action-grid">
+    <a href="/ui/organization" class="quick-action-card"><strong>Thành viên & lời mời</strong><small>Quản lý vai trò và trạng thái tài khoản</small><span>→</span></a>
+    <a href="/ui/organization/policy" class="quick-action-card"><strong>Chính sách tổ chức</strong><small>Cấu hình mặc định và security floor</small><span>→</span></a>
+    <a href="/ui/organization/break-glass" class="quick-action-card"><strong>Break-glass</strong><small>Kiểm tra yêu cầu quyền đặc biệt</small><span>→</span></a>
+    <a href="/ui/organization/audit" class="quick-action-card"><strong>Nhật ký audit</strong><small>Truy vết thay đổi trong tổ chức</small><span>→</span></a>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/system-common.js"></script>
+<script src="/static/organization-overview.js"></script>
+{% endblock %}

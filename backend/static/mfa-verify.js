@@ -6,8 +6,8 @@ const mfaAttempts = document.getElementById("mfa-attempts");
 function destinationFor(body) {
   if (body.mfa_setup_required) return "/ui/mfa";
   if (body.role === "system_admin") return "/ui/system";
-  if (body.role === "admin" || body.role === "org_admin") return "/ui/organization";
-  return "/ui/exams";
+  if (body.role === "admin" || body.role === "org_admin") return "/ui/organization/overview";
+  return "/ui/exams/overview";
 }
 
 function showRemaining(attempts) {

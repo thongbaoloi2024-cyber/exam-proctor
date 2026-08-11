@@ -156,14 +156,15 @@ def _backfill_rbac_foundation(engine: Engine) -> None:
                     text(
                         "INSERT INTO exam_assignments "
                         "(id, exam_id, user_id, assignment_role, status, "
-                        "assigned_by_user_id, created_at, updated_at) "
+                        "assigned_by_user_id, is_pinned, created_at, updated_at) "
                         "VALUES (:id, :exam_id, :user_id, 'owner', 'active', "
-                        ":user_id, :now, :now)"
+                        ":user_id, :is_pinned, :now, :now)"
                     ),
                     {
                         "id": str(uuid.uuid4()),
                         "exam_id": exam["id"],
                         "user_id": exam["created_by_user_id"],
+                        "is_pinned": False,
                         "now": now,
                     },
                 )
@@ -186,15 +187,16 @@ def _backfill_rbac_foundation(engine: Engine) -> None:
                         text(
                             "INSERT INTO exam_assignments "
                             "(id, exam_id, user_id, assignment_role, status, "
-                            "assigned_by_user_id, created_at, updated_at) "
+                            "assigned_by_user_id, is_pinned, created_at, updated_at) "
                             "VALUES (:id, :exam_id, :user_id, 'manager', 'active', "
-                            ":assigned_by, :now, :now)"
+                            ":assigned_by, :is_pinned, :now, :now)"
                         ),
                         {
                             "id": str(uuid.uuid4()),
                             "exam_id": exam["id"],
                             "user_id": user["id"],
                             "assigned_by": exam["created_by_user_id"],
+                            "is_pinned": False,
                             "now": now,
                         },
                     )
@@ -379,7 +381,26 @@ def apply_additive_migrations(engine: Engine) -> None:
                 )
             )
 
+    if "exam_assignments" in tables:
+        _add_columns(
+            engine,
+            "exam_assignments",
+            {
+                "is_pinned": "BOOLEAN",
+                "pinned_at": "TIMESTAMP",
+            },
+        )
+
     _backfill_rbac_foundation(engine)
+    if "exam_assignments" in set(inspect(engine).get_table_names()):
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "UPDATE exam_assignments "
+                    "SET is_pinned = COALESCE(is_pinned, :not_pinned)"
+                ),
+                {"not_pinned": False},
+            )
     if "users" in set(inspect(engine).get_table_names()):
         with engine.begin() as connection:
             connection.execute(
@@ -388,3 +409,4 @@ def apply_additive_migrations(engine: Engine) -> None:
             )
     _record_migration(engine, "2026_08_03_rbac_foundation")
     _record_migration(engine, "2026_08_09_web_google_auth")
+    _record_migration(engine, "2026_08_11_exam_assignment_pins")

@@ -10,7 +10,12 @@ def test_new_admin_page_shells_and_scripts_are_served(client):
         "/ui/system/security": "/static/system-security.js",
         "/ui/system/evidence": "/static/exams.js",
         "/ui/system/audit": "/static/system-audit.js",
+        "/ui/organization/overview": "/static/organization-overview.js",
         "/ui/organization": "/static/organization.js",
+        "/ui/organization/policy": "/static/organization.js",
+        "/ui/organization/break-glass": "/static/organization.js",
+        "/ui/organization/audit": "/static/organization.js",
+        "/ui/exams/overview": "/static/exam-overview.js",
         "/ui/mfa": "/static/mfa.js",
         "/ui/mfa/verify": "/static/mfa-verify.js",
         "/ui/register/organization": "/static/register-organization.js",
@@ -27,7 +32,7 @@ def test_new_admin_page_shells_and_scripts_are_served(client):
     assert "innerHTML" not in shared_system_script.text
     login_script = client.get("/static/login.js").text
     assert 'body.role === "system_admin"' in login_script
-    assert '? "/ui/organization"' in login_script
+    assert '? "/ui/organization/overview"' in login_script
 
     login_page = client.get("/ui/login").text
     register_page = client.get("/ui/register").text
@@ -54,7 +59,7 @@ def test_system_admin_sidebar_has_control_panel_navigation_and_account(client):
 
     api_script = client.get("/static/api.js").text
     assert 'document.body.classList.toggle("has-system-sidebar", isSystemAdmin)' in api_script
-    assert 'isOrganizationAdmin ? "/ui/organization" : "/ui/exams"' in api_script
+    assert 'isOrganizationAdmin ? "/ui/organization/overview" : "/ui/exams/overview"' in api_script
 
 
 def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
@@ -62,7 +67,12 @@ def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     assert response.status_code == 200
     assert 'id="tenant-nav-group"' in response.text
     assert 'id="exam-nav-section"' in response.text
+    assert 'id="nav-exam-overview"' in response.text
+    assert 'id="exam-nav-expandable"' in response.text
+    assert 'id="pinned-exams-toggle"' in response.text
+    assert 'id="pinned-exams-list"' in response.text
     assert 'id="organization-nav-section"' in response.text
+    assert 'id="nav-organization-overview"' in response.text
     assert 'id="organization-platform-badge"' in response.text
     assert 'id="exam-platform-badge"' in response.text
     assert 'id="organization-context"' in response.text
@@ -79,14 +89,18 @@ def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     assert 'this.hasCapability("org.members.read")' in api_script
     assert 'this.hasCapability("exam.read") || this.hasCapability("exam.create")' in api_script
     assert 'this.loadOrganizationSwitcher()' in api_script
+    assert 'this.loadPinnedExams()' in api_script
+    assert "async setExamPinned(examId, isPinned)" in api_script
 
     stylesheet = client.get("/static/style.css").text
     assert ".has-organization-sidebar" in stylesheet
     assert ".has-exam-manager-sidebar" in stylesheet
     assert "--sidebar-accent-rgb" in stylesheet
+    assert ".pinned-exams-list" in stylesheet
+    assert ".exam-pin-button" in stylesheet
     exams_script = client.get("/static/exams.js").text
     assert 'currentUser.effective_role === "org_admin"' in exams_script
-    assert 'window.location.replace("/ui/organization")' in exams_script
+    assert 'window.location.replace("/ui/organization/overview")' in exams_script
     mfa_page = client.get("/ui/mfa").text
     assert 'id="mfa-qr"' in mfa_page
     assert "qr_code_data_url" in client.get("/static/mfa.js").text
@@ -96,25 +110,47 @@ def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     assert "Gửi lại mã" not in mfa_verify_page
 
 
-def test_organization_sidebar_sections_and_invitation_dialog(client):
-    response = client.get("/ui/organization")
-    assert response.status_code == 200
-    assert 'id="nav-organization" data-organization-nav="organization"' in response.text
-    assert 'id="nav-organization-policy" data-organization-nav="policy"' in response.text
-    assert 'id="nav-organization-break-glass" data-organization-nav="break-glass"' in response.text
-    assert 'id="nav-organization-audit" data-organization-nav="audit"' in response.text
-    assert 'data-organization-panel="organization"' in response.text
-    assert 'data-organization-panel="policy"' in response.text
-    assert 'data-organization-panel="break-glass"' in response.text
-    assert 'data-organization-panel="audit"' in response.text
-    assert 'id="open-invitation-dialog"' in response.text
-    assert 'id="invitation-dialog"' in response.text
-    assert 'src="/static/organization.js?v=' in response.text
+def test_organization_sidebar_uses_real_paths_and_each_route_renders_one_panel(client):
+    members = client.get("/ui/organization")
+    policy = client.get("/ui/organization/policy")
+    break_glass = client.get("/ui/organization/break-glass")
+    audit = client.get("/ui/organization/audit")
+    for response in (members, policy, break_glass, audit):
+        assert response.status_code == 200
+        assert 'href="/ui/organization/policy"' in response.text
+        assert 'href="/ui/organization/break-glass"' in response.text
+        assert 'href="/ui/organization/audit"' in response.text
+        assert "/ui/organization#" not in response.text
+        assert 'src="/static/organization.js?v=' in response.text
+
+    assert 'data-section="organization"' in members.text
+    assert 'data-organization-panel="organization"' in members.text
+    assert 'id="invitation-dialog"' in members.text
+    assert 'data-organization-panel="policy"' not in members.text
+    assert 'data-organization-panel="break-glass"' not in members.text
+    assert 'data-organization-panel="audit"' not in members.text
+
+    assert 'data-section="policy"' in policy.text
+    assert 'data-organization-panel="policy"' in policy.text
+    assert 'data-organization-panel="organization"' not in policy.text
+    assert 'id="invitation-dialog"' not in policy.text
+
+    assert 'data-section="break-glass"' in break_glass.text
+    assert 'data-organization-panel="break-glass"' in break_glass.text
+    assert 'id="grant-decision-dialog"' in break_glass.text
+    assert 'data-organization-panel="audit"' not in break_glass.text
+
+    assert 'data-section="audit"' in audit.text
+    assert 'data-organization-panel="audit"' in audit.text
+    assert 'id="grant-decision-dialog"' not in audit.text
 
     script = client.get("/static/organization.js").text
-    assert "function bindOrganizationNavigation()" in script
-    assert "window.history.pushState" in script
-    assert 'window.addEventListener("popstate", updateOrganizationSection)' in script
+    assert 'if (section === "organization")' in script
+    assert 'else if (section === "policy")' in script
+    assert 'else if (section === "break-glass")' in script
+    assert 'else if (section === "audit")' in script
+    assert "loadMembers(), loadOrganizationOverview(), loadPolicy()" not in script
+    assert "function redirectLegacyOrganizationHash()" in script
 
 
 def test_current_user_exposes_server_resolved_capabilities(client):

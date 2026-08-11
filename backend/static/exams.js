@@ -18,6 +18,31 @@ function appendTextCell(row, text) {
   return cell;
 }
 
+function examPinButton(exam) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `exam-pin-button${exam.is_pinned ? " pinned" : ""}`;
+  button.textContent = "📌";
+  const action = exam.is_pinned ? "Bỏ ghim" : "Ghim";
+  button.title = `${action} ${exam.name}`;
+  button.setAttribute("aria-label", `${action} ${exam.name}`);
+  button.setAttribute("aria-pressed", String(Boolean(exam.is_pinned)));
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    try {
+      await API.setExamPinned(exam.id, !exam.is_pinned);
+      showToast(
+        exam.is_pinned ? `Đã bỏ ghim “${exam.name}”.` : `Đã ghim “${exam.name}”.`,
+        "success",
+      );
+    } catch (error) {
+      button.disabled = false;
+      showToast(error.message || "Không cập nhật được ghim kỳ thi.", "error");
+    }
+  });
+  return button;
+}
+
 function showTableMessage(tbody, message) {
   const row = document.createElement("tr");
   const cell = document.createElement("td");
@@ -74,7 +99,13 @@ async function rotateJoinCode(examId, expectedVersion) {
 function buildExamRow(exam) {
   const breakGlassView = Boolean(currentUser?.is_system_admin);
   const row = document.createElement("tr");
-  appendTextCell(row, exam.name);
+  const nameCell = document.createElement("td");
+  nameCell.className = "exam-name-cell";
+  if (!breakGlassView) nameCell.appendChild(examPinButton(exam));
+  const examName = document.createElement("span");
+  examName.textContent = exam.name;
+  nameCell.appendChild(examName);
+  row.appendChild(nameCell);
   appendTextCell(row, exam.candidate_auth_mode === "google" ? "Google" : "Họ tên + mã thí sinh");
 
   const codeCell = document.createElement("td");
@@ -292,6 +323,7 @@ document.getElementById("create-exam-form").addEventListener("submit", async (ev
     await loadDefaultExamPolicy();
     setWizardStep(0);
     await loadExams();
+    await API.loadPinnedExams({ forceOpen: true });
   } else {
     const body = await response.json().catch(() => ({}));
     const detail = Array.isArray(body.detail) ? body.detail[0]?.msg : body.detail;
@@ -303,7 +335,7 @@ async function initializeExams() {
   currentUser = await API.requireAuth();
   if (!currentUser) return;
   if (currentUser.effective_role === "org_admin" || currentUser.role === "admin") {
-    window.location.replace("/ui/organization");
+    window.location.replace("/ui/organization/overview");
     return;
   }
   if (currentUser.is_system_admin) {
@@ -326,6 +358,11 @@ async function initializeExams() {
 }
 
 initializeExams();
+
+document.addEventListener("exam-pin-changed", () => {
+  if (!currentUser || currentUser.is_system_admin) return;
+  loadExams().catch((error) => showToast(error.message || "Không tải lại được danh sách kỳ thi.", "error"));
+});
 
 function syncExamAuthMode() {
   const google = document.getElementById("candidate-auth-mode").value === "google";

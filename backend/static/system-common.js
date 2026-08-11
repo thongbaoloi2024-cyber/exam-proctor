@@ -5,7 +5,12 @@ const SystemUI = {
     const user = await API.requireAuth();
     if (!user) return null;
     if (!API.hasCapability(requiredCapability)) {
-      window.location.replace("/ui/exams");
+      const role = API.getRole();
+      window.location.replace(
+        role === "org_admin" || role === "admin"
+          ? "/ui/organization/overview"
+          : "/ui/exams/overview",
+      );
       return null;
     }
     this.bindDialogs();
