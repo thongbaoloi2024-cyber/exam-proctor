@@ -9,12 +9,28 @@
   <div id="lifecycle-actions" class="button-row"></div>
 </section>
 
+<section class="card" id="readiness-card">
+  <div class="organization-card-header"><div><h2>Sẵn sàng vận hành</h2><p id="readiness-summary" class="muted">Đang kiểm tra...</p></div></div>
+  <div id="readiness-list" class="readiness-list"></div>
+</section>
+
 <section class="card" id="exam-config-card">
   <h2>Cấu hình bản nháp</h2>
   <form id="exam-config-form" class="form-grid">
     <label>Tên kỳ thi<input id="manage-exam-name" required></label>
+    <label>URL bài thi<input id="manage-exam-url" type="url"></label>
+    <label>Chế độ xác thực<select id="manage-auth-mode"><option value="manual">Họ tên + mã thí sinh</option><option value="google">Tài khoản Google</option></select></label>
+    <label id="manage-google-domain-wrap" class="hidden">Google Workspace domain<input id="manage-google-domain"></label>
     <label>Bắt đầu<input id="manage-exam-start" type="datetime-local"></label>
     <label>Kết thúc<input id="manage-exam-end" type="datetime-local"></label>
+    <label>Phiên bản extension tối thiểu<input id="manage-extension-version" pattern="\d+\.\d+\.\d+" required></label>
+    <label>Rời cửa sổ tối đa (giây)<input id="manage-focus-loss" type="number" min="0" max="300" step="0.5" required></label>
+    <label class="checkbox-label"><input id="manage-require-extension" type="checkbox"> Bắt buộc extension</label>
+    <label class="checkbox-label"><input id="manage-require-fullscreen" type="checkbox"> Bắt buộc fullscreen</label>
+    <label class="checkbox-label"><input id="manage-require-camera" type="checkbox"> Bắt buộc camera</label>
+    <label class="checkbox-label"><input id="manage-require-microphone" type="checkbox"> Bắt buộc microphone</label>
+    <label class="checkbox-label"><input id="manage-require-screen-share" type="checkbox"> Bắt buộc chia sẻ màn hình</label>
+    <label class="checkbox-label"><input id="manage-block-clipboard" type="checkbox"> Chặn clipboard</label>
     <div><button type="submit">Lưu cấu hình</button></div>
   </form>
   <p class="muted">Cấu hình đầy đủ chỉ sửa khi kỳ thi ở trạng thái bản nháp.</p>
@@ -25,12 +41,13 @@
   <form id="assignment-form" class="inline-form hidden">
     <select id="assignment-user" required></select>
     <select id="assignment-role"><option value="manager">Manager</option><option value="proctor">Proctor</option></select>
+    <input id="assignment-expiry" type="datetime-local" aria-label="Hết hạn phân công">
     <button type="submit">Phân công</button>
   </form>
   <div class="table-scroll">
     <table class="data-table" id="assignments-table">
-      <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-      <tbody><tr><td colspan="4">Đang tải...</td></tr></tbody>
+      <thead><tr><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Hết hạn</th><th>Thao tác</th></tr></thead>
+      <tbody><tr><td colspan="5">Đang tải...</td></tr></tbody>
     </table>
   </div>
 </section>

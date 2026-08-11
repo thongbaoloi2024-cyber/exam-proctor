@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
+import os
 import secrets
+import time
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from typing import Literal
@@ -17,6 +20,8 @@ from .. import models
 from ..audit import record_audit
 from ..authorization import Permission, require_system_permission
 from ..db import get_db
+from ..policies import PlatformPolicy, get_platform_policy
+from ..session_materializer import SESSIONS_ROOT
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -28,6 +33,31 @@ class SystemOverviewResponse(BaseModel):
     exams: int
     active_sessions: int
     pending_access_grants: int
+
+
+class OperationsCenterResponse(BaseModel):
+    database_status: str
+    database_latency_ms: float
+    redis_status: str
+    report_jobs: dict[str, int]
+    evidence_storage_bytes: int
+    sessions_connected: int
+    extension_versions: dict[str, int]
+    recent_report_failures: int
+    checked_at: datetime
+
+
+class PlatformPolicyResponse(BaseModel):
+    policy: PlatformPolicy
+    version: int
+    updated_at: datetime | None
+    updated_by_user_id: str | None
+
+
+class UpdatePlatformPolicyRequest(BaseModel):
+    policy: PlatformPolicy
+    expected_version: int = Field(ge=0)
+    reason: str = Field(min_length=3, max_length=500)
 
 
 class SystemOrganizationResponse(BaseModel):
@@ -127,6 +157,27 @@ class CreatedSystemOrganizationResponse(BaseModel):
     invitation_expires_at: datetime
 
 
+class CreateOrganizationAdminInvitationRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
+    expires_in_hours: int = Field(default=72, ge=1, le=336)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_admin_email(cls, value: str) -> str:
+        value = value.strip().casefold()
+        if "@" not in value:
+            raise ValueError("Email khong hop le")
+        return value
+
+
+class CreatedOrganizationAdminInvitationResponse(BaseModel):
+    id: str
+    email: str
+    status: str
+    expires_at: datetime
+    invitation_token: str
+
+
 class UpdateSystemOrganizationRequest(BaseModel):
     status: Literal["active", "suspended"] | None = None
     quota_concurrent_sessions: int | None = Field(default=None, ge=1, le=1_000_000)
@@ -152,6 +203,7 @@ class AccessGrantResponse(BaseModel):
     status: str
     read_only: bool
     approved_by_user_id: str | None
+    decision_reason: str | None = None
     created_at: datetime
     approved_at: datetime | None
     expires_at: datetime
@@ -176,6 +228,7 @@ class SystemSecurityAnalyticsResponse(BaseModel):
     days: int
     status_totals: list[ChartCategory]
     request_trend: list[ChartPoint]
+    security_events: list[ChartCategory]
 
 
 class AuditLogResponse(BaseModel):
@@ -186,6 +239,7 @@ class AuditLogResponse(BaseModel):
     actor_role: str | None
     org_id: str | None
     exam_id: str | None
+    access_grant_id: str | None
     action: str
     resource_type: str
     resource_id: str | None
@@ -326,6 +380,103 @@ def overview(
             models.AccessGrant.status == "pending",
             models.AccessGrant.expires_at > _now(),
         ).scalar() or 0,
+    )
+
+
+@router.get("/operations", response_model=OperationsCenterResponse)
+def operations_center(
+    db: Session = Depends(get_db),
+    _actor: models.User = Depends(require_system_permission(Permission.SYSTEM_SECURITY_READ)),
+) -> OperationsCenterResponse:
+    started = time.perf_counter()
+    db.query(models.Organization.id).limit(1).all()
+    latency_ms = round((time.perf_counter() - started) * 1000, 2)
+    job_rows = db.query(models.ReportJob.status, func.count(models.ReportJob.id)).group_by(models.ReportJob.status).all()
+    version_rows = (
+        db.query(models.ExamSession.extension_version, func.count(models.ExamSession.id))
+        .filter(models.ExamSession.extension_version.is_not(None))
+        .group_by(models.ExamSession.extension_version)
+        .all()
+    )
+    storage_bytes = 0
+    try:
+        root = SESSIONS_ROOT.resolve()
+        if root.is_dir():
+            storage_bytes = sum(path.stat().st_size for path in root.rglob("*") if path.is_file())
+    except OSError:
+        storage_bytes = -1
+    recent_cutoff = _now() - timedelta(hours=24)
+    return OperationsCenterResponse(
+        database_status="healthy",
+        database_latency_ms=latency_ms,
+        redis_status="configured" if os.environ.get("REDIS_URL", "").strip() else "not_configured",
+        report_jobs={str(key): int(value) for key, value in job_rows},
+        evidence_storage_bytes=storage_bytes,
+        sessions_connected=db.query(models.ExamSession).filter_by(status="active").count(),
+        extension_versions={str(key): int(value) for key, value in version_rows},
+        recent_report_failures=db.query(models.ReportJob).filter(
+            models.ReportJob.status == "failed",
+            models.ReportJob.created_at >= recent_cutoff,
+        ).count(),
+        checked_at=_now(),
+    )
+
+
+@router.get("/policy", response_model=PlatformPolicyResponse)
+def get_system_policy(
+    db: Session = Depends(get_db),
+    _actor: models.User = Depends(require_system_permission(Permission.SYSTEM_SECURITY_READ)),
+) -> PlatformPolicyResponse:
+    stored = db.get(models.PlatformPolicySetting, "default")
+    return PlatformPolicyResponse(
+        policy=get_platform_policy(db),
+        version=stored.version if stored else 0,
+        updated_at=stored.updated_at if stored else None,
+        updated_by_user_id=stored.updated_by_user_id if stored else None,
+    )
+
+
+@router.put("/policy", response_model=PlatformPolicyResponse)
+def update_system_policy(
+    payload: UpdatePlatformPolicyRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: models.User = Depends(require_system_permission(Permission.SYSTEM_ORGANIZATIONS_MANAGE)),
+) -> PlatformPolicyResponse:
+    stored = db.get(models.PlatformPolicySetting, "default")
+    current_version = stored.version if stored else 0
+    if payload.expected_version != current_version:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": "Chinh sach da duoc cap nhat", "current_version": current_version},
+        )
+    before = get_platform_policy(db).model_dump()
+    if stored is None:
+        stored = models.PlatformPolicySetting(id="default", version=1)
+        db.add(stored)
+    else:
+        stored.version += 1
+    stored.settings_json = json.dumps(payload.policy.model_dump(), sort_keys=True)
+    stored.updated_by_user_id = actor.id
+    stored.updated_at = _now()
+    record_audit(
+        db,
+        actor=actor,
+        action="system.policy.update",
+        resource_type="platform_policy",
+        resource_id="default",
+        reason=payload.reason,
+        request=request,
+        before=before,
+        after=payload.policy.model_dump(),
+    )
+    db.commit()
+    db.refresh(stored)
+    return PlatformPolicyResponse(
+        policy=payload.policy,
+        version=stored.version,
+        updated_at=stored.updated_at,
+        updated_by_user_id=stored.updated_by_user_id,
     )
 
 
@@ -626,6 +777,67 @@ def update_organization(
 
 
 @router.post(
+    "/organizations/{org_id}/admin-invitations",
+    response_model=CreatedOrganizationAdminInvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def invite_organization_admin(
+    org_id: str,
+    payload: CreateOrganizationAdminInvitationRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: models.User = Depends(require_system_permission(Permission.SYSTEM_ORGANIZATIONS_MANAGE)),
+) -> CreatedOrganizationAdminInvitationResponse:
+    organization = db.get(models.Organization, org_id)
+    if organization is None or organization.slug == "system":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay to chuc")
+    existing_user = db.query(models.User).filter_by(email=payload.email).first()
+    if existing_user and db.query(models.OrganizationMembership).filter_by(
+        org_id=org_id,
+        user_id=existing_user.id,
+    ).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email da la thanh vien")
+    pending = db.query(models.Invitation).filter_by(
+        org_id=org_id,
+        email=payload.email,
+        status="pending",
+    ).first()
+    if pending and _as_utc(pending.expires_at) > _now():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Loi moi dang con hieu luc")
+    raw_token = secrets.token_urlsafe(32)
+    invitation = models.Invitation(
+        org_id=org_id,
+        email=payload.email,
+        role="org_admin",
+        token_hash=hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),
+        status="pending",
+        invited_by_user_id=actor.id,
+        expires_at=_now() + timedelta(hours=payload.expires_in_hours),
+    )
+    db.add(invitation)
+    db.flush()
+    record_audit(
+        db,
+        actor=actor,
+        action="system.organization.admin.invite",
+        resource_type="invitation",
+        resource_id=invitation.id,
+        org_id=org_id,
+        request=request,
+        after={"email": payload.email, "role": "org_admin"},
+    )
+    db.commit()
+    db.refresh(invitation)
+    return CreatedOrganizationAdminInvitationResponse(
+        id=invitation.id,
+        email=invitation.email,
+        status=invitation.status,
+        expires_at=invitation.expires_at,
+        invitation_token=raw_token,
+    )
+
+
+@router.post(
     "/access-grants",
     response_model=AccessGrantResponse,
     status_code=status.HTTP_201_CREATED,
@@ -733,6 +945,10 @@ def security_analytics(
         "revoked": "Đã thu hồi",
     }
     ordered_statuses = ["pending", "active", "expired", "revoked"]
+    security_rows = db.query(models.AuditLog.action, func.count(models.AuditLog.id)).filter(
+        models.AuditLog.action.like("security.%"),
+        models.AuditLog.created_at >= _day_start(days),
+    ).group_by(models.AuditLog.action).all()
     return SystemSecurityAnalyticsResponse(
         days=days,
         status_totals=[
@@ -740,6 +956,15 @@ def security_analytics(
             for key in ordered_statuses
         ],
         request_trend=_trend([grant.created_at for grant in grants], days),
+        security_events=[
+            ChartCategory(key=action, label={
+                "security.login.failed": "Đăng nhập thất bại",
+                "security.login.success": "Đăng nhập thành công",
+                "security.mfa.failed": "MFA thất bại",
+                "security.mfa.success": "MFA thành công",
+            }.get(action, action), value=count)
+            for action, count in security_rows
+        ],
     )
 
 

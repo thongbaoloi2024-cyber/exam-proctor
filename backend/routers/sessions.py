@@ -12,19 +12,30 @@ from pathlib import Path as _Path
 
 from typing import Any, Dict, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from .. import models
 from ..auth import decode_session_token, get_current_user
-from ..authorization import Permission, authorize_exam, authorize_session
+from ..authorization import (
+    Permission,
+    active_break_glass_grant,
+    authorize_exam,
+    authorize_session,
+)
 from ..audit import record_audit
 from ..candidate_tokens import bearer_token_from_request
 from ..db import get_db
-from ..session_materializer import build_session_meta, session_dir_for, write_session_meta
+from ..session_materializer import (
+    archive_session_attempt,
+    build_session_meta,
+    session_dir_for,
+    write_session_meta,
+)
 from ..ws_tickets import ticket_store
+from ..ws_manager import manager
 
 # src/reporting/ nam o repo root, ngoai package backend/ - them root vao
 # sys.path de import lai dung module CV da co (Tuan 11), khong copy/viet lai
@@ -52,6 +63,8 @@ class SessionResponse(BaseModel):
     client_type: str
     extension_version: str | None
     browser_name: str | None
+    browser_version: str | None
+    platform: str | None
     status: str
     risk_score_current: float
     session_state_current: str
@@ -60,6 +73,12 @@ class SessionResponse(BaseModel):
     integrity_score_current: float
     integrity_status_current: str
     browser_event_count: int
+    camera_status: str
+    microphone_status: str
+    screen_share_status: str
+    reset_count: int
+    last_reset_at: datetime | None
+    last_reset_reason: str | None
 
 
 class WebSocketTicketResponse(BaseModel):
@@ -71,6 +90,27 @@ class WebSocketTicketResponse(BaseModel):
 class IncidentReviewRequest(BaseModel):
     status: Literal["new", "in_review", "confirmed", "dismissed"]
     note: str | None = Field(default=None, max_length=5000)
+
+
+class EndSessionRequest(BaseModel):
+    reason: str = Field(default="Kết thúc bởi giám thị", min_length=3, max_length=200)
+
+
+class ResetSessionRequest(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)
+
+
+class ExamIncidentItem(BaseModel):
+    session_id: str
+    student_name: str
+    event_id: str
+    video_time_sec: float
+    severity: str
+    primary_violation: str
+    status: str
+    note: str | None
+    reviewed_by_email: str | None
+    updated_at: datetime | None
 
 
 class IncidentReviewResponse(BaseModel):
@@ -148,9 +188,10 @@ def create_websocket_ticket(
 
 
 @router.post("/sessions/{session_id}/end", response_model=SessionResponse)
-def end_session(
+async def end_session(
     session_id: str,
     request: Request,
+    payload: EndSessionRequest | None = Body(default=None),
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
 ) -> models.ExamSession:
@@ -177,6 +218,7 @@ def end_session(
         resource_id=exam_session.id,
         org_id=exam_session.exam.org_id,
         exam_id=exam_session.exam_id,
+        reason=payload.reason if payload else "Kết thúc bởi giám thị",
         request=request,
     )
     db.commit()
@@ -188,7 +230,7 @@ def end_session(
             session_id,
             exam_session.started_at,
             exam_session.ended_at,
-            end_reason="ended_by_proctor",
+            end_reason=payload.reason if payload else "ended_by_proctor",
             student_name=exam_session.student_name,
             candidate_number=exam_session.candidate_number,
             candidate_email=exam_session.candidate_email,
@@ -197,7 +239,145 @@ def end_session(
             extension_version=exam_session.extension_version,
         ),
     )
+    await manager.force_close_client(session_id)
+    await manager.broadcast_to_dashboard(
+        exam_session.exam_id,
+        {
+            "type": "session_ended",
+            "session_id": exam_session.id,
+            "student_name": exam_session.student_name,
+            "data": {"reason": payload.reason if payload else "ended_by_proctor"},
+            "server_received_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
     return exam_session
+
+
+@router.post("/sessions/{session_id}/reset", response_model=SessionResponse)
+async def reset_session(
+    session_id: str,
+    payload: ResetSessionRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> models.ExamSession:
+    exam_session = authorize_session(db, user, session_id, Permission.EXAM_MANAGE)
+    if exam_session.status == "active":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phai ket thuc phien active truoc khi reset")
+    next_attempt = exam_session.reset_count + 1
+    try:
+        archived_path = archive_session_attempt(session_id, next_attempt)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    now = datetime.now(timezone.utc)
+    before = {"status": exam_session.status, "reset_count": exam_session.reset_count}
+    exam_session.status = "pending"
+    exam_session.started_at = now
+    exam_session.ended_at = None
+    exam_session.last_seen_at = now
+    exam_session.disconnect_reason = None
+    exam_session.risk_score_current = 0.0
+    exam_session.session_state_current = "SESSION_NORMAL"
+    exam_session.integrity_score_current = 0.0
+    exam_session.integrity_status_current = "healthy"
+    exam_session.browser_event_count = 0
+    exam_session.camera_status = "pending" if exam_session.exam.require_camera else "not_required"
+    exam_session.microphone_status = "pending" if exam_session.exam.require_microphone else "not_required"
+    exam_session.screen_share_status = "pending" if exam_session.exam.require_screen_share else "not_required"
+    exam_session.reset_count = next_attempt
+    exam_session.last_reset_at = now
+    exam_session.last_reset_reason = payload.reason.strip()
+    record_audit(
+        db,
+        actor=user,
+        action="exam.session.reset",
+        resource_type="exam_session",
+        resource_id=session_id,
+        org_id=exam_session.exam.org_id,
+        exam_id=exam_session.exam_id,
+        reason=exam_session.last_reset_reason,
+        request=request,
+        before=before,
+        after={
+            "status": "pending",
+            "reset_count": next_attempt,
+            "archived_evidence": str(archived_path) if archived_path else None,
+        },
+    )
+    db.commit()
+    db.refresh(exam_session)
+    await manager.broadcast_to_dashboard(
+        exam_session.exam_id,
+        {
+            "type": "session_reset",
+            "session_id": session_id,
+            "student_name": exam_session.student_name,
+            "data": {"reset_count": next_attempt},
+            "server_received_at": now.isoformat(),
+        },
+    )
+    return exam_session
+
+
+@router.get("/exams/{exam_id}/incidents", response_model=list[ExamIncidentItem])
+def list_exam_incidents(
+    exam_id: str,
+    review_status: Literal["new", "in_review", "confirmed", "dismissed"] | None = None,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> list[ExamIncidentItem]:
+    authorize_exam(db, user, exam_id, Permission.EXAM_INCIDENT_REVIEW)
+    sessions = db.query(models.ExamSession).filter_by(exam_id=exam_id).all()
+    session_ids = [item.id for item in sessions]
+    reviews = (
+        db.query(models.IncidentReview)
+        .filter(models.IncidentReview.exam_session_id.in_(session_ids))
+        .all()
+        if session_ids
+        else []
+    )
+    review_map = {
+        (item.exam_session_id, item.violation_event_id): item for item in reviews
+    }
+    reviewer_ids = {item.reviewed_by_user_id for item in reviews if item.reviewed_by_user_id}
+    reviewers = {
+        item.id: item.email
+        for item in db.query(models.User).filter(models.User.id.in_(reviewer_ids)).all()
+    } if reviewer_ids else {}
+    results: list[ExamIncidentItem] = []
+    for exam_session in sessions:
+        report_data = load_session_report_data(session_dir_for(exam_session.id))
+        for violation in report_data.violations:
+            event_id = str(violation.get("event_id") or "")
+            if not event_id:
+                continue
+            review = review_map.get((exam_session.id, event_id))
+            current_status = review.status if review else "new"
+            if review_status and current_status != review_status:
+                continue
+            results.append(ExamIncidentItem(
+                session_id=exam_session.id,
+                student_name=exam_session.student_name,
+                event_id=event_id,
+                video_time_sec=float(violation.get("video_time_sec") or 0),
+                severity=str(violation.get("severity") or "LOW"),
+                primary_violation=str(violation.get("primary_violation") or "-"),
+                status=current_status,
+                note=review.note if review else None,
+                reviewed_by_email=(
+                    reviewers.get(review.reviewed_by_user_id) if review else None
+                ),
+                updated_at=review.updated_at if review else None,
+            ))
+    severity_rank = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+    return sorted(
+        results,
+        key=lambda item: (
+            0 if item.status in {"new", "in_review"} else 1,
+            severity_rank.get(item.severity, 3),
+            -item.video_time_sec,
+        ),
+    )
 
 
 @router.get("/sessions/{session_id}/detail")
@@ -219,6 +399,7 @@ def get_session_detail(
     )
 
     data = load_session_report_data(session_dir_for(session_id))
+    access_grant = active_break_glass_grant(db, user, exam_session.exam.org_id)
     record_audit(
         db,
         actor=user,
@@ -227,6 +408,7 @@ def get_session_detail(
         resource_id=exam_session.id,
         org_id=exam_session.exam.org_id,
         exam_id=exam_session.exam_id,
+        access_grant_id=access_grant.id if access_grant else None,
         request=request,
     )
     db.commit()
@@ -240,6 +422,14 @@ def get_session_detail(
         "client_type": exam_session.client_type,
         "extension_version": exam_session.extension_version,
         "browser_name": exam_session.browser_name,
+        "browser_version": exam_session.browser_version,
+        "platform": exam_session.platform,
+        "camera_status": exam_session.camera_status,
+        "microphone_status": exam_session.microphone_status,
+        "screen_share_status": exam_session.screen_share_status,
+        "last_seen_at": exam_session.last_seen_at,
+        "disconnect_reason": exam_session.disconnect_reason,
+        "reset_count": exam_session.reset_count,
         "integrity_score": exam_session.integrity_score_current,
         "integrity_status": exam_session.integrity_status_current,
         "browser_event_count": exam_session.browser_event_count,
@@ -357,6 +547,7 @@ def get_snapshot(
     ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay anh chup")
     media_type = "image/png" if snapshot_path.suffix.lower() == ".png" else "image/jpeg"
+    access_grant = active_break_glass_grant(db, user, exam_session.exam.org_id)
     record_audit(
         db,
         actor=user,
@@ -365,6 +556,7 @@ def get_snapshot(
         resource_id=safe_filename,
         org_id=exam_session.exam.org_id,
         exam_id=exam_session.exam_id,
+        access_grant_id=access_grant.id if access_grant else None,
         request=request,
     )
     db.commit()
@@ -388,6 +580,7 @@ def get_report(
     paths = generate_report(
         session_dir, fusion_config_path=str(_FUSION_CONFIG_PATH), formats=[fmt],
     )
+    access_grant = active_break_glass_grant(db, user, exam_session.exam.org_id)
     record_audit(
         db,
         actor=user,
@@ -396,6 +589,7 @@ def get_report(
         resource_id=f"{session_id}:{fmt}",
         org_id=exam_session.exam.org_id,
         exam_id=exam_session.exam_id,
+        access_grant_id=access_grant.id if access_grant else None,
         request=request,
     )
     db.commit()
@@ -417,10 +611,10 @@ def create_report_job(
     if fmt not in ("html", "pdf"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="fmt phai la html hoac pdf")
     exam_session = authorize_session(db, user, session_id, Permission.EXAM_REPORTS_EXPORT)
-    existing = db.query(models.ReportJob).filter_by(
-        exam_session_id=session_id,
-        format=fmt,
-        status="pending",
+    existing = db.query(models.ReportJob).filter(
+        models.ReportJob.exam_session_id == session_id,
+        models.ReportJob.format == fmt,
+        models.ReportJob.status.in_(["pending", "processing"]),
     ).first()
     if existing is not None:
         return existing
@@ -459,3 +653,28 @@ def get_report_job(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay report job")
     authorize_session(db, user, job.exam_session_id, Permission.EXAM_REPORTS_EXPORT)
     return job
+
+
+@router.get("/report-jobs/{job_id}/download")
+def download_report_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> FileResponse:
+    job = db.get(models.ReportJob, job_id)
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay report job")
+    authorize_session(db, user, job.exam_session_id, Permission.EXAM_REPORTS_EXPORT)
+    now = datetime.now(timezone.utc)
+    expires_at = job.expires_at
+    if expires_at is not None and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if job.status != "completed" or not job.output_path or (expires_at and expires_at <= now):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Report chua san sang hoac da het han")
+    session_root = session_dir_for(job.exam_session_id).resolve()
+    output = _Path(job.output_path).resolve()
+    expected_name = f"report.{job.format}"
+    if output.parent != session_root or output.name != expected_name or not output.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay report")
+    media_type = "application/pdf" if job.format == "pdf" else "text/html"
+    return FileResponse(output, media_type=media_type, filename=expected_name)

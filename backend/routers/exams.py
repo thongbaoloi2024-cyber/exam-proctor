@@ -22,6 +22,7 @@ from ..authorization import (
     active_membership,
     active_system_role,
     authorize_exam,
+    exam_access_for_user,
     require_permission,
     scoped_exam_query,
 )
@@ -32,6 +33,13 @@ from ..candidate_tokens import (
     resolve_candidate_token,
 )
 from ..db import get_db
+from ..policies import (
+    EXAM_POLICY_FIELDS,
+    OrganizationPolicy,
+    exam_policy_values,
+    get_effective_organization_policy,
+    resolve_exam_policy,
+)
 from ..rate_limit import JOIN_CODE_LIMIT_PER_MINUTE, PUBLIC_IP_LIMIT_PER_MINUTE, enforce_rate_limit
 from .candidate_auth import google_oauth_configured
 
@@ -41,6 +49,13 @@ _JOIN_CODE_ALPHABET = string.ascii_uppercase + string.digits
 _JOIN_CODE_LENGTH = 6
 _SEMVER_RE = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$")
 _DOMAIN_RE = re.compile(r"^(?=.{1,253}$)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$")
+_ALLOWED_STATUS_TRANSITIONS: dict[str, frozenset[str]] = {
+    "draft": frozenset({"scheduled", "open", "archived"}),
+    "scheduled": frozenset({"draft", "open", "closed"}),
+    "open": frozenset({"closed"}),
+    "closed": frozenset({"open", "archived"}),
+    "archived": frozenset(),
+}
 
 
 def _generate_join_code(db: Session) -> str:
@@ -131,12 +146,6 @@ class CreateExamRequest(BaseModel):
 
     @model_validator(mode="after")
     def coherent_policy(self) -> "CreateExamRequest":
-        if self.require_extension and not self.exam_url:
-            raise ValueError("Ky thi bat buoc extension phai co URL bai thi")
-        if self.candidate_auth_mode == "google" and not self.require_extension:
-            raise ValueError("Che do Google bat buoc su dung browser extension")
-        if self.candidate_auth_mode != "google" and self.google_allowed_domain:
-            raise ValueError("Chi dat Google Workspace domain cho che do Google")
         if (self.scheduled_start_at is None) != (self.scheduled_end_at is None):
             raise ValueError("Phai dat ca thoi gian bat dau va ket thuc")
         if self.scheduled_start_at and self.scheduled_end_at:
@@ -173,6 +182,9 @@ class ExamResponse(BaseModel):
     version: int
     created_at: datetime
     updated_at: datetime
+    assignment_role: Optional[str] = None
+    allowed_actions: list[str] = Field(default_factory=list)
+    allowed_transitions: list[str] = Field(default_factory=list)
 
 
 def _exam_response_for_user(
@@ -181,6 +193,18 @@ def _exam_response_for_user(
     exam: models.Exam,
 ) -> ExamResponse:
     response = ExamResponse.model_validate(exam)
+    assignment_role, permissions = exam_access_for_user(db, user, exam)
+    allowed_actions = sorted(permission.value for permission in permissions)
+    allowed_transitions = (
+        sorted(_ALLOWED_STATUS_TRANSITIONS.get(exam.status, frozenset()))
+        if Permission.EXAM_MANAGE in permissions
+        else []
+    )
+    response = response.model_copy(update={
+        "assignment_role": assignment_role,
+        "allowed_actions": allowed_actions,
+        "allowed_transitions": allowed_transitions,
+    })
     if active_system_role(db, user) is None:
         return response
     # Break-glass exposes monitoring/evidence metadata, never operational
@@ -243,6 +267,7 @@ class JoinExamResponse(BaseModel):
     candidate_id: Optional[str]
     authentication_method: Literal["manual", "google"]
     exam_url: Optional[str]
+    resumed: bool = False
 
 
 class JoinPolicyResponse(BaseModel):
@@ -267,10 +292,17 @@ class UpdateExamStatusRequest(BaseModel):
     expected_version: Optional[int] = Field(default=None, ge=1)
 
 
+class RotateJoinCodeRequest(BaseModel):
+    expected_version: int = Field(ge=1)
+    ttl_minutes: int = Field(default=24 * 60, ge=5, le=7 * 24 * 60)
+
+
 class UpdateExamRequest(BaseModel):
     expected_version: int = Field(ge=1)
     name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    candidate_auth_mode: Optional[Literal["manual", "google"]] = None
     exam_url: Optional[str] = Field(default=None, max_length=2048)
+    google_allowed_domain: Optional[str] = Field(default=None, max_length=255)
     scheduled_start_at: Optional[datetime] = None
     scheduled_end_at: Optional[datetime] = None
     require_extension: Optional[bool] = None
@@ -303,6 +335,28 @@ class UpdateExamRequest(BaseModel):
         if value is not None:
             _version_tuple(value)
         return value
+
+    @field_validator("google_allowed_domain")
+    @classmethod
+    def validate_optional_google_domain(cls, value: Optional[str]) -> Optional[str]:
+        if value is None or not value.strip():
+            return None
+        value = value.strip().casefold()
+        if _DOMAIN_RE.fullmatch(value) is None:
+            raise ValueError("Google Workspace domain khong hop le")
+        return value
+
+
+class ReadinessItem(BaseModel):
+    code: str
+    label: str
+    ready: bool
+    detail: str
+
+
+class ExamReadinessResponse(BaseModel):
+    ready: bool
+    items: list[ReadinessItem]
 
 
 class AssignmentRequest(BaseModel):
@@ -366,25 +420,21 @@ def _active_exam_by_code(db: Session, join_code: str) -> models.Exam:
     return exam
 
 
-def _ensure_identity_not_used(
+def _identity_session(
     db: Session,
     exam: models.Exam,
     *,
     candidate_number: Optional[str] = None,
     candidate_identity_id: Optional[str] = None,
-) -> None:
+) -> models.ExamSession | None:
     query = db.query(models.ExamSession).filter(models.ExamSession.exam_id == exam.id)
     if candidate_identity_id:
         query = query.filter(models.ExamSession.candidate_identity_id == candidate_identity_id)
     elif candidate_number:
         query = query.filter(models.ExamSession.candidate_number == candidate_number)
     else:
-        return
-    if query.first() is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Danh tinh nay da duoc su dung cho ky thi",
-        )
+        return None
+    return query.first()
 
 
 @router.post("", response_model=ExamResponse, status_code=status.HTTP_201_CREATED)
@@ -393,29 +443,54 @@ def create_exam(
     request: Request,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_permission(Permission.EXAM_CREATE)),
-) -> models.Exam:
-    if payload.candidate_auth_mode == "google" and not google_oauth_configured():
+) -> ExamResponse:
+    membership = active_membership(db, user)
+    organization = db.get(models.Organization, membership.org_id)
+    if organization is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay to chuc")
+    overrides = {
+        field_name: getattr(payload, field_name)
+        for field_name in EXAM_POLICY_FIELDS
+        if field_name in payload.model_fields_set
+    }
+    try:
+        resolved_policy = resolve_exam_policy(db, organization, overrides)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    if resolved_policy.require_extension and not payload.exam_url:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Ky thi bat buoc extension phai co URL bai thi",
+        )
+    if resolved_policy.candidate_auth_mode != "google" and payload.google_allowed_domain:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Chi dat Google Workspace domain cho che do Google",
+        )
+    if resolved_policy.candidate_auth_mode == "google" and not google_oauth_configured():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Backend chua cau hinh Google OAuth",
         )
-    membership = active_membership(db, user)
     exam = models.Exam(
         org_id=membership.org_id,
         name=payload.name,
         join_code=_generate_join_code(db),
         status=payload.initial_status,
         join_code_expires_at=datetime.now(timezone.utc) + timedelta(minutes=payload.join_code_ttl_minutes),
-        candidate_auth_mode=payload.candidate_auth_mode,
+        candidate_auth_mode=resolved_policy.candidate_auth_mode,
         exam_url=payload.exam_url,
-        require_extension=payload.require_extension,
-        min_extension_version=payload.min_extension_version,
-        require_fullscreen=payload.require_fullscreen,
-        require_camera=payload.require_camera,
-        require_microphone=payload.require_microphone,
-        require_screen_share=payload.require_screen_share,
-        block_clipboard=payload.block_clipboard,
-        max_focus_loss_seconds=payload.max_focus_loss_seconds,
+        require_extension=resolved_policy.require_extension,
+        min_extension_version=resolved_policy.min_extension_version,
+        require_fullscreen=resolved_policy.require_fullscreen,
+        require_camera=resolved_policy.require_camera,
+        require_microphone=resolved_policy.require_microphone,
+        require_screen_share=resolved_policy.require_screen_share,
+        block_clipboard=resolved_policy.block_clipboard,
+        max_focus_loss_seconds=resolved_policy.max_focus_loss_seconds,
         google_allowed_domain=payload.google_allowed_domain,
         created_by_user_id=user.id,
         owner_user_id=user.id,
@@ -446,7 +521,7 @@ def create_exam(
     )
     db.commit()
     db.refresh(exam)
-    return exam
+    return _exam_response_for_user(db, user, exam)
 
 
 @router.get("", response_model=list[ExamResponse])
@@ -460,6 +535,18 @@ def list_exams(
     ]
 
 
+@router.get("/policy/defaults", response_model=OrganizationPolicy)
+def get_exam_policy_defaults(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_permission(Permission.EXAM_CREATE)),
+) -> OrganizationPolicy:
+    membership = active_membership(db, user)
+    organization = db.get(models.Organization, membership.org_id)
+    if organization is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay to chuc")
+    return get_effective_organization_policy(db, organization)
+
+
 @router.get("/{exam_id}", response_model=ExamResponse)
 def get_exam(
     exam_id: str,
@@ -470,6 +557,88 @@ def get_exam(
     return _exam_response_for_user(db, user, exam)
 
 
+@router.get("/{exam_id}/readiness", response_model=ExamReadinessResponse)
+def get_exam_readiness(
+    exam_id: str,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> ExamReadinessResponse:
+    exam = authorize_exam(db, user, exam_id, Permission.EXAM_READ)
+    now = datetime.now(timezone.utc)
+    active_assignments = db.query(models.ExamAssignment).filter(
+        models.ExamAssignment.exam_id == exam.id,
+        models.ExamAssignment.status == "active",
+        (
+            models.ExamAssignment.expires_at.is_(None)
+            | (models.ExamAssignment.expires_at > now)
+        ),
+    ).count()
+    active_sessions = db.query(models.ExamSession).filter(
+        models.ExamSession.exam_id == exam.id,
+        models.ExamSession.status.in_(["pending", "active", "disconnected"]),
+    ).count()
+    organization = db.get(models.Organization, exam.org_id)
+    quota_ready = (
+        organization is None
+        or organization.quota_concurrent_sessions is None
+        or active_sessions < organization.quota_concurrent_sessions
+    )
+    schedule_ready = (
+        exam.status != "scheduled"
+        or (
+            exam.scheduled_start_at is not None
+            and exam.scheduled_end_at is not None
+            and _as_utc(exam.scheduled_end_at) > _as_utc(exam.scheduled_start_at)
+        )
+    )
+    items = [
+        ReadinessItem(
+            code="destination",
+            label="Trang bài thi",
+            ready=not exam.require_extension or bool(exam.exam_url),
+            detail="Đã cấu hình URL" if exam.exam_url else "Chưa cấu hình URL bài thi",
+        ),
+        ReadinessItem(
+            code="join_code",
+            label="Mã tham gia",
+            ready=_as_utc(exam.join_code_expires_at) > now,
+            detail=f"Hết hạn {exam.join_code_expires_at.isoformat()}",
+        ),
+        ReadinessItem(
+            code="schedule",
+            label="Lịch thi",
+            ready=schedule_ready,
+            detail="Lịch hợp lệ" if schedule_ready else "Thiếu hoặc sai thời gian bắt đầu/kết thúc",
+        ),
+        ReadinessItem(
+            code="authentication",
+            label="Xác thực thí sinh",
+            ready=exam.candidate_auth_mode != "google" or google_oauth_configured(),
+            detail="Google OAuth" if exam.candidate_auth_mode == "google" else "Họ tên + mã thí sinh",
+        ),
+        ReadinessItem(
+            code="staffing",
+            label="Nhân sự",
+            ready=active_assignments > 0,
+            detail=f"{active_assignments} phân công đang hiệu lực",
+        ),
+        ReadinessItem(
+            code="quota",
+            label="Hạn mức phiên",
+            ready=quota_ready,
+            detail=(
+                f"{active_sessions} phiên đang chiếm hạn mức"
+                if organization is None or organization.quota_concurrent_sessions is None
+                else f"{active_sessions}/{organization.quota_concurrent_sessions} phiên"
+            ),
+        ),
+    ]
+    return ExamReadinessResponse(
+        ready=all(item.ready for item in items),
+        items=items,
+    )
+
+
 @router.patch("/{exam_id}", response_model=ExamResponse)
 def update_exam(
     exam_id: str,
@@ -477,7 +646,7 @@ def update_exam(
     request: Request,
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
-) -> models.Exam:
+) -> ExamResponse:
     exam = authorize_exam(db, user, exam_id, Permission.EXAM_MANAGE)
     if exam.status != "draft":
         raise HTTPException(
@@ -487,6 +656,37 @@ def update_exam(
     _assert_version(exam, payload.expected_version)
     before = {"name": exam.name, "version": exam.version, "status": exam.status}
     changes = payload.model_dump(exclude_unset=True, exclude={"expected_version"})
+    candidate_policy = exam_policy_values(exam)
+    candidate_policy.update({
+        key: value
+        for key, value in changes.items()
+        if key in EXAM_POLICY_FIELDS
+    })
+    try:
+        resolved_policy = resolve_exam_policy(db, exam.organization, candidate_policy)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    candidate_auth_mode = changes.get("candidate_auth_mode", exam.candidate_auth_mode)
+    google_allowed_domain = changes.get("google_allowed_domain", exam.google_allowed_domain)
+    exam_url = changes.get("exam_url", exam.exam_url)
+    if resolved_policy.require_extension and not exam_url:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Ky thi bat buoc extension phai co URL bai thi",
+        )
+    if candidate_auth_mode == "google" and not google_oauth_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Backend chua cau hinh Google OAuth",
+        )
+    if candidate_auth_mode != "google" and google_allowed_domain:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Chi dat Google Workspace domain cho che do Google",
+        )
     start = changes.get("scheduled_start_at", exam.scheduled_start_at)
     end = changes.get("scheduled_end_at", exam.scheduled_end_at)
     if (start is None) != (end is None):
@@ -522,7 +722,7 @@ def update_exam(
     )
     db.commit()
     db.refresh(exam)
-    return exam
+    return _exam_response_for_user(db, user, exam)
 
 
 @router.get("/{exam_id}/assignments", response_model=list[AssignmentResponse])
@@ -702,21 +902,6 @@ def join_exam(payload: JoinExamRequest, request: Request, db: Session = Depends(
     organization = db.get(models.Organization, exam.org_id)
     if organization is None or organization.status != "active":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ma tham gia khong hop le hoac da het han")
-    if organization.quota_concurrent_sessions is not None:
-        active_count = (
-            db.query(models.ExamSession)
-            .join(models.Exam, models.Exam.id == models.ExamSession.exam_id)
-            .filter(
-                models.Exam.org_id == organization.id,
-                models.ExamSession.status.in_(["pending", "active", "disconnected"]),
-            )
-            .count()
-        )
-        if active_count >= organization.quota_concurrent_sessions:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="To chuc da dat han muc phien thi dong thoi",
-            )
     client_info = payload.client_info
     if exam.require_extension and client_info.client_type != "browser_extension":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ky thi nay bat buoc dung browser extension")
@@ -740,7 +925,6 @@ def join_exam(payload: JoinExamRequest, request: Request, db: Session = Depends(
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Vui long nhap ma thi sinh")
         student_name = payload.student_name
         candidate_number = payload.candidate_id
-        _ensure_identity_not_used(db, exam, candidate_number=candidate_number)
     else:
         if client_info.client_type != "browser_extension" or client_info.device_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Che do Google chi ho tro browser extension")
@@ -755,11 +939,60 @@ def join_exam(payload: JoinExamRequest, request: Request, db: Session = Depends(
         student_name = candidate.display_name
         candidate_email = candidate.email
         candidate_identity_id = candidate.id
-        _ensure_identity_not_used(db, exam, candidate_identity_id=candidate.id)
 
     device_hash = (
         hash_device_id(str(client_info.device_id)) if client_info.device_id is not None else None
     )
+    existing = _identity_session(
+        db,
+        exam,
+        candidate_number=candidate_number,
+        candidate_identity_id=candidate_identity_id,
+    )
+    if existing is not None:
+        if (
+            client_info.client_type != "browser_extension"
+            or not device_hash
+            or existing.device_id_hash != device_hash
+            or existing.status not in {"pending", "active", "disconnected"}
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Danh tinh nay da duoc su dung cho ky thi",
+            )
+        existing.status = "pending"
+        existing.disconnect_reason = None
+        existing.last_seen_at = datetime.now(timezone.utc)
+        existing.extension_version = client_info.extension_version
+        existing.browser_name = client_info.browser_name
+        db.commit()
+        db.refresh(existing)
+        return JoinExamResponse(
+            session_token=create_session_token(existing.id),
+            session_id=existing.id,
+            exam_name=exam.name,
+            student_name=existing.student_name,
+            candidate_id=existing.candidate_number,
+            authentication_method=existing.authentication_method,
+            exam_url=exam.exam_url,
+            resumed=True,
+        )
+
+    if organization.quota_concurrent_sessions is not None:
+        active_count = (
+            db.query(models.ExamSession)
+            .join(models.Exam, models.Exam.id == models.ExamSession.exam_id)
+            .filter(
+                models.Exam.org_id == organization.id,
+                models.ExamSession.status.in_(["pending", "active", "disconnected"]),
+            )
+            .count()
+        )
+        if active_count >= organization.quota_concurrent_sessions:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="To chuc da dat han muc phien thi dong thoi",
+            )
     session = models.ExamSession(
         exam_id=exam.id,
         student_name=student_name,
@@ -771,6 +1004,9 @@ def join_exam(payload: JoinExamRequest, request: Request, db: Session = Depends(
         extension_version=client_info.extension_version,
         browser_name=client_info.browser_name,
         device_id_hash=device_hash,
+        camera_status="pending" if exam.require_camera else "not_required",
+        microphone_status="pending" if exam.require_microphone else "not_required",
+        screen_share_status="pending" if exam.require_screen_share else "not_required",
         status="pending",
         last_seen_at=datetime.now(timezone.utc),
     )
@@ -803,17 +1039,13 @@ def update_exam_status(
     request: Request,
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
-) -> models.Exam:
+) -> ExamResponse:
     exam = authorize_exam(db, user, exam_id, Permission.EXAM_MANAGE)
     _assert_version(exam, payload.expected_version)
-    transitions = {
-        "draft": {"scheduled", "open", "archived"},
-        "scheduled": {"draft", "open", "closed"},
-        "open": {"closed"},
-        "closed": {"open", "archived"},
-        "archived": set(),
-    }
-    if payload.status != exam.status and payload.status not in transitions.get(exam.status, set()):
+    if payload.status != exam.status and payload.status not in _ALLOWED_STATUS_TRANSITIONS.get(
+        exam.status,
+        frozenset(),
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Khong the chuyen ky thi tu {exam.status} sang {payload.status}",
@@ -831,7 +1063,7 @@ def update_exam_status(
             detail="Ma tham gia da het han; hay xoay ma truoc khi mo ky thi",
         )
     if payload.status == exam.status:
-        return exam
+        return _exam_response_for_user(db, user, exam)
     previous_status = exam.status
     exam.status = payload.status
     exam.archived_at = datetime.now(timezone.utc) if payload.status == "archived" else None
@@ -851,22 +1083,25 @@ def update_exam_status(
     )
     db.commit()
     db.refresh(exam)
-    return exam
+    return _exam_response_for_user(db, user, exam)
 
 
 @router.post("/{exam_id}/rotate-code", response_model=ExamResponse)
 def rotate_join_code(
     exam_id: str,
+    payload: RotateJoinCodeRequest,
     request: Request,
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
-) -> models.Exam:
+) -> ExamResponse:
     exam = authorize_exam(db, user, exam_id, Permission.EXAM_MANAGE)
+    _assert_version(exam, payload.expected_version)
     if exam.status == "archived":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ky thi da luu tru")
     exam.join_code = _generate_join_code(db)
-    exam.join_code_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-    exam.status = "open"
+    exam.join_code_expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=payload.ttl_minutes,
+    )
     exam.version += 1
     exam.updated_at = datetime.now(timezone.utc)
     record_audit(
@@ -878,8 +1113,8 @@ def rotate_join_code(
         org_id=exam.org_id,
         exam_id=exam.id,
         request=request,
-        after={"status": exam.status, "expires_at": exam.join_code_expires_at},
+        after={"status": exam.status, "expires_at": exam.join_code_expires_at, "version": exam.version},
     )
     db.commit()
     db.refresh(exam)
-    return exam
+    return _exam_response_for_user(db, user, exam)

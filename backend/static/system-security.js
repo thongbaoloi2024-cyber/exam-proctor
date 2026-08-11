@@ -74,6 +74,13 @@ async function loadSecurityAnalytics() {
   });
   SystemUI.renderLineChart("security-trend-chart", data.request_trend);
   SystemUI.renderDonutChart("security-status-chart", data.status_totals);
+  const events = data.security_events || [];
+  document.getElementById("security-events-grid").replaceChildren(...(events.length ? events.map((item) => {
+    const card = document.createElement("article"); card.className = `operation-card ${item.key.endsWith(".failed") ? "operation-warning" : "operation-healthy"}`;
+    const label = document.createElement("span"); label.className = "metric-label"; label.textContent = item.label;
+    const value = document.createElement("strong"); value.textContent = SystemUI.formatNumber(item.value);
+    card.append(label, value); return card;
+  }) : [SystemUI.empty("Chưa có security event trong khoảng này.")]));
 }
 
 async function loadSecurityGrants() {

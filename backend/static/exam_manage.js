@@ -1,5 +1,6 @@
 let managedExam = null;
 let canAssign = false;
+let managePolicyFloor = null;
 
 function manageCell(row, value) {
   const cell = document.createElement("td");
@@ -27,26 +28,74 @@ async function setLifecycle(status) {
   }
   managedExam = body;
   renderManagedExam();
+  await loadReadiness();
+}
+
+function isoFromManageInput(value) {
+  return value ? new Date(value).toISOString() : null;
+}
+
+function manageConfigIsEditable() {
+  return Boolean(managedExam?.allowed_actions?.includes("exam.manage"))
+    && managedExam.status === "draft";
+}
+
+function syncManageAuthMode() {
+  const google = document.getElementById("manage-auth-mode").value === "google";
+  document.getElementById("manage-google-domain-wrap").classList.toggle("hidden", !google);
+  const requireExtension = document.getElementById("manage-require-extension");
+  if (google) requireExtension.checked = true;
+  requireExtension.disabled = !manageConfigIsEditable()
+    || google
+    || Boolean(managePolicyFloor?.require_extension);
+  document.getElementById("manage-exam-url").required = requireExtension.checked;
+}
+
+function applyManagePolicyConstraints() {
+  if (!managePolicyFloor) return;
+  [
+    ["manage-require-extension", "require_extension"],
+    ["manage-require-fullscreen", "require_fullscreen"],
+    ["manage-require-camera", "require_camera"],
+    ["manage-require-microphone", "require_microphone"],
+    ["manage-require-screen-share", "require_screen_share"],
+    ["manage-block-clipboard", "block_clipboard"],
+  ].forEach(([elementId, policyField]) => {
+    if (managePolicyFloor[policyField]) {
+      document.getElementById(elementId).checked = true;
+      document.getElementById(elementId).disabled = true;
+    }
+  });
+  document.getElementById("manage-focus-loss").max = String(managePolicyFloor.max_focus_loss_seconds);
+  syncManageAuthMode();
 }
 
 function renderManagedExam() {
+  const allowedActions = new Set(managedExam.allowed_actions || []);
+  const canManage = allowedActions.has("exam.manage");
   document.getElementById("manage-exam-title").textContent = managedExam.name;
-  document.getElementById("manage-exam-state").textContent = `Trạng thái: ${managedExam.status} · phiên bản ${managedExam.version}`;
+  const assignmentLabel = managedExam.assignment_role ? ` · vai trò ${managedExam.assignment_role}` : "";
+  document.getElementById("manage-exam-state").textContent = `Trạng thái: ${managedExam.status} · phiên bản ${managedExam.version}${assignmentLabel}`;
   document.getElementById("manage-exam-name").value = managedExam.name;
+  document.getElementById("manage-exam-url").value = managedExam.exam_url || "";
+  document.getElementById("manage-auth-mode").value = managedExam.candidate_auth_mode;
+  document.getElementById("manage-google-domain").value = managedExam.google_allowed_domain || "";
   document.getElementById("manage-exam-start").value = localInputValue(managedExam.scheduled_start_at);
   document.getElementById("manage-exam-end").value = localInputValue(managedExam.scheduled_end_at);
-  document.getElementById("exam-config-form").querySelectorAll("input,button").forEach((element) => {
-    element.disabled = managedExam.status !== "draft";
+  document.getElementById("manage-extension-version").value = managedExam.min_extension_version;
+  document.getElementById("manage-focus-loss").value = managedExam.max_focus_loss_seconds;
+  document.getElementById("manage-require-extension").checked = managedExam.require_extension;
+  document.getElementById("manage-require-fullscreen").checked = managedExam.require_fullscreen;
+  document.getElementById("manage-require-camera").checked = managedExam.require_camera;
+  document.getElementById("manage-require-microphone").checked = managedExam.require_microphone;
+  document.getElementById("manage-require-screen-share").checked = managedExam.require_screen_share;
+  document.getElementById("manage-block-clipboard").checked = managedExam.block_clipboard;
+  document.getElementById("exam-config-form").querySelectorAll("input,select,button").forEach((element) => {
+    element.disabled = !canManage || managedExam.status !== "draft";
   });
-  const transitions = {
-    draft: ["scheduled", "open", "archived"],
-    scheduled: ["draft", "open", "closed"],
-    open: ["closed"],
-    closed: ["open", "archived"],
-    archived: [],
-  };
+  applyManagePolicyConstraints();
   const labels = { draft: "Về bản nháp", scheduled: "Lên lịch", open: "Mở", closed: "Đóng", archived: "Lưu trữ" };
-  const buttons = (transitions[managedExam.status] || []).map((status) => {
+  const buttons = (managedExam.allowed_transitions || []).map((status) => {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = labels[status];
@@ -54,6 +103,33 @@ function renderManagedExam() {
     return button;
   });
   document.getElementById("lifecycle-actions").replaceChildren(...buttons);
+}
+
+async function loadManagePolicyFloor() {
+  const response = await API.request("/exams/policy/defaults");
+  if (!response.ok) return;
+  managePolicyFloor = await response.json();
+}
+
+async function loadReadiness() {
+  const response = await API.request(`/exams/${encodeURIComponent(MANAGE_EXAM_ID)}/readiness`);
+  if (!response.ok) return;
+  const readiness = await response.json();
+  document.getElementById("readiness-summary").textContent = readiness.ready
+    ? "Tất cả kiểm tra đều đạt."
+    : "Còn hạng mục cần xử lý trước khi mở kỳ thi.";
+  const items = readiness.items.map((item) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = `readiness-item ${item.ready ? "ready" : "blocked"}`;
+    const title = document.createElement("strong");
+    title.textContent = `${item.ready ? "✓" : "!"} ${item.label}`;
+    const detail = document.createElement("span");
+    detail.className = "muted";
+    detail.textContent = item.detail;
+    wrapper.append(title, detail);
+    return wrapper;
+  });
+  document.getElementById("readiness-list").replaceChildren(...items);
 }
 
 async function loadManagedExam() {
@@ -79,8 +155,9 @@ async function loadAssignments() {
   const rows = assignments.map((assignment) => {
     const row = document.createElement("tr");
     manageCell(row, assignment.email);
-    manageCell(row, assignment.assignment_role);
+    manageCell(row, { owner: "Chủ kỳ thi", manager: "Quản lý", proctor: "Giám thị" }[assignment.assignment_role] || assignment.assignment_role);
     manageCell(row, assignment.status);
+    manageCell(row, assignment.expires_at ? new Date(assignment.expires_at).toLocaleString("vi-VN") : "Không giới hạn");
     const actions = document.createElement("td");
     if (canAssign && assignment.assignment_role !== "owner" && assignment.status === "active") {
       const revoke = document.createElement("button");
@@ -116,8 +193,21 @@ document.getElementById("exam-config-form").addEventListener("submit", async (ev
     body: JSON.stringify({
       expected_version: managedExam.version,
       name: document.getElementById("manage-exam-name").value,
-      scheduled_start_at: document.getElementById("manage-exam-start").value || null,
-      scheduled_end_at: document.getElementById("manage-exam-end").value || null,
+      exam_url: document.getElementById("manage-exam-url").value || null,
+      candidate_auth_mode: document.getElementById("manage-auth-mode").value,
+      google_allowed_domain: document.getElementById("manage-auth-mode").value === "google"
+        ? (document.getElementById("manage-google-domain").value.trim() || null)
+        : null,
+      scheduled_start_at: isoFromManageInput(document.getElementById("manage-exam-start").value),
+      scheduled_end_at: isoFromManageInput(document.getElementById("manage-exam-end").value),
+      min_extension_version: document.getElementById("manage-extension-version").value,
+      max_focus_loss_seconds: Number(document.getElementById("manage-focus-loss").value),
+      require_extension: document.getElementById("manage-require-extension").checked,
+      require_fullscreen: document.getElementById("manage-require-fullscreen").checked,
+      require_camera: document.getElementById("manage-require-camera").checked,
+      require_microphone: document.getElementById("manage-require-microphone").checked,
+      require_screen_share: document.getElementById("manage-require-screen-share").checked,
+      block_clipboard: document.getElementById("manage-block-clipboard").checked,
     }),
   });
   const body = await response.json().catch(() => ({}));
@@ -128,6 +218,7 @@ document.getElementById("exam-config-form").addEventListener("submit", async (ev
   managedExam = body;
   renderManagedExam();
   showToast("Đã lưu kỳ thi.", "success");
+  await loadReadiness();
 });
 
 document.getElementById("assignment-form").addEventListener("submit", async (event) => {
@@ -137,6 +228,7 @@ document.getElementById("assignment-form").addEventListener("submit", async (eve
     body: JSON.stringify({
       user_id: document.getElementById("assignment-user").value,
       assignment_role: document.getElementById("assignment-role").value,
+      expires_at: isoFromManageInput(document.getElementById("assignment-expiry").value),
     }),
   });
   showToast(response.ok ? "Đã phân công." : "Không phân công được.", response.ok ? "success" : "error");
@@ -145,8 +237,11 @@ document.getElementById("assignment-form").addEventListener("submit", async (eve
 
 async function initializeExamManage() {
   if (!await API.requireAuth()) return;
-  await Promise.all([loadManagedExam(), loadEligibleMembers()]);
+  await loadManagePolicyFloor();
+  await Promise.all([loadManagedExam(), loadEligibleMembers(), loadReadiness()]);
   await loadAssignments();
 }
 
 initializeExamManage().catch((error) => showToast(error.message, "error"));
+document.getElementById("manage-auth-mode").addEventListener("change", syncManageAuthMode);
+document.getElementById("manage-require-extension").addEventListener("change", syncManageAuthMode);

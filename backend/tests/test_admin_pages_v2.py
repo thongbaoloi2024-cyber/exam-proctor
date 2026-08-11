@@ -65,6 +65,9 @@ def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     assert 'id="organization-nav-section"' in response.text
     assert 'id="organization-platform-badge"' in response.text
     assert 'id="exam-platform-badge"' in response.text
+    assert 'id="organization-context"' in response.text
+    assert 'id="organization-switcher"' in response.text
+    assert '<!-- <div id="organization-context">' not in response.text
     assert "Vận hành kỳ thi" in response.text
     assert "Quản trị tổ chức" in response.text
 
@@ -75,6 +78,7 @@ def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     assert "const canUseExams = !isOrganizationAdmin" in api_script
     assert 'this.hasCapability("org.members.read")' in api_script
     assert 'this.hasCapability("exam.read") || this.hasCapability("exam.create")' in api_script
+    assert 'this.loadOrganizationSwitcher()' in api_script
 
     stylesheet = client.get("/static/style.css").text
     assert ".has-organization-sidebar" in stylesheet

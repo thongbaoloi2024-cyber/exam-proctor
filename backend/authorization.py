@@ -224,6 +224,51 @@ def capabilities_for_user(db: Session, user: models.User) -> list[str]:
     return sorted(permission.value for permission in capabilities)
 
 
+def exam_access_for_user(
+    db: Session,
+    user: models.User,
+    exam: models.Exam,
+) -> tuple[str | None, frozenset[Permission]]:
+    """Return the caller's assignment role and effective permissions for one exam.
+
+    Account-level capabilities are useful for building the primary navigation,
+    but they are deliberately a union across every active assignment.  Resource
+    actions must use this helper so being a manager on one exam never makes a
+    proctor-only exam look manageable in the UI.
+    """
+
+    if active_system_role(db, user) is not None:
+        grant = _active_break_glass_grants(db, user).filter(
+            models.AccessGrant.org_id == exam.org_id,
+        ).first()
+        return (None, _BREAK_GLASS_READ_PERMISSIONS if grant is not None else frozenset())
+
+    membership = active_membership(db, user)
+    if membership.org_id != exam.org_id:
+        return (None, frozenset())
+
+    permissions = _ORG_ROLE_PERMISSIONS.get(membership.role, frozenset())
+    if membership.role != "exam_manager":
+        return (None, permissions)
+
+    assignment = db.query(models.ExamAssignment).filter_by(
+        exam_id=exam.id,
+        user_id=user.id,
+        status="active",
+    ).first()
+    if assignment is None:
+        return (None, permissions)
+    if assignment.expires_at is not None and _as_utc(
+        assignment.expires_at,
+    ) <= datetime.now(timezone.utc):
+        return (None, permissions)
+    return (
+        assignment.assignment_role,
+        permissions
+        | _ASSIGNMENT_ROLE_PERMISSIONS.get(assignment.assignment_role, frozenset()),
+    )
+
+
 def require_system_permission(permission: Permission) -> Callable:
     def _dependency(
         db: Session = Depends(get_db),
@@ -256,6 +301,20 @@ def _valid_break_glass_grant(
         models.AccessGrant.org_id == org_id,
     ).first()
     return grant is not None
+
+
+def active_break_glass_grant(
+    db: Session,
+    user: models.User,
+    org_id: str,
+) -> models.AccessGrant | None:
+    """Return the active grant used for sensitive-read audit attribution."""
+
+    if active_system_role(db, user) is None:
+        return None
+    return _active_break_glass_grants(db, user).filter(
+        models.AccessGrant.org_id == org_id,
+    ).first()
 
 
 def scoped_exam_query(

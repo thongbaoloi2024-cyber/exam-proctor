@@ -77,14 +77,51 @@ async function loadSystemOverview() {
   renderAttention(data);
 }
 
+function formatBytes(value) {
+  if (value < 0) return "Không đọc được";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let amount = Number(value || 0);
+  let index = 0;
+  while (amount >= 1024 && index < units.length - 1) {
+    amount /= 1024;
+    index += 1;
+  }
+  return `${amount.toFixed(index ? 1 : 0)} ${units[index]}`;
+}
+
+async function loadOperations() {
+  const data = await SystemUI.fetchJson("/system/operations");
+  const jobs = Object.entries(data.report_jobs).map(([key, value]) => `${key}: ${value}`).join(" · ") || "Không có job";
+  const versions = Object.entries(data.extension_versions).map(([key, value]) => `${key}: ${value}`).join(" · ") || "Chưa có extension";
+  const cards = [
+    ["Database", `${data.database_status} · ${data.database_latency_ms} ms`, data.database_status === "healthy"],
+    ["Redis", data.redis_status === "configured" ? "Đã cấu hình" : "Chưa cấu hình (single-worker)", data.redis_status === "configured"],
+    ["Report queue", jobs, data.recent_report_failures === 0],
+    ["Evidence storage", formatBytes(data.evidence_storage_bytes), data.evidence_storage_bytes >= 0],
+    ["Phiên connected", data.sessions_connected, true],
+    ["Extension versions", versions, true],
+  ];
+  document.getElementById("operations-grid").replaceChildren(...cards.map(([labelText, valueText, healthy]) => {
+    const card = document.createElement("article");
+    card.className = `operation-card ${healthy ? "operation-healthy" : "operation-warning"}`;
+    const label = document.createElement("span"); label.className = "metric-label"; label.textContent = labelText;
+    const value = document.createElement("strong"); value.textContent = valueText;
+    card.append(label, value);
+    return card;
+  }));
+}
+
 async function initializeSystemOverview() {
   const user = await SystemUI.initialize();
   if (!user) return;
   document.getElementById("overview-range").addEventListener("change", () => {
     loadSystemOverview().catch((error) => showToast(error.message, "error"));
   });
+  document.getElementById("refresh-operations").addEventListener("click", () => {
+    loadOperations().catch((error) => showToast(error.message, "error"));
+  });
   try {
-    await loadSystemOverview();
+    await Promise.all([loadSystemOverview(), loadOperations()]);
   } catch (error) {
     showToast(error.message, "error");
   }

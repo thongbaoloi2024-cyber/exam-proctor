@@ -10,10 +10,11 @@
   <p><a href="/ui/exams/{{ exam_id }}/dashboard">&larr; Quay lại dashboard</a></p>
   <h1 id="student-name-heading">Chi tiết phiên</h1>
   <p id="session-summary" class="muted">Đang tải...</p>
-  <p>
-    <a href="#" id="report-html-link">Xem báo cáo HTML</a> ·
-    <a href="#" id="report-pdf-link">Tải báo cáo PDF</a>
-  </p>
+  <div class="report-job-actions">
+    <button type="button" id="report-html-button" class="secondary">Tạo báo cáo HTML</button>
+    <button type="button" id="report-pdf-button" class="secondary">Tạo báo cáo PDF</button>
+    <span id="report-job-status" class="muted" aria-live="polite"></span>
+  </div>
   <h2>Điểm rủi ro theo thời gian</h2>
   <div id="risk-chart-wrap">
     <svg id="risk-chart" viewBox="0 0 600 150" preserveAspectRatio="none"></svg>
@@ -23,6 +24,14 @@
       <span id="chart-time-end"></span>
     </div>
   </div>
+  <div class="section-heading-row">
+    <div><h2>Timeline hợp nhất</h2><p class="muted">CV và sự kiện trình duyệt theo cùng trục thời gian.</p></div>
+    <label>Mức độ<select id="timeline-severity-filter"><option value="">Tất cả</option><option value="HIGH">HIGH</option><option value="MEDIUM">MEDIUM</option><option value="LOW">LOW</option></select></label>
+  </div>
+  <table id="unified-timeline-table" class="data-table">
+    <thead><tr><th>Thời điểm (s)</th><th>Nguồn</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th></tr></thead>
+    <tbody><tr><td colspan="5" class="muted">Đang tải...</td></tr></tbody>
+  </table>
   <h2>Timeline vi phạm</h2>
   <table id="violations-table" class="data-table">
     <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Loại vi phạm chính</th><th>Ảnh chụp</th><th>Duyệt sự cố</th></tr></thead>

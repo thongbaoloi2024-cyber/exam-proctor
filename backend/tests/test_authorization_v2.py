@@ -112,6 +112,52 @@ def test_manager_assignment_can_manage_exam(client):
     assert response.json()["status"] == "closed"
 
 
+def test_exam_response_actions_are_scoped_per_assignment(client):
+    admin_token = _register_admin(client, email="mixed-scope-admin@test.local")
+    _, owner_token = _create_proctor(client, admin_token, "mixed-owner@test.local")
+    manager_exam = _create_exam(client, owner_token, "Managed Resource")
+    proctor_exam = _create_exam(client, owner_token, "Proctored Resource")
+    mixed_user_id, mixed_token = _create_proctor(
+        client,
+        admin_token,
+        "mixed-role@test.local",
+    )
+    with SessionLocal() as db:
+        db.add_all([
+            models.ExamAssignment(
+                exam_id=manager_exam["id"],
+                user_id=mixed_user_id,
+                assignment_role="manager",
+                status="active",
+            ),
+            models.ExamAssignment(
+                exam_id=proctor_exam["id"],
+                user_id=mixed_user_id,
+                assignment_role="proctor",
+                status="active",
+            ),
+        ])
+        db.commit()
+
+    response = client.get(
+        "/exams",
+        headers={"Authorization": f"Bearer {mixed_token}"},
+    )
+    assert response.status_code == 200
+    exams = {item["id"]: item for item in response.json()}
+
+    managed = exams[manager_exam["id"]]
+    assert managed["assignment_role"] == "manager"
+    assert "exam.manage" in managed["allowed_actions"]
+    assert "closed" in managed["allowed_transitions"]
+
+    proctored = exams[proctor_exam["id"]]
+    assert proctored["assignment_role"] == "proctor"
+    assert "exam.monitor" in proctored["allowed_actions"]
+    assert "exam.manage" not in proctored["allowed_actions"]
+    assert proctored["allowed_transitions"] == []
+
+
 def test_exam_manager_can_create_and_owns_new_exam(client):
     admin_token = _register_admin(client, email="creator-admin@test.local")
     proctor_id, proctor_token = _create_proctor(

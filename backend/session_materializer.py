@@ -50,6 +50,25 @@ def ensure_session_dir(session_id: str) -> Path:
     return session_dir
 
 
+def archive_session_attempt(session_id: str, attempt_number: int) -> Path | None:
+    """Move immutable evidence from a failed attempt before reusing its session id."""
+    source = session_dir_for(session_id)
+    if not source.exists():
+        return None
+    root = SESSIONS_ROOT.resolve()
+    resolved_source = source.resolve()
+    if resolved_source.parent != root or resolved_source.name != session_id:
+        raise ValueError("Thu muc phien khong hop le")
+    archive_parent = root / ".reset_archives" / session_id
+    archive_parent.mkdir(parents=True, exist_ok=True)
+    destination = archive_parent / f"attempt-{attempt_number}"
+    if destination.exists():
+        raise ValueError("Ban luu attempt da ton tai")
+    resolved_source.replace(destination)
+    ensure_session_dir(session_id)
+    return destination
+
+
 def append_jsonl(session_id: str, filename: str, record: Dict[str, Any]) -> None:
     if filename not in _JSONL_FILES:
         raise ValueError("Ten file JSONL khong duoc phep")

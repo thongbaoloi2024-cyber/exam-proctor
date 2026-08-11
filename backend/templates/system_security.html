@@ -31,6 +31,11 @@
 </section>
 
 <section class="panel">
+  <div class="panel-heading"><div><h2>Security events</h2><p class="muted">Đăng nhập và MFA trong 30 ngày; xem audit để tra cứu IP/request ID.</p></div><a href="/ui/system/audit?search=security." class="text-link">Mở audit →</a></div>
+  <div id="security-events-grid" class="operations-grid"><div class="empty-state compact">Đang tổng hợp...</div></div>
+</section>
+
+<section class="panel">
   <div class="panel-heading"><div><h2>Lịch sử yêu cầu</h2><p class="muted">System Admin không thể tự phê duyệt yêu cầu của mình.</p></div></div>
   <form id="security-filters" class="filter-bar">
     <label class="compact-field"><span class="sr-only">Trạng thái</span><select id="security-status-filter"><option value="">Tất cả trạng thái</option><option value="pending">Chờ duyệt</option><option value="active">Đang hiệu lực</option><option value="expired">Hết hạn</option><option value="revoked">Đã thu hồi</option></select></label>

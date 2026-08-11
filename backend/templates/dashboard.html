@@ -9,6 +9,30 @@
 
   <div id="kpi-row" class="kpi-row"></div>
 
+  <div class="filter-bar dashboard-filters" aria-label="Bộ lọc phiên thi">
+    <label class="grow">Tìm thí sinh
+      <input id="session-search" type="search" placeholder="Tên, mã hoặc email">
+    </label>
+    <label>Trạng thái
+      <select id="session-status-filter">
+        <option value="all">Tất cả</option>
+        <option value="alert">Có cảnh báo</option>
+        <option value="active">Đang tham gia</option>
+        <option value="pending">Chờ client</option>
+        <option value="disconnected">Mất kết nối</option>
+        <option value="ended">Đã kết thúc</option>
+      </select>
+    </label>
+    <label>Sắp xếp
+      <select id="session-sort">
+        <option value="alert">Ưu tiên cảnh báo</option>
+        <option value="risk">Risk cao nhất</option>
+        <option value="name">Tên thí sinh</option>
+        <option value="recent">Heartbeat gần nhất</option>
+      </select>
+    </label>
+  </div>
+
   <table id="sessions-table" class="data-table">
     <thead>
       <tr><th>Thí sinh</th><th>Mã/Email</th><th>Xác thực · Client</th><th>Trạng thái</th><th>Risk CV</th><th>Trình duyệt</th><th></th></tr>
@@ -17,7 +41,43 @@
       <tr class="loading-row"><td colspan="7">Đang tải...</td></tr>
     </tbody>
   </table>
+
+  <div class="section-heading-row">
+    <div><h2>Hàng đợi sự cố</h2><p class="muted">Sự cố mới và mức HIGH được ưu tiên trước.</p></div>
+    <label>Trạng thái
+      <select id="incident-status-filter">
+        <option value="">Tất cả</option>
+        <option value="new">Mới</option>
+        <option value="in_review">Đang duyệt</option>
+        <option value="confirmed">Đã xác nhận</option>
+        <option value="dismissed">Đã bỏ qua</option>
+      </select>
+    </label>
+  </div>
+  <table id="incidents-table" class="data-table">
+    <thead><tr><th>Thí sinh</th><th>Mức độ</th><th>Sự cố</th><th>Trạng thái</th><th>Người duyệt</th><th></th></tr></thead>
+    <tbody><tr><td colspan="6" class="muted">Đang tải...</td></tr></tbody>
+  </table>
 </section>
+
+<dialog id="end-session-dialog" class="admin-dialog admin-dialog-small">
+  <form method="dialog" id="end-session-form">
+    <div class="dialog-header">
+      <div><h2>Kết thúc phiên thi</h2><p class="muted" id="end-session-student"></p></div>
+      <button type="button" class="icon-button" id="end-session-close" aria-label="Đóng">×</button>
+    </div>
+    <div class="dialog-body">
+      <label>Lý do bắt buộc
+        <textarea id="end-session-reason" rows="3" minlength="3" maxlength="200" required>Kết thúc bởi giám thị</textarea>
+      </label>
+      <p class="muted">Client sẽ bị ngắt ngay và thao tác được ghi vào audit log.</p>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="secondary" id="end-session-cancel">Hủy</button>
+      <button type="submit" class="danger">Kết thúc phiên</button>
+    </div>
+  </form>
+</dialog>
 {% endblock %}
 {% block scripts %}
 <script src="/static/dashboard.js"></script>

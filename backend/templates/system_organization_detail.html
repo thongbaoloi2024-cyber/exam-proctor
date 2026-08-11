@@ -39,7 +39,7 @@
 
   <section class="detail-grid">
     <article class="panel">
-      <div class="panel-heading"><div><h2>Organization Admin</h2><p class="muted">Quản trị viên thuộc tenant này</p></div></div>
+      <div class="panel-heading"><div><h2>Organization Admin</h2><p class="muted">Quản trị viên thuộc tenant này</p></div><button type="button" class="secondary-button" id="invite-organization-admin">Mời admin</button></div>
       <div id="organization-admin-list" class="person-list"><div class="empty-state compact">Đang tải...</div></div>
     </article>
     <article class="panel">
@@ -87,6 +87,14 @@
       <label>Thời hạn yêu cầu<select id="break-glass-duration"><option value="15">15 phút</option><option value="30" selected>30 phút</option><option value="60">60 phút</option><option value="120">120 phút</option></select></label>
     </div>
     <div class="dialog-actions"><button type="button" class="secondary-button dialog-close">Hủy</button><button type="submit">Gửi yêu cầu</button></div>
+  </form>
+</dialog>
+
+<dialog id="invite-admin-dialog" class="admin-dialog admin-dialog-small">
+  <form id="invite-admin-form">
+    <div class="dialog-header"><div><h2>Mời Organization Admin</h2><p class="muted">Token chỉ hiển thị một lần sau khi tạo.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
+    <div class="dialog-body form-stack"><label>Email<input id="invite-admin-email" type="email" required></label><label>Hiệu lực (giờ)<input id="invite-admin-hours" type="number" min="1" max="336" value="72" required></label><div id="invite-admin-result" class="invitation-result hidden"></div></div>
+    <div class="dialog-actions"><button type="button" class="secondary-button dialog-close">Hủy</button><button type="submit">Tạo lời mời</button></div>
   </form>
 </dialog>
 {% endblock %}

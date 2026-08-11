@@ -36,3 +36,9 @@ def test_report_job_is_queued_processed_and_queryable(client, tmp_path, monkeypa
     assert completed.status_code == 200
     assert completed.json()["status"] == "completed"
     assert (tmp_path / joined["session_id"] / "report.html").is_file()
+    download = client.get(
+        f"/report-jobs/{queued.json()['id']}/download",
+        headers=headers,
+    )
+    assert download.status_code == 200
+    assert "text/html" in download.headers["content-type"]

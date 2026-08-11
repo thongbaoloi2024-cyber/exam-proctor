@@ -7,44 +7,82 @@
   <h1 id="exams-page-title">{{ 'Dữ liệu break-glass' if system_evidence else 'Kỳ thi của tôi' }}</h1>
   <p id="exams-page-description" class="muted{% if not system_evidence %} hidden{% endif %}">Chỉ hiển thị kỳ thi thuộc các yêu cầu đang hiệu lực. Quyền truy cập hoàn toàn chỉ đọc.</p>
   <form id="create-exam-form" class="policy-form{% if system_evidence %} hidden{% endif %}">
-    <div class="form-grid">
+    <div class="wizard-progress" aria-label="Tiến trình tạo kỳ thi">
+      <span data-wizard-indicator="0" class="active">1. Thông tin</span>
+      <span data-wizard-indicator="1">2. Xác thực</span>
+      <span data-wizard-indicator="2">3. Giám sát</span>
+      <span data-wizard-indicator="3">4. Rà soát</span>
+    </div>
+    <fieldset class="wizard-step" data-wizard-step="0">
+      <legend>Thông tin và thời gian</legend>
+      <div class="form-grid">
       <label>Tên kỳ thi
         <input type="text" id="exam-name" required>
       </label>
       <label>URL bài thi
-        <input type="url" id="exam-url" placeholder="https://exam.example/..." required>
+        <input type="url" id="exam-url" placeholder="https://exam.example/...">
       </label>
+      <label>Trạng thái ban đầu
+        <select id="initial-status">
+          <option value="draft">Bản nháp</option>
+          <option value="scheduled">Đã lên lịch</option>
+          <option value="open">Mở ngay</option>
+        </select>
+      </label>
+      <label>Thời hạn mã tham gia (phút)
+        <input type="number" id="join-code-ttl" min="5" max="10080" value="1440" required>
+      </label>
+      <label id="create-start-wrap" class="hidden">Bắt đầu
+        <input id="create-exam-start" type="datetime-local">
+      </label>
+      <label id="create-end-wrap" class="hidden">Kết thúc
+        <input id="create-exam-end" type="datetime-local">
+      </label>
+      </div>
+    </fieldset>
+    <fieldset class="wizard-step hidden" data-wizard-step="1">
+      <legend>Xác thực thí sinh</legend>
+      <div class="form-grid">
       <label>Chế độ xác thực
         <select id="candidate-auth-mode">
           <option value="manual">Họ tên + mã thí sinh</option>
           <option value="google">Tài khoản Google</option>
         </select>
       </label>
-      <label>Trạng thái ban đầu
-        <select id="initial-status">
-          <option value="draft">Bản nháp</option>
-          <option value="open">Mở ngay</option>
-        </select>
-      </label>
       <label id="google-domain-wrap" class="hidden">Google Workspace domain (tùy chọn)
         <input type="text" id="google-domain" placeholder="school.edu.vn">
       </label>
+      </div>
+    </fieldset>
+    <fieldset class="wizard-step hidden" data-wizard-step="2">
+      <legend>Thiết bị và giám sát</legend>
+      <div class="form-grid">
       <label>Phiên bản extension tối thiểu
         <input type="text" id="min-extension-version" value="1.0.0" pattern="\d+\.\d+\.\d+" required>
       </label>
       <label>Cho phép rời cửa sổ tối đa (giây)
         <input type="number" id="max-focus-loss" min="0" max="300" step="0.5" value="5">
       </label>
-    </div>
-    <div class="checkbox-grid">
+      </div>
+      <div class="checkbox-grid">
       <label><input type="checkbox" id="require-extension" checked> Bắt buộc browser extension</label>
       <label><input type="checkbox" id="require-fullscreen" checked> Bắt buộc toàn màn hình</label>
       <label><input type="checkbox" id="require-camera" checked> Bắt buộc camera</label>
       <label><input type="checkbox" id="require-microphone"> Bắt buộc microphone</label>
       <label><input type="checkbox" id="require-screen-share"> Bắt buộc chia sẻ toàn màn hình</label>
       <label><input type="checkbox" id="block-clipboard" checked> Chặn copy/paste/menu chuột phải</label>
+      </div>
+      <p class="muted">Các trường bị khóa là mức tối thiểu do tổ chức áp dụng.</p>
+    </fieldset>
+    <fieldset class="wizard-step hidden" data-wizard-step="3">
+      <legend>Rà soát trước khi tạo</legend>
+      <dl id="create-exam-review" class="description-list"></dl>
+    </fieldset>
+    <div class="wizard-actions">
+      <button type="button" id="wizard-previous" class="secondary-button hidden">Quay lại</button>
+      <button type="button" id="wizard-next">Tiếp tục</button>
+      <button type="submit" id="create-exam-submit" class="hidden">Tạo kỳ thi</button>
     </div>
-    <button type="submit">Tạo kỳ thi</button>
   </form>
   <table id="exams-table" class="data-table">
     <thead>

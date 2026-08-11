@@ -5,6 +5,7 @@ const SEVERITY_BADGE_CLASS = { LOW: "badge-low", MEDIUM: "badge-medium", HIGH: "
 const snapshotObjectUrls = [];
 const incidentReviews = new Map();
 const BROWSER_EVENT_LABELS = {
+  MEDIA_READY: "Camera, microphone và chia sẻ màn hình sẵn sàng",
   CONTENT_MONITOR_READY: "Bộ giám sát trang sẵn sàng",
   TAB_HIDDEN: "Ẩn tab bài thi",
   TAB_VISIBLE: "Quay lại tab bài thi",
@@ -26,6 +27,8 @@ const BROWSER_EVENT_LABELS = {
   MONITOR_CLOSED: "Cửa sổ giám sát đóng",
   PERMISSION_MISSING: "Thiếu quyền bắt buộc",
 };
+const reportPollTimers = new Map();
+let unifiedTimeline = [];
 
 function numeric(value, fallback = 0) {
   const parsed = Number(value);
@@ -118,6 +121,20 @@ function renderRiskChart(riskTimeline) {
   startLabel.textContent = "0s";
   endLabel.textContent = `${maxTime.toFixed(0)}s`;
   maxLabel.textContent = `risk_score cao nhất: ${maxScore.toFixed(1)}`;
+}
+
+function renderUnifiedTimeline() {
+  const filter = document.getElementById("timeline-severity-filter").value;
+  const items = unifiedTimeline.filter((item) => !filter || item.severity === filter);
+  const tbody = document.querySelector("#unified-timeline-table tbody");
+  if (!items.length) return showTableMessage(tbody, "Không có sự kiện phù hợp.", 5);
+  tbody.replaceChildren(...items.map((item) => {
+    const row = document.createElement("tr");
+    [numeric(item.time).toFixed(1), item.source].forEach((value) => { const cell = document.createElement("td"); cell.textContent = value; row.appendChild(cell); });
+    const severityCell = document.createElement("td"); const badge = document.createElement("span"); badge.className = `badge ${SEVERITY_BADGE_CLASS[item.severity] || "badge-low"}`; badge.textContent = item.severity; severityCell.appendChild(badge); row.appendChild(severityCell);
+    [item.type, item.detail || "-"].forEach((value) => { const cell = document.createElement("td"); cell.textContent = value; row.appendChild(cell); });
+    return row;
+  }));
 }
 
 async function loadSnapshot(img, url) {
@@ -227,7 +244,10 @@ async function loadDetail() {
   document.getElementById("session-summary").textContent =
     `Trạng thái: ${detail.status} · Xác thực: ${detail.authentication_method} · Client: ${detail.client_type}`
     + ` · Thời lượng: ${durationLabel} · Vi phạm CV: ${violations.length}`
-    + ` · Sự kiện trình duyệt: ${detail.browser_event_count}`;
+    + ` · Sự kiện trình duyệt: ${detail.browser_event_count}`
+    + ` · Thiết bị: Cam ${detail.camera_status}, Mic ${detail.microphone_status}, Màn ${detail.screen_share_status}`
+    + `${detail.disconnect_reason ? ` · Ngắt: ${detail.disconnect_reason}` : ""}`
+    + `${detail.reset_count ? ` · Đã reset ${detail.reset_count} lần` : ""}`;
 
   renderRiskChart(detail.risk_timeline);
   const tbody = document.querySelector("#violations-table tbody");
@@ -239,6 +259,11 @@ async function loadDetail() {
   }
 
   const browserEvents = Array.isArray(detail.browser_events) ? detail.browser_events : [];
+  unifiedTimeline = [
+    ...violations.map((item) => ({ time: item.video_time_sec, source: "CV", severity: String(item.severity || "LOW"), type: String(item.primary_violation || "-"), detail: item.risk_score != null ? `Risk ${numeric(item.risk_score).toFixed(1)}` : "" })),
+    ...browserEvents.map((item) => ({ time: item.video_time_sec, source: "Trình duyệt", severity: String(item.severity || "LOW"), type: BROWSER_EVENT_LABELS[item.event_type] || String(item.event_type || "-"), detail: item.observed_origin || (item.server_duration_ms != null ? `${(numeric(item.server_duration_ms) / 1000).toFixed(1)}s` : "") })),
+  ].sort((left, right) => left.time - right.time);
+  renderUnifiedTimeline();
   const browserTbody = document.querySelector("#browser-events-table tbody");
   browserTbody.replaceChildren();
   if (browserEvents.length === 0) {
@@ -248,15 +273,62 @@ async function loadDetail() {
   }
 }
 
-document.getElementById("report-html-link").addEventListener("click", (event) => {
-  event.preventDefault();
-  openAuthenticatedFile(`/sessions/${encodeURIComponent(SESSION_ID)}/report/html`);
+function setReportStatus(text, isError = false) {
+  const element = document.getElementById("report-job-status");
+  element.textContent = text;
+  element.className = isError ? "error" : "muted";
+}
+
+async function pollReportJob(jobId, format) {
+  const response = await API.request(`/report-jobs/${encodeURIComponent(jobId)}`);
+  if (!response.ok) {
+    setReportStatus("Không đọc được trạng thái báo cáo.", true);
+    return;
+  }
+  const job = await response.json();
+  if (job.status === "completed") {
+    setReportStatus(`Báo cáo ${format.toUpperCase()} đã sẵn sàng.`);
+    openAuthenticatedFile(`/report-jobs/${encodeURIComponent(jobId)}/download`);
+    return;
+  }
+  if (job.status === "failed") {
+    setReportStatus(job.error_message || "Tạo báo cáo thất bại.", true);
+    return;
+  }
+  setReportStatus(job.status === "processing" ? "Đang tạo báo cáo..." : "Báo cáo đang chờ xử lý...");
+  const timer = window.setTimeout(() => pollReportJob(jobId, format).catch(() => {
+    setReportStatus("Mất kết nối khi chờ báo cáo.", true);
+  }), 2000);
+  reportPollTimers.set(format, timer);
+}
+
+async function createReport(format) {
+  const button = document.getElementById(`report-${format}-button`);
+  button.disabled = true;
+  setReportStatus(`Đang gửi yêu cầu ${format.toUpperCase()}...`);
+  try {
+    const response = await API.request(
+      `/sessions/${encodeURIComponent(SESSION_ID)}/report-jobs/${encodeURIComponent(format)}`,
+      { method: "POST" },
+    );
+    if (!response.ok) throw new Error("Không tạo được yêu cầu báo cáo.");
+    const job = await response.json();
+    clearTimeout(reportPollTimers.get(format));
+    await pollReportJob(job.id, format);
+  } catch (error) {
+    setReportStatus(error.message || "Không tạo được báo cáo.", true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+document.getElementById("report-html-button").addEventListener("click", () => createReport("html"));
+document.getElementById("report-pdf-button").addEventListener("click", () => createReport("pdf"));
+document.getElementById("timeline-severity-filter").addEventListener("change", renderUnifiedTimeline);
+window.addEventListener("unload", () => {
+  snapshotObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  reportPollTimers.forEach((timer) => clearTimeout(timer));
 });
-document.getElementById("report-pdf-link").addEventListener("click", (event) => {
-  event.preventDefault();
-  openAuthenticatedFile(`/sessions/${encodeURIComponent(SESSION_ID)}/report/pdf`);
-});
-window.addEventListener("unload", () => snapshotObjectUrls.forEach((url) => URL.revokeObjectURL(url)));
 
 async function initializeDetail() {
   const user = await API.requireAuth();

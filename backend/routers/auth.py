@@ -489,6 +489,18 @@ def login(
     )
     user = db.query(models.User).filter(models.User.email == payload.email).first()
     if user is None or user.status != "active" or not verify_password(payload.password, user.password_hash):
+        record_audit(
+            db,
+            actor=user,
+            action="security.login.failed",
+            resource_type="user_account",
+            resource_id=user.id if user else payload.email,
+            org_id=user.org_id if user else None,
+            outcome="failure",
+            reason="invalid_credentials_or_inactive_account",
+            request=request,
+        )
+        db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sai email hoac mat khau")
     _validate_login_identity(db, user)
     if user.mfa_enabled:
@@ -497,7 +509,18 @@ def login(
         set_auth_flow_cookie(response, challenge_token, _AUTH_CHALLENGE_TTL_MINUTES * 60)
         return LoginResponse(mfa_required=True)
 
-    return _issue_login_session(db, user, response)
+    login_response = _issue_login_session(db, user, response)
+    record_audit(
+        db,
+        actor=user,
+        action="security.login.success",
+        resource_type="user_account",
+        resource_id=user.id,
+        org_id=user.org_id,
+        request=request,
+    )
+    db.commit()
+    return login_response
 
 
 @router.get("/mfa/challenge")
@@ -568,6 +591,17 @@ def verify_login_mfa(
         attempts_remaining = max(0, _MAX_MFA_ATTEMPTS - challenge.failed_attempts)
         if attempts_remaining == 0:
             challenge.consumed_at = _now()
+        record_audit(
+            db,
+            actor=user,
+            action="security.mfa.failed",
+            resource_type="user_account",
+            resource_id=user.id,
+            org_id=user.org_id,
+            outcome="failure",
+            reason="invalid_mfa_code",
+            request=request,
+        )
         db.commit()
         detail = (
             "Khong giai ma duoc MFA secret; hay dung recovery code hoac lien he quan tri vien."
@@ -606,6 +640,15 @@ def verify_login_mfa(
             mfa_reenrollment_required = True
 
     challenge.consumed_at = _now()
+    record_audit(
+        db,
+        actor=user,
+        action="security.mfa.success",
+        resource_type="user_account",
+        resource_id=user.id,
+        org_id=user.org_id,
+        request=request,
+    )
     db.commit()
     login_data = _issue_login_session(
         db,

@@ -62,6 +62,22 @@ class Organization(Base):
     )
 
 
+class PlatformPolicySetting(Base):
+    """Singleton platform security floor managed by System Admin."""
+
+    __tablename__ = "platform_policy_settings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default="default")
+    settings_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    updated_by_user_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class User(Base):
     """Chi admin/proctor; CandidateIdentity khong phai User platform."""
 
@@ -285,6 +301,11 @@ class AuditLog(Base):
         ForeignKey("organizations.id"), nullable=True, index=True,
     )
     exam_id: Mapped[Optional[str]] = mapped_column(ForeignKey("exams.id"), nullable=True)
+    access_grant_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("access_grants.id"),
+        nullable=True,
+        index=True,
+    )
     action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     resource_type: Mapped[str] = mapped_column(String(50), nullable=False)
     resource_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -318,6 +339,7 @@ class AccessGrant(Base):
     approved_by_user_id: Mapped[Optional[str]] = mapped_column(
         ForeignKey("users.id"), nullable=True,
     )
+    decision_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -354,7 +376,16 @@ class ExamSession(Base):
     client_type: Mapped[str] = mapped_column(String(32), nullable=False, default="desktop_cv")
     extension_version: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     browser_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    browser_version: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    platform: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    capabilities_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     device_id_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    camera_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    microphone_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    screen_share_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    reset_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_reset_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_reset_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="pending",
     )  # pending|active|disconnected|ended

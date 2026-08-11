@@ -170,6 +170,26 @@ async function submitBreakGlass(event) {
   }
 }
 
+async function submitAdminInvitation(event) {
+  event.preventDefault();
+  const submit = event.submitter;
+  SystemUI.setBusy(submit, true, "Đang tạo...");
+  try {
+    const data = await SystemUI.fetchJson(`/system/organizations/${encodeURIComponent(organizationDetailState.id)}/admin-invitations`, {
+      method: "POST",
+      body: JSON.stringify({ email: document.getElementById("invite-admin-email").value, expires_in_hours: Number(document.getElementById("invite-admin-hours").value) }),
+    });
+    const result = document.getElementById("invite-admin-result");
+    result.classList.remove("hidden");
+    result.textContent = `Token lời mời: ${data.invitation_token}`;
+    showToast("Đã tạo lời mời Organization Admin.", "success");
+  } catch (error) {
+    showToast(error.message, "error");
+  } finally {
+    SystemUI.setBusy(submit, false);
+  }
+}
+
 async function initializeOrganizationDetail() {
   const user = await SystemUI.initialize();
   if (!user) return;
@@ -193,9 +213,14 @@ async function initializeOrganizationDetail() {
   document.getElementById("request-break-glass").addEventListener("click", () => {
     document.getElementById("break-glass-dialog").showModal();
   });
+  document.getElementById("invite-organization-admin").addEventListener("click", () => {
+    document.getElementById("invite-admin-result").classList.add("hidden");
+    document.getElementById("invite-admin-dialog").showModal();
+  });
   document.getElementById("edit-organization-form").addEventListener("submit", saveOrganizationSettings);
   document.getElementById("detail-status-form").addEventListener("submit", updateDetailStatus);
   document.getElementById("break-glass-form").addEventListener("submit", submitBreakGlass);
+  document.getElementById("invite-admin-form").addEventListener("submit", submitAdminInvitation);
   try {
     await loadOrganizationDetail();
   } catch (error) {

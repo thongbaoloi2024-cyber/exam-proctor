@@ -88,8 +88,28 @@ def test_system_admin_needs_approved_break_glass_for_evidence(client):
     assert requested.status_code == 201
     assert requested.json()["status"] == "pending"
 
+    visible_request = client.get(
+        "/organizations/current/access-grants",
+        headers=target_headers,
+    )
+    assert visible_request.status_code == 200
+    assert visible_request.json()[0]["requester_email"] == "system-admin@test.local"
+    assert visible_request.json()[0]["scope"] == "evidence.read"
+    assert visible_request.json()[0]["read_only"] is True
+
+    denied_reauth = client.post(
+        f"/organizations/current/access-grants/{requested.json()['id']}/approve",
+        json={"decision_reason": "Khong dung ma", "verification_code": "sai-mat-khau"},
+        headers=target_headers,
+    )
+    assert denied_reauth.status_code == 401
+
     approved = client.post(
         f"/organizations/current/access-grants/{requested.json()['id']}/approve",
+        json={
+            "decision_reason": "Da xac minh yeu cau ho tro",
+            "verification_code": "matkhau123",
+        },
         headers=target_headers,
     )
     assert approved.status_code == 200
@@ -124,6 +144,10 @@ def test_system_admin_needs_approved_break_glass_for_evidence(client):
 
     revoked = client.post(
         f"/organizations/current/access-grants/{requested.json()['id']}/revoke",
+        json={
+            "decision_reason": "Da hoan tat dieu tra",
+            "verification_code": "matkhau123",
+        },
         headers=target_headers,
     )
     assert revoked.status_code == 200
@@ -143,6 +167,11 @@ def test_system_admin_needs_approved_break_glass_for_evidence(client):
     assert "system.break_glass.request" in actions
     assert "org.break_glass.approve" in actions
     assert "org.break_glass.revoke" in actions
+    evidence_entries = [
+        item for item in audit.json() if item["action"] == "exam.evidence.view"
+    ]
+    assert evidence_entries
+    assert evidence_entries[0]["access_grant_id"] == requested.json()["id"]
 
 
 def test_system_admin_can_provision_and_suspend_organization(client):
@@ -162,6 +191,13 @@ def test_system_admin_can_provision_and_suspend_organization(client):
     assert created.status_code == 201
     body = created.json()
     assert body["organization"]["status"] == "active"
+    invited_admin = client.post(
+        f"/system/organizations/{body['organization']['id']}/admin-invitations",
+        json={"email": "second-provisioned-admin@test.local", "expires_in_hours": 48},
+        headers=headers,
+    )
+    assert invited_admin.status_code == 201
+    assert invited_admin.json()["invitation_token"]
     accepted = client.post(
         "/auth/invitations/accept",
         json={
@@ -322,3 +358,40 @@ def test_expired_pending_grant_is_not_counted_as_pending(client):
     overview = client.get("/system/overview", headers=_headers(system_token))
     assert overview.status_code == 200
     assert overview.json()["pending_access_grants"] == 0
+
+
+def test_system_operations_and_policy_are_managed_with_optimistic_lock(client):
+    system_token, _ = _register(client, "policy-system@test.local", "Policy System")
+    _grant_system_role("policy-system@test.local")
+    headers = _headers(system_token)
+
+    operations = client.get("/system/operations", headers=headers)
+    assert operations.status_code == 200
+    assert operations.json()["database_status"] == "healthy"
+    assert "report_jobs" in operations.json()
+
+    current = client.get("/system/policy", headers=headers)
+    assert current.status_code == 200
+    assert current.json()["version"] == 0
+    policy = current.json()["policy"]
+    policy.update({
+        "min_extension_version": "2.1.0",
+        "require_extension": True,
+        "min_retention_days": 30,
+        "max_retention_days": 730,
+    })
+    updated = client.put(
+        "/system/policy",
+        json={"policy": policy, "expected_version": 0, "reason": "Nang security floor"},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["version"] == 1
+    assert updated.json()["policy"]["min_extension_version"] == "2.1.0"
+
+    stale = client.put(
+        "/system/policy",
+        json={"policy": policy, "expected_version": 0, "reason": "Stale update"},
+        headers=headers,
+    )
+    assert stale.status_code == 409

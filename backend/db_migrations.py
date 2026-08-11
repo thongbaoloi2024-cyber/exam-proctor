@@ -256,7 +256,16 @@ def apply_additive_migrations(engine: Engine) -> None:
                 "client_type": ("VARCHAR(32)", "desktop_cv"),
                 "extension_version": ("VARCHAR(32)", None),
                 "browser_name": ("VARCHAR(50)", None),
+                "browser_version": ("VARCHAR(50)", None),
+                "platform": ("VARCHAR(100)", None),
+                "capabilities_json": ("TEXT", "[]"),
                 "device_id_hash": ("VARCHAR(64)", None),
+                "camera_status": ("VARCHAR(20)", "unknown"),
+                "microphone_status": ("VARCHAR(20)", "unknown"),
+                "screen_share_status": ("VARCHAR(20)", "unknown"),
+                "reset_count": ("INTEGER", 0),
+                "last_reset_at": ("TIMESTAMP", None),
+                "last_reset_reason": ("VARCHAR(500)", None),
                 "integrity_score_current": ("FLOAT", 0.0),
                 "integrity_status_current": ("VARCHAR(20)", "healthy"),
                 "browser_event_count": ("INTEGER", 0),
@@ -280,6 +289,27 @@ def apply_additive_migrations(engine: Engine) -> None:
                 text(
                     "CREATE UNIQUE INDEX IF NOT EXISTS uq_exam_candidate_identity "
                     "ON exam_sessions (exam_id, candidate_identity_id)"
+                )
+            )
+
+    tables = set(inspect(engine).get_table_names())
+    if "access_grants" in tables:
+        _add_columns(
+            engine,
+            "access_grants",
+            {"decision_reason": "VARCHAR(500)"},
+        )
+    if "audit_logs" in tables:
+        _add_columns(
+            engine,
+            "audit_logs",
+            {"access_grant_id": "VARCHAR(36)"},
+        )
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_audit_logs_access_grant_id "
+                    "ON audit_logs (access_grant_id)"
                 )
             )
 

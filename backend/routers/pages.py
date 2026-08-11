@@ -102,6 +102,11 @@ def system_security_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "system_security.html")
 
 
+@router.get("/ui/system/policy", response_class=HTMLResponse)
+def system_policy_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "system_policy.html")
+
+
 @router.get("/ui/system/evidence", response_class=HTMLResponse)
 def system_evidence_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(

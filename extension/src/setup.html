@@ -19,10 +19,16 @@
       <section id="active-card" class="card hidden">
         <h2>Phiên đang hoạt động</h2>
         <p id="active-summary"></p>
+        <ul id="active-health" class="preflight-list"></ul>
         <p class="muted">
           Trang thi và bảng giám sát đang chạy ở tab bài thi. Không thể tham gia
           kỳ thi khác cho đến khi phiên hiện tại kết thúc.
         </p>
+        <div class="actions">
+          <button id="return-exam" type="button">Quay lại trang thi</button>
+          <button id="open-monitor" type="button" class="secondary">Mở bảng giám sát</button>
+          <button id="end-active" type="button" class="danger">Kết thúc phiên</button>
+        </div>
       </section>
 
       <section id="join-card" class="card">
@@ -54,6 +60,8 @@
       <section id="policy-card" class="card hidden">
         <h2 id="exam-name">2. Xác thực thí sinh</h2>
         <ul id="policy-list" class="policy-list"></ul>
+        <h2 class="preflight-heading">3. Kiểm tra trước khi thi</h2>
+        <ul id="preflight-list" class="preflight-list"></ul>
 
         <div id="manual-fields" class="grid hidden">
           <label

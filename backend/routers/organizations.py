@@ -2,19 +2,28 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .. import models
 from ..audit import record_audit
+from ..auth import verify_password
 from ..authorization import Permission, active_membership, require_permission
 from ..db import get_db
+from ..mfa import decrypt_secret, verify_totp
+from ..policies import (
+    OrganizationPolicy,
+    get_effective_organization_policy,
+    get_platform_policy,
+    validate_organization_policy,
+)
+from ..rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/organizations/current", tags=["organizations"])
 
@@ -52,6 +61,19 @@ class MemberResponse(BaseModel):
     membership_status: str
     expires_at: datetime | None
     created_at: datetime
+    mfa_enabled: bool
+
+
+class OrganizationOverviewResponse(BaseModel):
+    members_total: int
+    members_active: int
+    members_suspended: int
+    members_with_mfa: int
+    pending_invitations: int
+    exams_total: int
+    sessions_active: int
+    concurrent_session_quota: int | None
+    retention_days: int
 
 
 class UpdateMemberRequest(BaseModel):
@@ -89,34 +111,32 @@ class CreatedInvitationResponse(InvitationResponse):
     invitation_token: str
 
 
-class OrganizationPolicy(BaseModel):
-    default_candidate_auth_mode: Literal["manual", "google"] = "manual"
-    min_extension_version: str = Field(default="1.0.0", pattern=r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
-    require_extension: bool = False
-    require_fullscreen: bool = True
-    require_camera: bool = True
-    require_microphone: bool = False
-    require_screen_share: bool = False
-    block_clipboard: bool = True
-    max_focus_loss_seconds: float = Field(default=5.0, ge=0.0, le=300.0)
-    retention_days: int = Field(default=365, ge=1, le=3650)
-
-
 class AccessGrantResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: str
     requester_user_id: str
+    requester_email: str
     org_id: str
     reason: str
     scope: str
     status: str
     read_only: bool
     approved_by_user_id: str | None
+    decision_reason: str | None
     created_at: datetime
     approved_at: datetime | None
     expires_at: datetime
     revoked_at: datetime | None
+    effective_status: str
+
+
+class AccessGrantDecisionRequest(BaseModel):
+    decision_reason: str = Field(min_length=3, max_length=500)
+    verification_code: str = Field(min_length=1, max_length=128)
+
+    @field_validator("decision_reason")
+    @classmethod
+    def normalize_reason(cls, value: str) -> str:
+        return " ".join(value.strip().split())
 
 
 class AuditLogResponse(BaseModel):
@@ -149,6 +169,71 @@ def _current_org(db: Session, user: models.User) -> models.Organization:
     return organization
 
 
+def _effective_grant_status(grant: models.AccessGrant) -> str:
+    expires_at = grant.expires_at.replace(tzinfo=grant.expires_at.tzinfo or timezone.utc)
+    if grant.status in {"pending", "active"} and expires_at <= _now():
+        return "expired"
+    return grant.status
+
+
+def _access_grant_response(
+    grant: models.AccessGrant,
+    requester: models.User,
+) -> AccessGrantResponse:
+    return AccessGrantResponse(
+        id=grant.id,
+        requester_user_id=grant.requester_user_id,
+        requester_email=requester.email,
+        org_id=grant.org_id,
+        reason=grant.reason,
+        scope=grant.scope,
+        status=grant.status,
+        read_only=grant.read_only,
+        approved_by_user_id=grant.approved_by_user_id,
+        decision_reason=grant.decision_reason,
+        created_at=grant.created_at,
+        approved_at=grant.approved_at,
+        expires_at=grant.expires_at,
+        revoked_at=grant.revoked_at,
+        effective_status=_effective_grant_status(grant),
+    )
+
+
+def _verify_sensitive_action(
+    actor: models.User,
+    verification_code: str,
+    request: Request,
+) -> None:
+    enforce_rate_limit(
+        request,
+        "sensitive-action",
+        actor.id,
+        limit=5,
+        window_sec=300.0,
+    )
+    code = verification_code.strip()
+    if actor.mfa_enabled:
+        try:
+            valid = bool(actor.mfa_secret_encrypted) and verify_totp(
+                decrypt_secret(actor.mfa_secret_encrypted or ""),
+                code,
+            )
+        except ValueError:
+            valid = False
+    elif actor.google_subject:
+        raise HTTPException(
+            status_code=status.HTTP_428_PRECONDITION_REQUIRED,
+            detail="Tai khoan Google phai bat MFA truoc khi duyet quyen nhay cam",
+        )
+    else:
+        valid = verify_password(code, actor.password_hash)
+    if not valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Xac thuc lai khong hop le",
+        )
+
+
 def _member_response(membership: models.OrganizationMembership, user: models.User) -> MemberResponse:
     return MemberResponse(
         user_id=user.id,
@@ -158,6 +243,7 @@ def _member_response(membership: models.OrganizationMembership, user: models.Use
         membership_status=membership.status,
         expires_at=membership.expires_at,
         created_at=membership.created_at,
+        mfa_enabled=user.mfa_enabled,
     )
 
 
@@ -167,6 +253,41 @@ def get_current_organization(
     user: models.User = Depends(require_permission(Permission.ORG_MEMBERS_READ)),
 ) -> models.Organization:
     return _current_org(db, user)
+
+
+@router.get("/overview", response_model=OrganizationOverviewResponse)
+def get_organization_overview(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_permission(Permission.ORG_MEMBERS_READ)),
+) -> OrganizationOverviewResponse:
+    organization = _current_org(db, user)
+    memberships = db.query(models.OrganizationMembership).filter_by(org_id=organization.id)
+    member_rows = memberships.all()
+    member_ids = [item.user_id for item in member_rows]
+    mfa_count = (
+        db.query(models.User).filter(models.User.id.in_(member_ids), models.User.mfa_enabled.is_(True)).count()
+        if member_ids else 0
+    )
+    active_sessions = (
+        db.query(models.ExamSession)
+        .join(models.Exam, models.Exam.id == models.ExamSession.exam_id)
+        .filter(
+            models.Exam.org_id == organization.id,
+            models.ExamSession.status.in_(["pending", "active", "disconnected"]),
+        )
+        .count()
+    )
+    return OrganizationOverviewResponse(
+        members_total=len(member_rows),
+        members_active=sum(item.status == "active" for item in member_rows),
+        members_suspended=sum(item.status in {"suspended", "revoked"} for item in member_rows),
+        members_with_mfa=mfa_count,
+        pending_invitations=db.query(models.Invitation).filter_by(org_id=organization.id, status="pending").count(),
+        exams_total=db.query(models.Exam).filter_by(org_id=organization.id).count(),
+        sessions_active=active_sessions,
+        concurrent_session_quota=organization.quota_concurrent_sessions,
+        retention_days=organization.retention_days,
+    )
 
 
 @router.patch("", response_model=OrganizationResponse)
@@ -383,12 +504,7 @@ def get_policy(
     user: models.User = Depends(require_permission(Permission.ORG_MEMBERS_READ)),
 ) -> OrganizationPolicy:
     organization = _current_org(db, user)
-    try:
-        stored = json.loads(organization.settings_json or "{}")
-    except (TypeError, ValueError):
-        stored = {}
-    stored.setdefault("retention_days", organization.retention_days)
-    return OrganizationPolicy.model_validate(stored)
+    return get_effective_organization_policy(db, organization)
 
 
 @router.put("/policy", response_model=OrganizationPolicy)
@@ -399,6 +515,13 @@ def update_policy(
     user: models.User = Depends(require_permission(Permission.ORG_POLICY_MANAGE)),
 ) -> OrganizationPolicy:
     organization = _current_org(db, user)
+    try:
+        validate_organization_policy(payload, get_platform_policy(db))
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
     before = organization.settings_json
     organization.settings_json = payload.model_dump_json()
     organization.retention_days = payload.retention_days
@@ -422,30 +545,40 @@ def update_policy(
 def list_access_grants(
     db: Session = Depends(get_db),
     user: models.User = Depends(require_permission(Permission.ORG_AUDIT_READ)),
-) -> list[models.AccessGrant]:
+) -> list[AccessGrantResponse]:
     membership = active_membership(db, user)
-    return (
-        db.query(models.AccessGrant)
+    rows = (
+        db.query(models.AccessGrant, models.User)
+        .join(models.User, models.User.id == models.AccessGrant.requester_user_id)
         .filter(models.AccessGrant.org_id == membership.org_id)
         .order_by(models.AccessGrant.created_at.desc())
         .all()
     )
+    return [_access_grant_response(grant, requester) for grant, requester in rows]
 
 
 @router.post("/access-grants/{grant_id}/approve", response_model=AccessGrantResponse)
 def approve_access_grant(
     grant_id: str,
+    payload: AccessGrantDecisionRequest,
     request: Request,
     db: Session = Depends(get_db),
     actor: models.User = Depends(require_permission(Permission.ORG_MEMBERS_MANAGE)),
-) -> models.AccessGrant:
+) -> AccessGrantResponse:
     membership = active_membership(db, actor)
-    grant = db.query(models.AccessGrant).filter_by(
-        id=grant_id,
-        org_id=membership.org_id,
-    ).first()
-    if grant is None:
+    row = (
+        db.query(models.AccessGrant, models.User)
+        .join(models.User, models.User.id == models.AccessGrant.requester_user_id)
+        .filter(
+            models.AccessGrant.id == grant_id,
+            models.AccessGrant.org_id == membership.org_id,
+        )
+        .first()
+    )
+    if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay yeu cau")
+    grant, requester = row
+    _verify_sensitive_action(actor, payload.verification_code, request)
     if grant.status != "pending":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Yeu cau khong con cho duyet")
     expires_at = grant.expires_at.replace(tzinfo=grant.expires_at.tzinfo or timezone.utc)
@@ -456,6 +589,7 @@ def approve_access_grant(
     grant.status = "active"
     grant.approved_by_user_id = actor.id
     grant.approved_at = _now()
+    grant.decision_reason = payload.decision_reason
     record_audit(
         db,
         actor=actor,
@@ -463,31 +597,40 @@ def approve_access_grant(
         resource_type="access_grant",
         resource_id=grant.id,
         org_id=membership.org_id,
-        reason=grant.reason,
+        reason=payload.decision_reason,
         request=request,
         after={"scope": grant.scope, "expires_at": grant.expires_at, "read_only": True},
     )
     db.commit()
     db.refresh(grant)
-    return grant
+    return _access_grant_response(grant, requester)
 
 
 @router.post("/access-grants/{grant_id}/revoke", response_model=AccessGrantResponse)
 def revoke_access_grant(
     grant_id: str,
+    payload: AccessGrantDecisionRequest,
     request: Request,
     db: Session = Depends(get_db),
     actor: models.User = Depends(require_permission(Permission.ORG_MEMBERS_MANAGE)),
-) -> models.AccessGrant:
+) -> AccessGrantResponse:
     membership = active_membership(db, actor)
-    grant = db.query(models.AccessGrant).filter_by(
-        id=grant_id,
-        org_id=membership.org_id,
-    ).first()
-    if grant is None:
+    row = (
+        db.query(models.AccessGrant, models.User)
+        .join(models.User, models.User.id == models.AccessGrant.requester_user_id)
+        .filter(
+            models.AccessGrant.id == grant_id,
+            models.AccessGrant.org_id == membership.org_id,
+        )
+        .first()
+    )
+    if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Khong tim thay yeu cau")
+    grant, requester = row
+    _verify_sensitive_action(actor, payload.verification_code, request)
     grant.status = "revoked"
     grant.revoked_at = _now()
+    grant.decision_reason = payload.decision_reason
     record_audit(
         db,
         actor=actor,
@@ -495,25 +638,40 @@ def revoke_access_grant(
         resource_type="access_grant",
         resource_id=grant.id,
         org_id=membership.org_id,
+        reason=payload.decision_reason,
         request=request,
     )
     db.commit()
     db.refresh(grant)
-    return grant
+    return _access_grant_response(grant, requester)
 
 
 @router.get("/audit", response_model=list[AuditLogResponse])
 def list_organization_audit(
     limit: int = 100,
+    offset: int = 0,
+    action: str | None = None,
+    actor_user_id: str | None = None,
+    outcome: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     user: models.User = Depends(require_permission(Permission.ORG_AUDIT_READ)),
 ) -> list[models.AuditLog]:
     membership = active_membership(db, user)
     safe_limit = min(max(limit, 1), 500)
-    return (
-        db.query(models.AuditLog)
-        .filter(models.AuditLog.org_id == membership.org_id)
-        .order_by(models.AuditLog.created_at.desc())
-        .limit(safe_limit)
-        .all()
-    )
+    query = db.query(models.AuditLog).filter(models.AuditLog.org_id == membership.org_id)
+    if action:
+        query = query.filter(models.AuditLog.action == action)
+    if actor_user_id:
+        query = query.filter(models.AuditLog.actor_user_id == actor_user_id)
+    if outcome:
+        query = query.filter(models.AuditLog.outcome == outcome)
+    if search:
+        pattern = f"%{search.strip()}%"
+        query = query.filter(or_(
+            models.AuditLog.action.ilike(pattern),
+            models.AuditLog.resource_type.ilike(pattern),
+            models.AuditLog.resource_id.ilike(pattern),
+            models.AuditLog.request_id.ilike(pattern),
+        ))
+    return query.order_by(models.AuditLog.created_at.desc()).offset(max(offset, 0)).limit(safe_limit).all()

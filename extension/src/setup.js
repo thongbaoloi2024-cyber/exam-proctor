@@ -5,6 +5,7 @@ const BACKEND_URL = "http://localhost:8000";
 const SETUP_DRAFT_KEY = "dattSetupDraft";
 let currentPolicy = null;
 let googleProfile = null;
+const preflight = new Map();
 
 function element(id) { return document.getElementById(id); }
 
@@ -12,6 +13,17 @@ function setStatus(id, text, kind = "") {
   const node = element(id);
   node.textContent = text;
   node.className = `status${kind ? ` ${kind}` : ""}`;
+}
+
+function setPreflight(key, label, state, help = "") {
+  preflight.set(key, { label, state, help });
+  const list = element("preflight-list");
+  list.replaceChildren(...[...preflight.values()].map((step) => {
+    const item = document.createElement("li");
+    item.className = `preflight-${step.state}`;
+    item.textContent = `${step.state === "ok" ? "✓" : step.state === "error" ? "!" : "…"} ${step.label}${step.help ? ` — ${step.help}` : ""}`;
+    return item;
+  }));
 }
 
 async function requestOriginPermissions(urls) {
@@ -52,6 +64,12 @@ function renderPolicy(policy) {
     return item;
   }));
   const driftSeconds = Math.abs(Date.now() - Date.parse(policy.server_time)) / 1000;
+  setPreflight("version", `Extension ${DATT.VERSION} (yêu cầu ≥ ${policy.min_extension_version})`, DATT.compareVersions(DATT.VERSION, policy.min_extension_version) >= 0 ? "ok" : "error", "Cập nhật extension nếu chưa đạt phiên bản tối thiểu");
+  setPreflight("network", "Kết nối backend", "ok");
+  setPreflight("clock", "Đồng hồ thiết bị", driftSeconds <= 120 ? "ok" : "error", driftSeconds > 120 ? "Bật đồng bộ ngày giờ tự động" : "");
+  setPreflight("permissions", "Quyền truy cập trang thi", "pending", "Sẽ yêu cầu khi tham gia");
+  setPreflight("media", "Camera và microphone", policy.require_camera || policy.require_microphone ? "pending" : "ok", "Sẽ kiểm tra khi tham gia");
+  setPreflight("screen", "Chia sẻ màn hình", policy.require_screen_share ? "pending" : "ok", policy.require_screen_share ? "Chọn toàn bộ màn hình trong bảng giám sát" : "Không bắt buộc");
   if (driftSeconds > 120) {
     setStatus("join-status", "Đồng hồ máy lệch backend quá 2 phút; hãy đồng bộ thời gian trước khi thi.", "error");
   }
@@ -147,9 +165,12 @@ element("join-exam").addEventListener("click", async () => {
   try {
     const urls = [BACKEND_URL, currentPolicy.exam_url].filter(Boolean);
     if (!(await requestOriginPermissions(urls))) {
+      setPreflight("permissions", "Quyền truy cập trang thi", "error", "Mở cài đặt extension và cấp quyền cho backend/trang thi");
       throw new Error("Chưa cấp quyền truy cập trang bài thi.");
     }
+    setPreflight("permissions", "Quyền truy cập trang thi", "ok");
     await checkRequiredMedia(currentPolicy);
+    setPreflight("media", "Camera và microphone", "ok");
     const { session } = await send({
       type: "DATT_JOIN_EXAM",
       baseUrl: BACKEND_URL,
@@ -157,7 +178,7 @@ element("join-exam").addEventListener("click", async () => {
       studentName,
       candidateId,
     });
-    setStatus("join-status", `Đã tạo phiên ${session.sessionId}. Hãy kích hoạt popup giám sát trên trang thi.`, "success");
+    setStatus("join-status", `${session.resumed ? "Đã khôi phục" : "Đã tạo"} phiên ${session.supportCode || session.sessionId.slice(0, 8)}. Hãy kích hoạt bảng giám sát trên trang thi.`, "success");
     element("join-card").classList.add("hidden");
   } catch (error) {
     setStatus("join-status", error.message, "error");
@@ -176,8 +197,32 @@ async function initialize() {
   if (session) {
     element("active-card").classList.remove("hidden");
     element("join-card").classList.add("hidden");
-    element("active-summary").textContent = `${session.examName} · ${session.studentName} · ${session.connected ? "đã kết nối" : "đang kết nối lại"}`;
+    renderActive(session);
   }
 }
+
+function renderActive(session) {
+  element("active-summary").textContent = `${session.examName} · ${session.studentName} · Mã hỗ trợ ${session.supportCode}`;
+  const rows = [
+    [session.connected, session.connected ? "WebSocket đã kết nối" : "Đang kết nối lại backend"],
+    [session.mediaReady, session.mediaReady ? "Thiết bị giám sát đã sẵn sàng" : "Chưa kích hoạt camera/màn hình"],
+    [session.pendingEventCount === 0, `${session.pendingEventCount} sự kiện đang chờ đồng bộ`],
+    [Boolean(session.lastSyncedAt), session.lastSyncedAt ? `Đồng bộ cuối: ${new Date(session.lastSyncedAt).toLocaleTimeString("vi-VN")}` : "Chưa đồng bộ sự kiện"],
+  ];
+  element("active-health").replaceChildren(...rows.map(([ok, text]) => {
+    const item = document.createElement("li"); item.className = ok ? "preflight-ok" : "preflight-pending"; item.textContent = `${ok ? "✓" : "…"} ${text}`; return item;
+  }));
+}
+
+element("return-exam").addEventListener("click", async () => {
+  try { const { session } = await send({ type: "DATT_OPEN_ACTIVE" }); renderActive(session); window.close(); } catch (error) { setStatus("setup-status", error.message, "error"); }
+});
+element("open-monitor").addEventListener("click", async () => {
+  try { const { session } = await send({ type: "DATT_OPEN_ACTIVE" }); renderActive(session); } catch (error) { setStatus("setup-status", error.message, "error"); }
+});
+element("end-active").addEventListener("click", async () => {
+  if (!confirm("Bạn chắc chắn muốn kết thúc phiên? Hãy bảo đảm các sự kiện đã đồng bộ.")) return;
+  try { await send({ type: "DATT_END_SESSION", reason: "completed" }); element("active-card").classList.add("hidden"); element("join-card").classList.remove("hidden"); setStatus("setup-status", "Phiên đã kết thúc.", "success"); } catch (error) { setStatus("setup-status", error.message, "error"); }
+});
 
 initialize().catch((error) => setStatus("setup-status", error.message, "error"));

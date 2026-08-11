@@ -70,11 +70,27 @@ def test_exam_lifecycle_and_optimistic_locking(client):
             "name": "Scheduled Exam",
             "scheduled_start_at": "2026-08-10T08:00:00+07:00",
             "scheduled_end_at": "2026-08-10T10:00:00+07:00",
+            "exam_url": "https://exam.example/test",
+            "require_extension": True,
+            "require_microphone": True,
+            "max_focus_loss_seconds": 2.5,
         },
         headers=headers,
     )
     assert updated.status_code == 200
     assert updated.json()["version"] == 2
+    assert updated.json()["require_extension"] is True
+    assert updated.json()["require_microphone"] is True
+    assert updated.json()["max_focus_loss_seconds"] == 2.5
+
+    readiness = client.get(
+        f"/exams/{exam['id']}/readiness",
+        headers=headers,
+    )
+    assert readiness.status_code == 200
+    readiness_by_code = {item["code"]: item for item in readiness.json()["items"]}
+    assert readiness_by_code["destination"]["ready"] is True
+    assert readiness_by_code["staffing"]["ready"] is True
 
     stale = client.patch(
         f"/exams/{exam['id']}",
@@ -196,5 +212,50 @@ def test_incident_review_is_separate_from_violation_log(client, tmp_path, monkey
     assert listed.status_code == 200
     assert [item["violation_event_id"] for item in listed.json()] == ["event-review-1"]
 
+    queue = client.get(f"/exams/{exam['id']}/incidents", headers=headers)
+    assert queue.status_code == 200
+    assert queue.json()[0]["event_id"] == "event-review-1"
+    assert queue.json()[0]["status"] == "confirmed"
+
     with SessionLocal() as db:
         assert db.query(models.IncidentReview).count() == 1
+
+
+def test_manager_can_reset_failed_session_and_archive_previous_evidence(client, tmp_path, monkeypatch):
+    monkeypatch.setattr(session_materializer, "SESSIONS_ROOT", tmp_path)
+    admin_token, token = _register_exam_owner(client, "reset-admin@test.local")
+    headers = _headers(token)
+    exam = client.post("/exams", json={"name": "Reset Exam"}, headers=headers).json()
+    joined = client.post(
+        "/exams/join",
+        json={"join_code": exam["join_code"], "student_name": "Reset Student"},
+    ).json()
+    session_materializer.append_jsonl(
+        joined["session_id"],
+        "violations.jsonl",
+        {"event_id": "old-attempt", "video_time_sec": 1, "severity": "LOW"},
+    )
+    ended = client.post(
+        f"/sessions/{joined['session_id']}/end",
+        json={"reason": "Thiết bị gặp lỗi"},
+        headers=headers,
+    )
+    assert ended.status_code == 200
+
+    reset = client.post(
+        f"/sessions/{joined['session_id']}/reset",
+        json={"reason": "Cho phép thí sinh thử lại sau lỗi thiết bị"},
+        headers=headers,
+    )
+    assert reset.status_code == 200
+    assert reset.json()["status"] == "pending"
+    assert reset.json()["reset_count"] == 1
+    assert (tmp_path / ".reset_archives" / joined["session_id"] / "attempt-1" / "violations.jsonl").is_file()
+    assert (tmp_path / joined["session_id"] / "violations.jsonl").read_text(encoding="utf-8") == ""
+
+    audit = client.get(
+        "/organizations/current/audit?search=exam.session.reset",
+        headers=_headers(admin_token),
+    )
+    assert audit.status_code == 200
+    assert audit.json()[0]["reason"] == "Cho phép thí sinh thử lại sau lỗi thiết bị"

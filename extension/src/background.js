@@ -65,6 +65,11 @@ function publicActive() {
     policy: active.policy,
     connected: socket?.readyState === WebSocket.OPEN,
     examTabId: active.examTabId || null,
+    mediaReady: Boolean(active.mediaReady),
+    pendingEventCount: active.pendingEvents?.length || 0,
+    lastSyncedAt: active.lastSyncedAt || null,
+    supportCode: active.sessionId.slice(0, 8).toUpperCase(),
+    resumed: Boolean(active.resumed),
   };
 }
 
@@ -233,7 +238,9 @@ async function joinExam(message) {
     examTabId: null,
     examWindowId: null,
     mediaReady: false,
+    lastSyncedAt: null,
     bootstrapping: true,
+    resumed: Boolean(joined.resumed),
   };
   await persistActive();
   await connectSocket();
@@ -373,6 +380,7 @@ async function handleSocketMessage(raw) {
       (item) => item.data.event_id !== message.data.event_id,
     );
     sentEventIds.delete(message.data.event_id);
+    active.lastSyncedAt = new Date().toISOString();
     await persistActive();
   }
 }
@@ -472,10 +480,15 @@ async function handleMessage(message, sender) {
       return { session: await joinExam(message) };
     case "DATT_GET_ACTIVE":
       return { session: publicActive() };
+    case "DATT_OPEN_ACTIVE":
+      if (!active) throw new Error("Không có phiên đang hoạt động.");
+      await activateExamTab();
+      return { session: publicActive() };
     case "DATT_MEDIA_READY":
       if (active) {
         active.mediaReady = true;
         await persistActive();
+        await enqueueBrowserEvent("MEDIA_READY", {});
         await activateExamTab();
       }
       return { session: publicActive() };

@@ -161,6 +161,7 @@ class HeartbeatData(StrictModel):
 
 
 BrowserEventType = Literal[
+    "MEDIA_READY",
     "CONTENT_MONITOR_READY",
     "TAB_HIDDEN",
     "TAB_VISIBLE",

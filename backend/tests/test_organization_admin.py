@@ -162,6 +162,90 @@ def test_org_policy_is_validated_and_persisted(client):
     assert invalid.status_code == 422
 
 
+def test_exam_inherits_org_policy_and_cannot_weaken_it(client):
+    admin_token, _ = _register(client, "policy-floor-admin@test.local", "Policy Floor Org")
+    policy = {
+        "default_candidate_auth_mode": "manual",
+        "min_extension_version": "2.1.0",
+        "require_extension": True,
+        "require_fullscreen": True,
+        "require_camera": True,
+        "require_microphone": True,
+        "require_screen_share": False,
+        "block_clipboard": True,
+        "max_focus_loss_seconds": 3.5,
+        "retention_days": 180,
+    }
+    assert client.put(
+        "/organizations/current/policy",
+        json=policy,
+        headers=_headers(admin_token),
+    ).status_code == 200
+    manager_token = create_exam_manager(
+        client,
+        admin_token,
+        email="policy-floor-manager@test.local",
+    )
+    headers = _headers(manager_token)
+
+    defaults = client.get("/exams/policy/defaults", headers=headers)
+    assert defaults.status_code == 200
+    assert defaults.json() == policy
+
+    inherited = client.post(
+        "/exams",
+        json={"name": "Inherited Policy", "exam_url": "https://exam.test/"},
+        headers=headers,
+    )
+    assert inherited.status_code == 201
+    assert inherited.json()["min_extension_version"] == "2.1.0"
+    assert inherited.json()["require_microphone"] is True
+    assert inherited.json()["max_focus_loss_seconds"] == 3.5
+
+    weakened = client.post(
+        "/exams",
+        json={
+            "name": "Weak Policy",
+            "exam_url": "https://exam.test/",
+            "require_microphone": False,
+        },
+        headers=headers,
+    )
+    assert weakened.status_code == 422
+    assert "require_microphone" in weakened.json()["detail"]
+
+
+def test_platform_policy_floor_rejects_weaker_organization_policy(client):
+    admin_token, _ = _register(client, "platform-floor-admin@test.local", "Platform Floor Org")
+    with SessionLocal() as db:
+        db.add(
+            models.PlatformPolicySetting(
+                id="default",
+                settings_json=(
+                    '{"min_extension_version":"3.0.0",'
+                    '"require_screen_share":true,"max_focus_loss_seconds":10}'
+                ),
+            )
+        )
+        db.commit()
+
+    current = client.get(
+        "/organizations/current/policy",
+        headers=_headers(admin_token),
+    )
+    assert current.status_code == 200
+    assert current.json()["min_extension_version"] == "3.0.0"
+    assert current.json()["require_screen_share"] is True
+
+    weaker = {**current.json(), "require_screen_share": False}
+    rejected = client.put(
+        "/organizations/current/policy",
+        json=weaker,
+        headers=_headers(admin_token),
+    )
+    assert rejected.status_code == 422
+
+
 def test_concurrent_session_quota_is_enforced(client):
     admin_token, org_id = _register(client, "quota-admin@test.local", "Quota Org")
     with SessionLocal() as db:

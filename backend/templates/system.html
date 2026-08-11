@@ -78,6 +78,14 @@
   </div>
   <div id="system-attention-list" class="attention-list"><div class="empty-state compact">Đang tổng hợp cảnh báo...</div></div>
 </section>
+
+<section class="panel operations-panel">
+  <div class="panel-heading">
+    <div><h2>Operations Center</h2><p class="muted">Database, Redis, report worker, storage và client versions.</p></div>
+    <button type="button" class="secondary-button" id="refresh-operations">Làm mới</button>
+  </div>
+  <div id="operations-grid" class="operations-grid"><div class="empty-state compact">Đang kiểm tra vận hành...</div></div>
+</section>
 {% endblock %}
 {% block scripts %}
 <script src="/static/system-common.js"></script>

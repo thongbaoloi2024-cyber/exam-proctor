@@ -102,6 +102,7 @@ _VIOLATION_BY_SIGNAL = {
 }
 
 _BROWSER_EVENT_BASE_SEVERITY = {
+    "MEDIA_READY": "LOW",
     "CONTENT_MONITOR_READY": "LOW",
     "TAB_HIDDEN": "LOW",
     "TAB_VISIBLE": "LOW",
@@ -319,6 +320,9 @@ async def client_ws(websocket: WebSocket) -> None:
                     await websocket.close(code=4403)
                     break
                 hello_received = True
+                exam_session.browser_version = data.browser_version
+                exam_session.platform = data.platform
+                exam_session.capabilities_json = json.dumps(sorted(data.capabilities))
                 await websocket.send_json(
                     {
                         "type": "hello_ack",
@@ -392,6 +396,30 @@ async def client_ws(websocket: WebSocket) -> None:
                 append_jsonl(session_id, "browser_events.jsonl", record)
 
                 exam_session.browser_event_count += 1
+                if data.event_type == "MEDIA_READY":
+                    exam_session.camera_status = (
+                        "ready" if exam.require_camera else "not_required"
+                    )
+                    exam_session.microphone_status = (
+                        "ready" if exam.require_microphone else "not_required"
+                    )
+                    exam_session.screen_share_status = (
+                        "ready" if exam.require_screen_share else "not_required"
+                    )
+                elif data.event_type.startswith("CAMERA_"):
+                    exam_session.camera_status = "issue"
+                elif data.event_type.startswith("MICROPHONE_"):
+                    exam_session.microphone_status = "issue"
+                elif data.event_type == "SCREEN_SHARE_ENDED":
+                    exam_session.screen_share_status = "issue"
+                elif data.event_type == "PERMISSION_MISSING":
+                    missing_component = str(data.metadata.get("component", ""))
+                    if missing_component == "camera":
+                        exam_session.camera_status = "issue"
+                    elif missing_component == "microphone":
+                        exam_session.microphone_status = "issue"
+                    elif missing_component == "screen_share":
+                        exam_session.screen_share_status = "issue"
                 exam_session.integrity_score_current = _integrity_score_after(
                     exam_session.integrity_score_current, severity,
                 )
@@ -410,6 +438,9 @@ async def client_ws(websocket: WebSocket) -> None:
                             "integrity_score": exam_session.integrity_score_current,
                             "integrity_status": exam_session.integrity_status_current,
                             "browser_event_count": exam_session.browser_event_count,
+                            "camera_status": exam_session.camera_status,
+                            "microphone_status": exam_session.microphone_status,
+                            "screen_share_status": exam_session.screen_share_status,
                         },
                         "server_received_at": received_iso,
                     },

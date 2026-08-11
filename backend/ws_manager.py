@@ -112,6 +112,20 @@ class ConnectionManager:
             self._client_sockets.pop(session_id, None)
             await self._release_client_lease(session_id)
 
+    async def force_close_client(self, session_id: str) -> None:
+        websocket = self._client_sockets.pop(session_id, None)
+        await self._release_client_lease(session_id)
+        if websocket is None:
+            return
+        try:
+            await websocket.send_json({
+                "type": "session_ended",
+                "data": {"reason": "ended_by_proctor"},
+            })
+            await websocket.close(code=4410, reason="ended by proctor")
+        except Exception:
+            pass
+
     async def connect_dashboard(self, exam_id: str, websocket: WebSocket) -> None:
         await self._ensure_subscriber()
         await websocket.accept()

@@ -40,6 +40,12 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .status.success { color: #70d98a; }
 .policy-list { margin: 8px 0 0; padding-left: 20px; color: var(--muted); }
 .policy-list li { margin: 5px 0; }
+.preflight-heading { margin-top: 16px; }
+.preflight-list { list-style: none; padding: 0; margin: 8px 0; font-size: .86rem; }
+.preflight-list li { margin: 6px 0; line-height: 1.35; }
+.preflight-ok { color: #70d98a; }
+.preflight-error { color: #ff8585; }
+.preflight-pending { color: #f0bd5c; }
 .profile { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #11151c; }
 .profile strong, .profile span { display: block; }
 .consent { display: flex; gap: 9px; align-items: flex-start; margin-top: 12px; }

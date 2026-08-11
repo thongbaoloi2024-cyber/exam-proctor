@@ -48,6 +48,7 @@ def record_audit(
     resource_id: str | None = None,
     org_id: str | None = None,
     exam_id: str | None = None,
+    access_grant_id: str | None = None,
     outcome: str = "success",
     reason: str | None = None,
     request: Request | None = None,
@@ -59,6 +60,7 @@ def record_audit(
         actor_role=actor.role if actor else None,
         org_id=org_id,
         exam_id=exam_id,
+        access_grant_id=access_grant_id,
         action=action,
         resource_type=resource_type,
         resource_id=resource_id,
@@ -72,4 +74,3 @@ def record_audit(
     )
     db.add(entry)
     return entry
-
