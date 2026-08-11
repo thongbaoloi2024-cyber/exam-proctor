@@ -5,9 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Giám Thị Số{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%81%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/style.css?v=20260812-workspace-1">
+  <script src="/static/theme.js?v=20260812-theme-1"></script>
+  <link rel="stylesheet" href="/static/style.css?v=20260812-theme-1">
 </head>
 <body class="{{ 'no-sidebar' if hide_sidebar else '' }} {% block body_class %}{% endblock %}">
+  <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Chuyển sang giao diện sáng" aria-pressed="false" title="Chuyển sang giao diện sáng">
+    <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.7"/>
+      <path d="M12 2.75v2.1M12 19.15v2.1M21.25 12h-2.1M4.85 12h-2.1M18.54 5.46l-1.49 1.49M6.95 17.05l-1.49 1.49M18.54 18.54l-1.49-1.49M6.95 6.95 5.46 5.46" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20.35 15.43A8.5 8.5 0 0 1 8.57 3.65 8.5 8.5 0 1 0 20.35 15.43Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
   {% if not hide_sidebar %}
   <aside class="sidebar" id="app-sidebar">
     <a class="sidebar-brand" id="sidebar-home-link" href="/ui/exams/overview" aria-label="Giám Thị Số - Trang chủ">

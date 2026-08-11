@@ -292,3 +292,37 @@ def test_current_user_exposes_server_resolved_capabilities(client):
 def test_request_id_is_returned_on_admin_pages(client):
     response = client.get("/ui/system")
     assert response.headers["x-request-id"]
+
+
+def test_shared_pages_include_and_persist_accessible_theme_toggle(client):
+    for path in ("/ui/login", "/ui/exams", "/ui/system"):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert 'id="theme-toggle"' in response.text
+        assert 'class="theme-icon theme-icon-sun"' in response.text
+        assert 'class="theme-icon theme-icon-moon"' in response.text
+        assert 'aria-label="Chuyển sang giao diện sáng"' in response.text
+        assert 'aria-pressed="false"' in response.text
+        assert response.text.index("/static/theme.js") < response.text.index("/static/style.css")
+
+    script_response = client.get("/static/theme.js")
+    assert script_response.status_code == 200
+    script = script_response.text
+    assert 'const STORAGE_KEY = "giam-thi-so-theme"' in script
+    assert 'const DEFAULT_THEME = "dark"' in script
+    assert "localStorage.getItem(STORAGE_KEY)" in script
+    assert "localStorage.setItem(STORAGE_KEY, nextTheme)" in script
+    assert "document.documentElement.dataset.theme = nextTheme" in script
+    assert 'currentTheme === "dark" ? "light" : "dark"' in script
+    assert 'toggle.setAttribute("aria-pressed", String(lightThemeActive))' in script
+
+    stylesheet_response = client.get("/static/style.css")
+    assert stylesheet_response.status_code == 200
+    stylesheet = stylesheet_response.text
+    assert ':root[data-theme="light"]' in stylesheet
+    assert "color-scheme: dark" in stylesheet
+    assert "color-scheme: light" in stylesheet
+    assert ".theme-toggle" in stylesheet
+    assert "position: fixed" in stylesheet
+    assert ".theme-icon-sun" in stylesheet
+    assert ".theme-icon-moon" in stylesheet
