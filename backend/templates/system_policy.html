@@ -1,26 +1,87 @@
-{% extends "base.html" %}
-{% block title %}Chính sách hệ thống · Giám Thị Số{% endblock %}
-{% block body_class %}system-admin-page{% endblock %}
-{% block container_class %}system-container{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}Chính sách hệ thống · Giám Thị Số{%
+endblock %} {% block body_class %}system-admin-page{% endblock %} {% block
+container_class %}system-container{% endblock %} {% block content %}
 <header class="system-page-header">
-  <div><div class="breadcrumb"><span>Quản trị hệ thống</span><span>/</span><strong>Chính sách</strong></div><h1>Mức bảo mật tối thiểu toàn hệ thống</h1><p class="muted">Tổ chức và kỳ thi có thể cấu hình chặt hơn, không thể hạ thấp các mức này.</p></div>
+  <div>
+    <h1>Mức bảo mật tối thiểu toàn hệ thống</h1>
+    <p class="muted">
+      Tổ chức và kỳ thi có thể cấu hình chặt hơn, không thể hạ thấp các mức này.
+    </p>
+  </div>
 </header>
 <section class="panel policy-workspace">
   <form id="system-policy-form" class="form-grid">
-    <label>Phiên bản tiện ích tối thiểu<input id="system-min-extension" pattern="\d+\.\d+\.\d+" required></label>
-    <label>Thời gian được phép rời cửa sổ (giây)<input id="system-max-focus" type="number" min="0" max="300" step="0.5" required></label>
-    <label>Thời hạn lưu trữ tối thiểu (ngày)<input id="system-min-retention" type="number" min="1" max="3650" required></label>
-    <label>Thời hạn lưu trữ tối đa (ngày)<input id="system-max-retention" type="number" min="1" max="3650" required></label>
-    <label class="checkbox-label"><input id="system-require-extension" type="checkbox"> Bắt buộc tiện ích trình duyệt</label>
-    <label class="checkbox-label"><input id="system-require-fullscreen" type="checkbox"> Bắt buộc toàn màn hình</label>
-    <label class="checkbox-label"><input id="system-require-camera" type="checkbox"> Bắt buộc camera</label>
-    <label class="checkbox-label"><input id="system-require-microphone" type="checkbox"> Bắt buộc micrô</label>
-    <label class="checkbox-label"><input id="system-require-screen-share" type="checkbox"> Bắt buộc chia sẻ màn hình</label>
-    <label class="checkbox-label"><input id="system-block-clipboard" type="checkbox"> Chặn sao chép và dán</label>
-    <label class="form-grid-span">Lý do thay đổi<textarea id="system-policy-reason" minlength="3" maxlength="500" rows="3" required></textarea></label>
-    <div class="form-grid-span form-actions"><button type="submit">Lưu chính sách</button><span id="system-policy-meta" class="muted"></span></div>
+    <label
+      >Phiên bản tiện ích tối thiểu<input
+        id="system-min-extension"
+        pattern="\d+\.\d+\.\d+"
+        required
+    /></label>
+    <label
+      >Thời gian được phép rời cửa sổ (giây)<input
+        id="system-max-focus"
+        type="number"
+        min="0"
+        max="300"
+        step="0.5"
+        required
+    /></label>
+    <label
+      >Thời hạn lưu trữ tối thiểu (ngày)<input
+        id="system-min-retention"
+        type="number"
+        min="1"
+        max="3650"
+        required
+    /></label>
+    <label
+      >Thời hạn lưu trữ tối đa (ngày)<input
+        id="system-max-retention"
+        type="number"
+        min="1"
+        max="3650"
+        required
+    /></label>
+    <label class="checkbox-label"
+      ><input id="system-require-extension" type="checkbox" /> Bắt buộc tiện ích
+      trình duyệt</label
+    >
+    <label class="checkbox-label"
+      ><input id="system-require-fullscreen" type="checkbox" /> Bắt buộc toàn
+      màn hình</label
+    >
+    <label class="checkbox-label"
+      ><input id="system-require-camera" type="checkbox" /> Bắt buộc
+      camera</label
+    >
+    <label class="checkbox-label"
+      ><input id="system-require-microphone" type="checkbox" /> Bắt buộc
+      micrô</label
+    >
+    <label class="checkbox-label"
+      ><input id="system-require-screen-share" type="checkbox" /> Bắt buộc chia
+      sẻ màn hình</label
+    >
+    <label class="checkbox-label"
+      ><input id="system-block-clipboard" type="checkbox" /> Chặn sao chép và
+      dán</label
+    >
+    <label class="form-grid-span"
+      >Lý do thay đổi<textarea
+        id="system-policy-reason"
+        minlength="3"
+        maxlength="500"
+        rows="3"
+        required
+      ></textarea>
+    </label>
+    <div class="form-grid-span form-actions">
+      <button type="submit">Lưu chính sách</button
+      ><span id="system-policy-meta" class="muted"></span>
+    </div>
   </form>
 </section>
+{% endblock %} {% block scripts %}
+<script src="/static/system-common.js"></script>
+<script src="/static/system-policy.js"></script>
 {% endblock %}
-{% block scripts %}<script src="/static/system-common.js"></script><script src="/static/system-policy.js"></script>{% endblock %}

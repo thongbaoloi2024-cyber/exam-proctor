@@ -1,15 +1,13 @@
-{% extends "base.html" %}
-{% block title %}Tổng quan hệ thống · Giám Thị Số{% endblock %}
-{% block body_class %}system-admin-page{% endblock %}
-{% block container_class %}system-container{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}Tổng quan hệ thống · Giám Thị Số{%
+endblock %} {% block body_class %}system-admin-page{% endblock %} {% block
+container_class %}system-container{% endblock %} {% block content %}
 <header class="system-page-header">
   <div>
-    <div class="breadcrumb"><span>Quản trị hệ thống</span><span aria-hidden="true">/</span><strong>Tổng quan</strong></div>
     <h1>Tổng quan hệ thống</h1>
     <p class="muted">Theo dõi sức khỏe vận hành của toàn bộ nền tảng.</p>
   </div>
-  <label class="compact-field">Khoảng thời gian
+  <label class="compact-field"
+    >Khoảng thời gian
     <select id="overview-range">
       <option value="7">7 ngày</option>
       <option value="30" selected>30 ngày</option>
@@ -20,74 +18,145 @@
 
 <section class="metric-grid metric-grid-five" aria-label="Chỉ số tổng quan">
   <article class="metric-card">
-    <div class="metric-card-top"><span class="metric-icon metric-blue">◇</span><span class="metric-label">Tổ chức hoạt động</span></div>
+    <div class="metric-card-top">
+      <span class="metric-icon metric-blue">◇</span
+      ><span class="metric-label">Tổ chức hoạt động</span>
+    </div>
     <strong class="metric-value" id="kpi-organizations">–</strong>
     <span class="metric-delta" id="delta-organizations">Đang tải dữ liệu</span>
   </article>
   <article class="metric-card">
-    <div class="metric-card-top"><span class="metric-icon metric-violet">◎</span><span class="metric-label">Người dùng</span></div>
+    <div class="metric-card-top">
+      <span class="metric-icon metric-violet">◎</span
+      ><span class="metric-label">Người dùng</span>
+    </div>
     <strong class="metric-value" id="kpi-users">–</strong>
     <span class="metric-delta" id="delta-users">Đang tải dữ liệu</span>
   </article>
   <article class="metric-card">
-    <div class="metric-card-top"><span class="metric-icon metric-cyan">▦</span><span class="metric-label">Kỳ thi</span></div>
+    <div class="metric-card-top">
+      <span class="metric-icon metric-cyan">▦</span
+      ><span class="metric-label">Kỳ thi</span>
+    </div>
     <strong class="metric-value" id="kpi-exams">–</strong>
     <span class="metric-delta" id="delta-exams">Đang tải dữ liệu</span>
   </article>
   <article class="metric-card">
-    <div class="metric-card-top"><span class="metric-icon metric-green">●</span><span class="metric-label">Phiên đang hoạt động</span></div>
+    <div class="metric-card-top">
+      <span class="metric-icon metric-green">●</span
+      ><span class="metric-label">Phiên đang hoạt động</span>
+    </div>
     <strong class="metric-value" id="kpi-sessions">–</strong>
     <span class="metric-delta" id="delta-sessions">Đang tải dữ liệu</span>
   </article>
   <article class="metric-card metric-card-warning">
-    <div class="metric-card-top"><span class="metric-icon metric-amber">!</span><span class="metric-label">Quyền truy cập ngoại lệ chờ duyệt</span></div>
+    <div class="metric-card-top">
+      <span class="metric-icon metric-amber">!</span
+      ><span class="metric-label">Quyền truy cập ngoại lệ chờ duyệt</span>
+    </div>
     <strong class="metric-value" id="kpi-grants">–</strong>
-    <a class="metric-link" href="/ui/system/security">Xem yêu cầu <span aria-hidden="true">→</span></a>
+    <a class="metric-link" href="/ui/system/security"
+      >Xem yêu cầu <span aria-hidden="true">→</span></a
+    >
   </article>
 </section>
 
 <section class="chart-grid chart-grid-primary">
   <article class="panel chart-panel chart-panel-wide">
     <div class="panel-heading">
-      <div><h2>Phiên thi theo thời gian</h2><p class="muted">Số phiên bắt đầu trong khoảng đã chọn</p></div>
+      <div>
+        <h2>Phiên thi theo thời gian</h2>
+        <p class="muted">Số phiên bắt đầu trong khoảng đã chọn</p>
+      </div>
       <span class="live-indicator"><span></span>Dữ liệu hệ thống</span>
     </div>
-    <div id="sessions-line-chart" class="chart-canvas chart-line" role="img" aria-label="Biểu đồ phiên thi theo thời gian"></div>
+    <div
+      id="sessions-line-chart"
+      class="chart-canvas chart-line"
+      role="img"
+      aria-label="Biểu đồ phiên thi theo thời gian"
+    ></div>
   </article>
   <article class="panel chart-panel">
-    <div class="panel-heading"><div><h2>Trạng thái tổ chức</h2><p class="muted">Phân bổ toàn hệ thống</p></div></div>
-    <div id="organizations-donut-chart" class="chart-canvas chart-donut" role="img" aria-label="Biểu đồ trạng thái tổ chức"></div>
+    <div class="panel-heading">
+      <div>
+        <h2>Trạng thái tổ chức</h2>
+        <p class="muted">Phân bổ toàn hệ thống</p>
+      </div>
+    </div>
+    <div
+      id="organizations-donut-chart"
+      class="chart-canvas chart-donut"
+      role="img"
+      aria-label="Biểu đồ trạng thái tổ chức"
+    ></div>
   </article>
 </section>
 
 <section class="chart-grid">
   <article class="panel chart-panel">
-    <div class="panel-heading"><div><h2>Kỳ thi theo trạng thái</h2><p class="muted">Phân bổ theo trạng thái hiện tại</p></div></div>
-    <div id="exams-bar-chart" class="chart-canvas" role="img" aria-label="Biểu đồ kỳ thi theo trạng thái"></div>
+    <div class="panel-heading">
+      <div>
+        <h2>Kỳ thi theo trạng thái</h2>
+        <p class="muted">Phân bổ theo trạng thái hiện tại</p>
+      </div>
+    </div>
+    <div
+      id="exams-bar-chart"
+      class="chart-canvas"
+      role="img"
+      aria-label="Biểu đồ kỳ thi theo trạng thái"
+    ></div>
   </article>
   <article class="panel chart-panel">
-    <div class="panel-heading"><div><h2>Tổ chức có nhiều phiên hoạt động</h2><p class="muted">6 tổ chức đứng đầu tại thời điểm hiện tại</p></div></div>
-    <div id="top-organizations-chart" class="chart-canvas" role="img" aria-label="Biểu đồ top tổ chức theo phiên hoạt động"></div>
+    <div class="panel-heading">
+      <div>
+        <h2>Tổ chức có nhiều phiên hoạt động</h2>
+        <p class="muted">6 tổ chức đứng đầu tại thời điểm hiện tại</p>
+      </div>
+    </div>
+    <div
+      id="top-organizations-chart"
+      class="chart-canvas"
+      role="img"
+      aria-label="Biểu đồ top tổ chức theo phiên hoạt động"
+    ></div>
   </article>
 </section>
 
 <section class="panel attention-panel">
   <div class="panel-heading">
-    <div><h2>Cần chú ý</h2><p class="muted">Các trạng thái quản trị hệ thống cần kiểm tra</p></div>
-    <a href="/ui/system/security" class="text-link">Trung tâm bảo mật <span aria-hidden="true">→</span></a>
+    <div>
+      <h2>Cần chú ý</h2>
+      <p class="muted">Các trạng thái quản trị hệ thống cần kiểm tra</p>
+    </div>
+    <a href="/ui/system/security" class="text-link"
+      >Trung tâm bảo mật <span aria-hidden="true">→</span></a
+    >
   </div>
-  <div id="system-attention-list" class="attention-list"><div class="empty-state compact">Đang tổng hợp cảnh báo...</div></div>
+  <div id="system-attention-list" class="attention-list">
+    <div class="empty-state compact">Đang tổng hợp cảnh báo...</div>
+  </div>
 </section>
 
 <section class="panel operations-panel">
   <div class="panel-heading">
-    <div><h2>Tình trạng vận hành</h2><p class="muted">Cơ sở dữ liệu, Redis, xử lý báo cáo, dung lượng lưu trữ và phiên bản tiện ích.</p></div>
-    <button type="button" class="secondary-button" id="refresh-operations">Làm mới</button>
+    <div>
+      <h2>Tình trạng vận hành</h2>
+      <p class="muted">
+        Cơ sở dữ liệu, Redis, xử lý báo cáo, dung lượng lưu trữ và phiên bản
+        tiện ích.
+      </p>
+    </div>
+    <button type="button" class="secondary-button" id="refresh-operations">
+      Làm mới
+    </button>
   </div>
-  <div id="operations-grid" class="operations-grid"><div class="empty-state compact">Đang kiểm tra vận hành...</div></div>
+  <div id="operations-grid" class="operations-grid">
+    <div class="empty-state compact">Đang kiểm tra vận hành...</div>
+  </div>
 </section>
-{% endblock %}
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script src="/static/system-common.js"></script>
 <script src="/static/system.js"></script>
 {% endblock %}
