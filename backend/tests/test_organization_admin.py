@@ -68,6 +68,89 @@ def test_org_admin_invites_new_member_and_last_admin_is_protected(client):
     assert protected.status_code == 409
 
 
+def test_organization_audit_is_paged_and_resolves_actor_identity(client):
+    admin_token, org_id = _register(
+        client,
+        "audit-admin@test.local",
+        "Audit Organization",
+    )
+    headers = _headers(admin_token)
+    with SessionLocal() as db:
+        actor = db.query(models.User).filter_by(email="audit-admin@test.local").one()
+        actor.display_name = "Nguyen Audit"
+        db.add_all([
+            models.AuditLog(
+                actor_user_id=actor.id,
+                actor_role=actor.role,
+                org_id=org_id,
+                action="org.audit.pagination",
+                resource_type="test_resource",
+                resource_id=f"resource-{index:02d}",
+                outcome="success",
+                reason="Kiem tra phan trang",
+            )
+            for index in range(25)
+        ])
+        db.add(
+            models.AuditLog(
+                actor_user_id=None,
+                actor_role=None,
+                org_id=org_id,
+                action="org.audit.system_event",
+                resource_type="test_resource",
+                outcome="success",
+            )
+        )
+        db.commit()
+
+    first_page = client.get(
+        "/organizations/current/audit/page"
+        "?search=org.audit.pagination&page=1&page_size=10",
+        headers=headers,
+    )
+    assert first_page.status_code == 200
+    first_body = first_page.json()
+    assert first_body["total"] == 25
+    assert first_body["page"] == 1
+    assert first_body["pages"] == 3
+    assert len(first_body["items"]) == 10
+    assert first_body["items"][0]["actor_display_name"] == "Nguyen Audit"
+    assert first_body["items"][0]["actor_email"] == "audit-admin@test.local"
+
+    last_page = client.get(
+        "/organizations/current/audit/page"
+        "?search=org.audit.pagination&page=3&page_size=10",
+        headers=headers,
+    )
+    assert last_page.status_code == 200
+    assert len(last_page.json()["items"]) == 5
+
+    searched_by_user = client.get(
+        "/organizations/current/audit/page?search=Nguyen+Audit&page_size=10",
+        headers=headers,
+    )
+    assert searched_by_user.status_code == 200
+    assert searched_by_user.json()["total"] >= 25
+
+    system_event = client.get(
+        "/organizations/current/audit/page?search=org.audit.system_event&page_size=10",
+        headers=headers,
+    )
+    assert system_event.status_code == 200
+    assert system_event.json()["items"][0]["actor_display_name"] is None
+    assert system_event.json()["items"][0]["actor_email"] is None
+
+    manager_token = create_exam_manager(
+        client,
+        admin_token,
+        email="audit-manager@test.local",
+    )
+    assert client.get(
+        "/organizations/current/audit/page",
+        headers=_headers(manager_token),
+    ).status_code == 403
+
+
 def test_organization_overview_aggregates_exam_and_session_status(client):
     admin_token, _ = _register(
         client,

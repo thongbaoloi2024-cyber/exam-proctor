@@ -23,6 +23,11 @@ body { padding: 24px; }
 .setup-body .actions > button { flex: 1 1 140px; }
 .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .brand-mark { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #1d4ed8; font-weight: 800; }
+.brand-title { min-width: 0; }
+.report-issue-button { width: 34px; height: 34px; margin-left: auto; padding: 0; flex: 0 0 34px; display: grid; place-items: center; color: var(--muted); background: #242a35; border: 1px solid var(--border); border-radius: 9px; }
+.report-issue-button:hover { color: var(--text); background: #303746; }
+.report-issue-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.report-issue-button svg { display: block; }
 h1 { font-size: 1.35rem; margin: 0; }
 h2 { font-size: 1rem; margin: 0 0 12px; }
 p { line-height: 1.45; }

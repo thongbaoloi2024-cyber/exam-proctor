@@ -1,3 +1,5 @@
+const manageRoot = document.getElementById("exam-manage-root");
+const MANAGE_EXAM_ID = manageRoot?.dataset.examId || "";
 let managedExam = null;
 let canAssign = false;
 let managePolicyFloor = null;
@@ -20,6 +22,35 @@ function manageExpiryText(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return `Hết hạn ${date.toLocaleString("vi-VN")}`;
+}
+
+function formatManageHeaderDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "–";
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function renderManageDetailHeader(exam) {
+  const statusLabels = {
+    draft: "Bản nháp",
+    scheduled: "Đã lên lịch",
+    open: "Đang mở",
+    closed: "Đã đóng",
+    archived: "Đã lưu trữ",
+  };
+  document.getElementById("detail-exam-title").textContent = exam.name;
+  document.getElementById("detail-created-at").textContent = formatManageHeaderDate(exam.created_at);
+  document.getElementById("detail-updated-at").textContent = formatManageHeaderDate(exam.updated_at);
+  const status = document.getElementById("detail-status");
+  status.className = `exam-status-badge status-${exam.status}`;
+  status.textContent = statusLabels[exam.status] || exam.status;
+  const joinCode = document.getElementById("detail-join-code");
+  joinCode.textContent = exam.join_code || "Đã ẩn";
+  joinCode.title = manageExpiryText(exam.join_code_expires_at);
+  document.title = `${exam.name} · Giám Thị Số`;
 }
 
 async function setLifecycle(status) {
@@ -79,11 +110,7 @@ function applyManagePolicyConstraints() {
 function renderManagedExam() {
   const allowedActions = new Set(managedExam.allowed_actions || []);
   const canManage = allowedActions.has("exam.manage");
-  document.getElementById("manage-exam-title").textContent = managedExam.name;
-  const assignmentLabel = managedExam.assignment_role ? ` · vai trò ${managedExam.assignment_role}` : "";
-  document.getElementById("manage-exam-state").textContent = `Trạng thái: ${managedExam.status} · phiên bản ${managedExam.version}${assignmentLabel}`;
-  document.getElementById("manage-join-code").textContent = managedExam.join_code || "Đã ẩn";
-  document.getElementById("manage-code-expiry").textContent = manageExpiryText(managedExam.join_code_expires_at);
+  renderManageDetailHeader(managedExam);
   document.getElementById("manage-exam-name").value = managedExam.name;
   document.getElementById("manage-exam-url").value = managedExam.exam_url || "";
   document.getElementById("manage-auth-mode").value = managedExam.candidate_auth_mode;
@@ -270,6 +297,7 @@ document.getElementById("assignment-form").addEventListener("submit", async (eve
 });
 
 async function initializeExamManage() {
+  if (!MANAGE_EXAM_ID) throw new Error("Thiếu mã kỳ thi để tải thông tin quản lý.");
   if (!await API.requireAuth()) return;
   await loadManagePolicyFloor();
   await loadManagedExam();

@@ -2,10 +2,16 @@
 {% block title %}Dashboard giám thị · Giám Thị Số{% endblock %}
 {% block content %}
 <section class="card exam-detail-header" id="exam-detail-header">
-  <p><a href="/ui/exams" id="dashboard-back-link">&larr; Danh sách kỳ thi</a></p>
-  <div class="exam-detail-heading">
-    <div><span class="eyebrow">Chi tiết kỳ thi</span><h1 id="detail-exam-title">Đang tải...</h1><p id="detail-exam-state" class="muted"></p></div>
+  <div class="exam-detail-header-top">
+    <a href="/ui/exams" id="dashboard-back-link" class="exam-detail-back-link">&larr; Danh sách kỳ thi</a>
   </div>
+  <h1 id="detail-exam-title" class="exam-detail-title">Đang tải...</h1>
+  <dl class="exam-detail-meta" aria-label="Thông tin kỳ thi">
+    <div><dt>Ngày tạo</dt><dd id="detail-created-at">–</dd></div>
+    <div><dt>Ngày cập nhật</dt><dd id="detail-updated-at">–</dd></div>
+    <div><dt>Trạng thái</dt><dd><span id="detail-status" class="exam-status-badge">–</span></dd></div>
+    <div><dt>Mã tham gia</dt><dd><code id="detail-join-code">–</code></dd></div>
+  </dl>
   <nav class="exam-detail-tabs" aria-label="Nội dung chi tiết kỳ thi">
     <a href="/ui/exams/{{ exam_id }}/detail" class="exam-detail-tab active" aria-current="page">Dashboard</a>
     <a href="/ui/exams/{{ exam_id }}/detail?tab=manage" class="exam-detail-tab hidden" id="detail-manage-tab">Quản lý</a>
@@ -90,5 +96,5 @@
 </dialog>
 {% endblock %}
 {% block scripts %}
-<script src="/static/dashboard.js"></script>
+<script src="/static/dashboard.js?v=20260811-exam-detail-2"></script>
 {% endblock %}

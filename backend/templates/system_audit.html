@@ -33,15 +33,15 @@
 <section class="panel">
   <div class="panel-heading"><div><h2>Chi tiết sự kiện</h2><p class="muted">Dữ liệu before/after đã được loại bỏ secret khi ghi audit.</p></div></div>
   <form id="audit-filters" class="filter-bar">
-    <label class="search-field"><span class="sr-only">Tìm audit</span><span class="search-icon" aria-hidden="true">⌕</span><input id="audit-search" type="search" placeholder="Action, resource hoặc request ID..." maxlength="100"></label>
+    <label class="search-field"><span class="sr-only">Tìm audit</span><span class="search-icon" aria-hidden="true">⌕</span><input id="audit-search" type="search" placeholder="Người dùng, hành động hoặc tài nguyên..." maxlength="100"></label>
     <label class="compact-field"><span class="sr-only">Kết quả</span><select id="audit-outcome-filter"><option value="">Tất cả kết quả</option><option value="success">Thành công</option><option value="failed">Thất bại</option><option value="denied">Bị từ chối</option></select></label>
     <label class="compact-field grow"><span class="sr-only">Tổ chức</span><select id="audit-organization-filter"><option value="">Tất cả tổ chức</option></select></label>
     <button type="submit" class="secondary-button">Áp dụng</button>
   </form>
   <div class="table-scroll">
     <table class="data-table admin-table" id="system-audit-table">
-      <thead><tr><th>Thời gian</th><th>Hành động</th><th>Tài nguyên</th><th>Tổ chức</th><th>Kết quả</th><th><span class="sr-only">Chi tiết</span></th></tr></thead>
-      <tbody><tr><td colspan="6"><div class="table-loading">Đang tải audit...</div></td></tr></tbody>
+      <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Tài nguyên</th><th>Tổ chức</th><th>Kết quả</th><th><span class="sr-only">Chi tiết</span></th></tr></thead>
+      <tbody><tr><td colspan="7"><div class="table-loading">Đang tải audit...</div></td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="audit-pagination"></div>

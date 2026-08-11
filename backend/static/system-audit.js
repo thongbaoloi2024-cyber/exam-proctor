@@ -33,6 +33,31 @@ function prettyAuditJson(value) {
   }
 }
 
+function auditActorName(entry) {
+  return entry.actor_display_name || entry.actor_email || "Hệ thống";
+}
+
+function auditActorDetail(entry) {
+  const name = auditActorName(entry);
+  return entry.actor_email && entry.actor_email !== name
+    ? `${name} · ${entry.actor_email}`
+    : name;
+}
+
+function appendAuditActorCell(row, entry) {
+  const cell = document.createElement("td");
+  cell.className = "audit-user-cell";
+  const name = document.createElement("strong");
+  name.textContent = auditActorName(entry);
+  cell.appendChild(name);
+  if (entry.actor_email && entry.actor_email !== name.textContent) {
+    const email = document.createElement("small");
+    email.textContent = entry.actor_email;
+    cell.appendChild(email);
+  }
+  row.appendChild(cell);
+}
+
 function showAuditDetail(entry) {
   SystemUI.text("audit-detail-time", SystemUI.formatDate(entry.created_at, true));
   const description = document.getElementById("audit-detail-description");
@@ -41,7 +66,7 @@ function showAuditDetail(entry) {
     auditDescriptionItem("Kết quả", SystemUI.statusLabel(entry.outcome)),
     auditDescriptionItem("Tài nguyên", `${entry.resource_type}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`),
     auditDescriptionItem("Tổ chức", auditState.organizations.get(entry.org_id) || entry.org_id),
-    auditDescriptionItem("Actor", entry.actor_role || entry.actor_user_id),
+    auditDescriptionItem("Người dùng", auditActorDetail(entry)),
     auditDescriptionItem("Request ID", entry.request_id),
     auditDescriptionItem("IP", entry.ip_address),
     auditDescriptionItem("Lý do", entry.reason),
@@ -56,7 +81,7 @@ function renderAuditRows(entries) {
   if (!entries.length) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 6;
+    cell.colSpan = 7;
     cell.appendChild(SystemUI.empty("Không có sự kiện audit phù hợp."));
     row.appendChild(cell);
     tbody.replaceChildren(row);
@@ -65,6 +90,7 @@ function renderAuditRows(entries) {
   tbody.replaceChildren(...entries.map((entry) => {
     const row = document.createElement("tr");
     SystemUI.cell(row, SystemUI.formatDate(entry.created_at, true));
+    appendAuditActorCell(row, entry);
     const actionCell = SystemUI.cell(row, entry.action, "audit-action-cell");
     actionCell.title = entry.action;
     SystemUI.cell(row, `${entry.resource_type}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`, "truncate-cell");

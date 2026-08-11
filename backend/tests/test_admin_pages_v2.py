@@ -22,6 +22,8 @@ def test_new_admin_page_shells_and_scripts_are_served(client):
         "/ui/mfa/verify": "/static/mfa-verify.js",
         "/ui/register/organization": "/static/register-organization.js",
         "/ui/exams/exam-id/manage": "/static/exam_manage.js",
+        "/ui/exams/exam-id/detail": "/static/dashboard.js",
+        "/ui/exams/exam-id/detail?tab=manage": "/static/exam_manage.js",
     }
     for path, script in pages.items():
         response = client.get(path)
@@ -148,6 +150,9 @@ def test_organization_sidebar_uses_real_paths_and_each_route_renders_one_panel(c
     assert 'data-section="audit"' in audit.text
     assert 'data-organization-panel="audit"' in audit.text
     assert 'id="grant-decision-dialog"' not in audit.text
+    assert '<th>Người dùng</th>' in audit.text
+    assert '<th>Request ID</th>' not in audit.text
+    assert 'id="organization-audit-pagination"' in audit.text
 
     script = client.get("/static/organization.js").text
     assert 'if (section === "organization")' in script
@@ -156,6 +161,7 @@ def test_organization_sidebar_uses_real_paths_and_each_route_renders_one_panel(c
     assert 'else if (section === "audit")' in script
     assert "loadMembers(), loadOrganizationOverview(), loadPolicy()" not in script
     assert "function redirectLegacyOrganizationHash()" in script
+    assert 'API.request(`/organizations/current/audit/page?${params}`)' in script
 
 
 def test_account_and_organization_settings_shells_expose_expected_fields(client):

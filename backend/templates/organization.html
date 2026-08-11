@@ -65,18 +65,19 @@
 
 {% if organization_section == "audit" %}
 <section class="card organization-panel" data-organization-panel="audit">
-  <h2>Audit gần nhất</h2>
+  <h2>Nhật ký audit</h2>
   <div class="filter-bar">
-    <label class="grow">Tìm kiếm<input id="audit-search" type="search" placeholder="Hành động, tài nguyên, request ID"></label>
-    <label>Kết quả<select id="audit-outcome"><option value="">Tất cả</option><option value="success">Thành công</option><option value="failure">Thất bại</option></select></label>
+    <label class="grow">Tìm kiếm<input id="audit-search" type="search" placeholder="Người dùng, hành động hoặc tài nguyên"></label>
+    <label>Kết quả<select id="audit-outcome"><option value="">Tất cả</option><option value="success">Thành công</option><option value="failed">Thất bại</option><option value="denied">Bị từ chối</option></select></label>
     <button type="button" id="audit-filter-button">Lọc</button>
   </div>
   <div class="table-scroll">
-    <table class="data-table" id="organization-audit-table">
-      <thead><tr><th>Thời gian</th><th>Actor</th><th>Hành động</th><th>Tài nguyên</th><th>Kết quả</th><th>Request ID</th></tr></thead>
+    <table class="data-table admin-table" id="organization-audit-table">
+      <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Tài nguyên</th><th>Kết quả</th><th>Lý do</th></tr></thead>
       <tbody><tr><td colspan="6">Đang tải...</td></tr></tbody>
     </table>
   </div>
+  <div class="pagination" id="organization-audit-pagination"></div>
 </section>
 {% endif %}
 

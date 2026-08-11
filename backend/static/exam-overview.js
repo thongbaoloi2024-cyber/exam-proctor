@@ -24,8 +24,8 @@ function workspaceAttention(item) {
   const dangerous = item.alert_sessions > 0 || item.disconnected_sessions > 0;
   link.className = `attention-item attention-${dangerous ? "danger" : "warning"}`;
   link.href = dangerous || !item.allowed_actions.includes("exam.manage")
-    ? `/ui/exams/${encodeURIComponent(item.id)}/dashboard`
-    : `/ui/exams/${encodeURIComponent(item.id)}/manage`;
+    ? `/ui/exams/${encodeURIComponent(item.id)}/detail`
+    : `/ui/exams/${encodeURIComponent(item.id)}/detail?tab=manage`;
   const icon = document.createElement("span");
   icon.className = "attention-icon";
   icon.textContent = "!";
@@ -103,8 +103,8 @@ function renderWorkspaceItems(items) {
     const canManage = item.allowed_actions.includes("exam.manage");
     const monitorFirst = item.active_sessions || item.alert_sessions || item.disconnected_sessions;
     action.href = monitorFirst || !canManage
-      ? `/ui/exams/${encodeURIComponent(item.id)}/dashboard`
-      : `/ui/exams/${encodeURIComponent(item.id)}/manage`;
+      ? `/ui/exams/${encodeURIComponent(item.id)}/detail`
+      : `/ui/exams/${encodeURIComponent(item.id)}/detail?tab=manage`;
     action.className = "text-link";
     action.textContent = monitorFirst || !canManage ? "Theo dõi →" : "Quản lý →";
     workspaceCell(row, action);

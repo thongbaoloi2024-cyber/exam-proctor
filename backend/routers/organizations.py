@@ -2,18 +2,19 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .. import models
-from ..audit import record_audit
+from ..audit import enrich_audit_actor_identity, record_audit
 from ..auth import verify_password
 from ..authorization import Permission, active_membership, require_permission
 from ..db import get_db
@@ -234,6 +235,8 @@ class AuditLogResponse(BaseModel):
 
     id: str
     actor_user_id: str | None
+    actor_display_name: str | None = None
+    actor_email: str | None = None
     action: str
     resource_type: str
     resource_id: str | None
@@ -241,6 +244,14 @@ class AuditLogResponse(BaseModel):
     reason: str | None
     request_id: str | None
     created_at: datetime
+
+
+class AuditLogPageResponse(BaseModel):
+    items: list[AuditLogResponse]
+    total: int
+    page: int
+    page_size: int
+    pages: int
 
 
 def _now() -> datetime:
@@ -777,6 +788,76 @@ def revoke_access_grant(
     return _access_grant_response(grant, requester)
 
 
+def _organization_audit_query(
+    db: Session,
+    org_id: str,
+    *,
+    action: str | None,
+    actor_user_id: str | None,
+    outcome: str | None,
+    search: str | None,
+):
+    query = (
+        db.query(models.AuditLog)
+        .outerjoin(models.User, models.AuditLog.actor_user_id == models.User.id)
+        .filter(models.AuditLog.org_id == org_id)
+    )
+    if action:
+        query = query.filter(models.AuditLog.action == action)
+    if actor_user_id:
+        query = query.filter(models.AuditLog.actor_user_id == actor_user_id)
+    if outcome:
+        query = query.filter(models.AuditLog.outcome == outcome)
+    if search and search.strip():
+        pattern = f"%{search.strip()}%"
+        query = query.filter(or_(
+            models.AuditLog.action.ilike(pattern),
+            models.AuditLog.resource_type.ilike(pattern),
+            models.AuditLog.resource_id.ilike(pattern),
+            models.AuditLog.request_id.ilike(pattern),
+            models.User.display_name.ilike(pattern),
+            models.User.email.ilike(pattern),
+        ))
+    return query
+
+
+@router.get("/audit/page", response_model=AuditLogPageResponse)
+def page_organization_audit(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=10, le=100),
+    action: str | None = None,
+    actor_user_id: str | None = None,
+    outcome: str | None = None,
+    search: str | None = Query(default=None, max_length=100),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_permission(Permission.ORG_AUDIT_READ)),
+) -> AuditLogPageResponse:
+    membership = active_membership(db, user)
+    query = _organization_audit_query(
+        db,
+        membership.org_id,
+        action=action,
+        actor_user_id=actor_user_id,
+        outcome=outcome,
+        search=search,
+    )
+    total = query.count()
+    entries = (
+        query.order_by(models.AuditLog.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    enrich_audit_actor_identity(db, entries)
+    return AuditLogPageResponse(
+        items=[AuditLogResponse.model_validate(entry) for entry in entries],
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=max(1, math.ceil(total / page_size)),
+    )
+
+
 @router.get("/audit", response_model=list[AuditLogResponse])
 def list_organization_audit(
     limit: int = 100,
@@ -790,19 +871,18 @@ def list_organization_audit(
 ) -> list[models.AuditLog]:
     membership = active_membership(db, user)
     safe_limit = min(max(limit, 1), 500)
-    query = db.query(models.AuditLog).filter(models.AuditLog.org_id == membership.org_id)
-    if action:
-        query = query.filter(models.AuditLog.action == action)
-    if actor_user_id:
-        query = query.filter(models.AuditLog.actor_user_id == actor_user_id)
-    if outcome:
-        query = query.filter(models.AuditLog.outcome == outcome)
-    if search:
-        pattern = f"%{search.strip()}%"
-        query = query.filter(or_(
-            models.AuditLog.action.ilike(pattern),
-            models.AuditLog.resource_type.ilike(pattern),
-            models.AuditLog.resource_id.ilike(pattern),
-            models.AuditLog.request_id.ilike(pattern),
-        ))
-    return query.order_by(models.AuditLog.created_at.desc()).offset(max(offset, 0)).limit(safe_limit).all()
+    query = _organization_audit_query(
+        db,
+        membership.org_id,
+        action=action,
+        actor_user_id=actor_user_id,
+        outcome=outcome,
+        search=search,
+    )
+    entries = (
+        query.order_by(models.AuditLog.created_at.desc())
+        .offset(max(offset, 0))
+        .limit(safe_limit)
+        .all()
+    )
+    return enrich_audit_actor_identity(db, entries)

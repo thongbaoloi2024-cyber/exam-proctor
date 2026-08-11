@@ -39,6 +39,28 @@ def _json(value: Any | None) -> str | None:
     return json.dumps(_redact(value), ensure_ascii=False, sort_keys=True, default=str)
 
 
+def enrich_audit_actor_identity(
+    db: Session,
+    entries: list[models.AuditLog],
+) -> list[models.AuditLog]:
+    """Attach display-safe actor fields to a batch of audit rows.
+
+    Audit rows retain the immutable user ID while the directory remains the
+    source of truth for the current display name and email. Loading all actors
+    in one query avoids an extra query for every row in a paged response.
+    """
+    actor_ids = {entry.actor_user_id for entry in entries if entry.actor_user_id}
+    actors = {
+        user.id: user
+        for user in db.query(models.User).filter(models.User.id.in_(actor_ids)).all()
+    } if actor_ids else {}
+    for entry in entries:
+        actor = actors.get(entry.actor_user_id)
+        entry.actor_display_name = actor.display_name if actor else None
+        entry.actor_email = actor.email if actor else None
+    return entries
+
+
 def record_audit(
     db: Session,
     *,

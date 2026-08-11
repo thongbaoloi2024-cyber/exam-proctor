@@ -224,6 +224,10 @@ def test_system_admin_can_provision_and_suspend_organization(client):
 def test_system_admin_analytics_and_paged_directories(client):
     system_token, _ = _register(client, "analytics-system@test.local", "System Analytics")
     _grant_system_role("analytics-system@test.local")
+    with SessionLocal() as db:
+        system_user = db.query(models.User).filter_by(email="analytics-system@test.local").one()
+        system_user.display_name = "System Analytics Admin"
+        db.commit()
     target_token, target_org_id = _register(client, "analytics-target@test.local", "Analytics Target")
     target_headers = _headers(target_token)
     target_manager_token = create_exam_manager(
@@ -286,6 +290,8 @@ def test_system_admin_analytics_and_paged_directories(client):
     assert audit_page.status_code == 200
     assert audit_page.json()["total"] == 1
     assert audit_page.json()["items"][0]["reason"]
+    assert audit_page.json()["items"][0]["actor_display_name"] == "System Analytics Admin"
+    assert audit_page.json()["items"][0]["actor_email"] == "analytics-system@test.local"
 
 
 def test_internal_system_tenant_cannot_be_updated_or_suspended(client):

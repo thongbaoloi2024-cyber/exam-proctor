@@ -47,3 +47,15 @@ test("valid join code advances to candidate authentication before exam details",
   assert.match(setupScript, /element\(["']join-card["']\)\.classList\.add\(["']hidden["']\)/);
   assert.match(setupScript, /element\(["']change-code["']\)\.addEventListener/);
 });
+
+test("setup header includes a UI-only issue report button", async () => {
+  const setupHtml = await readFile(join(extensionRoot, "src", "setup.html"), "utf8");
+  const setupScript = await readFile(join(extensionRoot, "src", "setup.js"), "utf8");
+  const styles = await readFile(join(extensionRoot, "src", "styles.css"), "utf8");
+
+  assert.match(setupHtml, /id="report-issue"/);
+  assert.match(setupHtml, /aria-label="Báo cáo sự cố"/);
+  assert.match(setupHtml, /class="report-issue-button"[\s\S]*?<svg/);
+  assert.match(styles, /\.report-issue-button\s*\{/);
+  assert.doesNotMatch(setupScript, /element\(["']report-issue["']\)\.addEventListener/);
+});

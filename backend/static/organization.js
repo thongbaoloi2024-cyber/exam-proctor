@@ -18,6 +18,7 @@ function orgSelect(options, selectedValue) {
 }
 
 let selectedGrantDecision = null;
+const organizationAuditState = { page: 1, pageSize: 20 };
 const LEGACY_ORGANIZATION_HASH_PATHS = {
   policy: "/ui/organization/policy",
   "break-glass": "/ui/organization/break-glass",
@@ -264,26 +265,92 @@ async function loadAccessGrants() {
   document.querySelector("#access-grants-table tbody").replaceChildren(...rows);
 }
 
+function appendOrganizationAuditUserCell(row, entry) {
+  const cell = document.createElement("td");
+  cell.className = "audit-user-cell";
+  const name = document.createElement("strong");
+  name.textContent = entry.actor_display_name || entry.actor_email || "Hệ thống";
+  cell.appendChild(name);
+  if (entry.actor_email && entry.actor_email !== name.textContent) {
+    const email = document.createElement("small");
+    email.textContent = entry.actor_email;
+    cell.appendChild(email);
+  }
+  row.appendChild(cell);
+}
+
+function appendOrganizationAuditOutcomeCell(row, outcome) {
+  const cell = document.createElement("td");
+  const badge = document.createElement("span");
+  badge.className = `status-badge status-${String(outcome || "neutral").replace(/[^a-z0-9_-]/gi, "")}`;
+  badge.textContent = {
+    success: "Thành công",
+    failed: "Thất bại",
+    denied: "Bị từ chối",
+  }[outcome] || outcome || "Không xác định";
+  cell.appendChild(badge);
+  row.appendChild(cell);
+}
+
+function renderOrganizationAuditPagination(page) {
+  const container = document.getElementById("organization-audit-pagination");
+  const label = document.createElement("span");
+  label.textContent = `Trang ${page.page} / ${page.pages} · ${page.total} sự kiện`;
+  const actions = document.createElement("div");
+  const previous = document.createElement("button");
+  previous.type = "button";
+  previous.className = "secondary-button pagination-button";
+  previous.textContent = "← Trước";
+  previous.disabled = page.page <= 1;
+  previous.addEventListener("click", () => {
+    organizationAuditState.page = page.page - 1;
+    loadOrganizationAudit();
+  });
+  const next = document.createElement("button");
+  next.type = "button";
+  next.className = "secondary-button pagination-button";
+  next.textContent = "Sau →";
+  next.disabled = page.page >= page.pages;
+  next.addEventListener("click", () => {
+    organizationAuditState.page = page.page + 1;
+    loadOrganizationAudit();
+  });
+  actions.append(previous, next);
+  container.replaceChildren(label, actions);
+}
+
 async function loadOrganizationAudit() {
-  const params = new URLSearchParams({ limit: "100" });
+  const params = new URLSearchParams({
+    page: String(organizationAuditState.page),
+    page_size: String(organizationAuditState.pageSize),
+  });
   const search = document.getElementById("audit-search").value.trim();
   const outcome = document.getElementById("audit-outcome").value;
   if (search) params.set("search", search);
   if (outcome) params.set("outcome", outcome);
-  const response = await API.request(`/organizations/current/audit?${params}`);
+  const response = await API.request(`/organizations/current/audit/page?${params}`);
   if (!response.ok) return;
-  const entries = await response.json();
-  const rows = entries.map((entry) => {
+  const page = await response.json();
+  const rows = page.items.map((entry) => {
     const row = document.createElement("tr");
     orgCell(row, new Date(entry.created_at).toLocaleString("vi-VN"));
-    orgCell(row, entry.actor_user_id || "Hệ thống");
+    appendOrganizationAuditUserCell(row, entry);
     orgCell(row, entry.action);
     orgCell(row, `${entry.resource_type}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`);
-    orgCell(row, entry.outcome);
-    orgCell(row, entry.request_id || "–");
+    appendOrganizationAuditOutcomeCell(row, entry.outcome);
+    orgCell(row, entry.reason || "–");
     return row;
   });
-  document.querySelector("#organization-audit-table tbody").replaceChildren(...rows);
+  const tbody = document.querySelector("#organization-audit-table tbody");
+  if (!rows.length) {
+    const row = document.createElement("tr");
+    const cell = orgCell(row, "Không có sự kiện audit phù hợp.");
+    cell.colSpan = 6;
+    tbody.replaceChildren(row);
+  } else {
+    tbody.replaceChildren(...rows);
+  }
+  renderOrganizationAuditPagination(page);
 }
 
 function bindOrganizationPage() {
@@ -347,11 +414,15 @@ function bindBreakGlassPage() {
 function bindAuditPage() {
   document.getElementById("audit-filter-button").addEventListener(
     "click",
-    () => loadOrganizationAudit(),
+    () => {
+      organizationAuditState.page = 1;
+      loadOrganizationAudit();
+    },
   );
   document.getElementById("audit-search").addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
+      organizationAuditState.page = 1;
       loadOrganizationAudit();
     }
   });

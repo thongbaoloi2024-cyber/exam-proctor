@@ -70,6 +70,37 @@ function formatLastSeen(value) {
   return new Date(value).toLocaleString("vi-VN");
 }
 
+function formatExamHeaderDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "–";
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function renderExamDetailHeader(exam) {
+  const statusLabels = {
+    draft: "Bản nháp",
+    scheduled: "Đã lên lịch",
+    open: "Đang mở",
+    closed: "Đã đóng",
+    archived: "Đã lưu trữ",
+  };
+  document.getElementById("detail-exam-title").textContent = exam.name;
+  document.getElementById("detail-created-at").textContent = formatExamHeaderDate(exam.created_at);
+  document.getElementById("detail-updated-at").textContent = formatExamHeaderDate(exam.updated_at);
+  const status = document.getElementById("detail-status");
+  status.className = `exam-status-badge status-${exam.status}`;
+  status.textContent = statusLabels[exam.status] || exam.status;
+  const joinCode = document.getElementById("detail-join-code");
+  joinCode.textContent = exam.join_code || "Đã ẩn";
+  joinCode.title = exam.join_code_expires_at
+    ? `Hết hạn ${formatExamHeaderDate(exam.join_code_expires_at)}`
+    : "";
+  document.title = `${exam.name} · Giám Thị Số`;
+}
+
 function filteredSessions() {
   const query = document.getElementById("session-search").value.trim().toLocaleLowerCase("vi");
   const status = document.getElementById("session-status-filter").value;
@@ -179,14 +210,7 @@ async function loadExamPermissions() {
   const exam = await response.json();
   canEndSessions = (exam.allowed_actions || []).includes("exam.sessions.end");
   canResetSessions = (exam.allowed_actions || []).includes("exam.manage");
-  document.getElementById("detail-exam-title").textContent = exam.name;
-  document.getElementById("detail-exam-state").textContent = ({
-    draft: "Bản nháp",
-    scheduled: "Đã lên lịch",
-    open: "Đang mở",
-    closed: "Đã đóng",
-    archived: "Đã lưu trữ",
-  })[exam.status] || exam.status;
+  renderExamDetailHeader(exam);
   document.getElementById("detail-manage-tab").classList.toggle(
     "hidden",
     !(exam.allowed_actions || []).includes("exam.manage"),

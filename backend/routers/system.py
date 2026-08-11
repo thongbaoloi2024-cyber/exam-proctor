@@ -17,7 +17,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from .. import models
-from ..audit import record_audit
+from ..audit import enrich_audit_actor_identity, record_audit
 from ..authorization import Permission, require_system_permission
 from ..db import get_db
 from ..policies import PlatformPolicy, get_platform_policy
@@ -236,6 +236,8 @@ class AuditLogResponse(BaseModel):
 
     id: str
     actor_user_id: str | None
+    actor_display_name: str | None = None
+    actor_email: str | None = None
     actor_role: str | None
     org_id: str | None
     exam_id: str | None
@@ -1011,7 +1013,11 @@ def page_audit_logs(
     db: Session = Depends(get_db),
     _user: models.User = Depends(require_system_permission(Permission.SYSTEM_SECURITY_READ)),
 ) -> AuditLogPageResponse:
-    query = db.query(models.AuditLog).filter(models.AuditLog.created_at >= _day_start(days))
+    query = (
+        db.query(models.AuditLog)
+        .outerjoin(models.User, models.AuditLog.actor_user_id == models.User.id)
+        .filter(models.AuditLog.created_at >= _day_start(days))
+    )
     normalized_search = search.strip()
     if normalized_search:
         pattern = f"%{normalized_search}%"
@@ -1020,6 +1026,8 @@ def page_audit_logs(
             models.AuditLog.resource_type.ilike(pattern),
             models.AuditLog.resource_id.ilike(pattern),
             models.AuditLog.request_id.ilike(pattern),
+            models.User.display_name.ilike(pattern),
+            models.User.email.ilike(pattern),
         ))
     if outcome:
         query = query.filter(models.AuditLog.outcome == outcome)
@@ -1032,6 +1040,7 @@ def page_audit_logs(
         .limit(page_size)
         .all()
     )
+    enrich_audit_actor_identity(db, entries)
     return AuditLogPageResponse(
         items=[AuditLogDetailResponse.model_validate(entry) for entry in entries],
         total=total,
@@ -1048,7 +1057,13 @@ def list_audit_logs(
     _user: models.User = Depends(require_system_permission(Permission.SYSTEM_SECURITY_READ)),
 ) -> list[models.AuditLog]:
     safe_limit = min(max(limit, 1), 500)
-    return db.query(models.AuditLog).order_by(models.AuditLog.created_at.desc()).limit(safe_limit).all()
+    entries = (
+        db.query(models.AuditLog)
+        .order_by(models.AuditLog.created_at.desc())
+        .limit(safe_limit)
+        .all()
+    )
+    return enrich_audit_actor_identity(db, entries)
 
 
 SystemOrganizationDetailResponse.model_rebuild()

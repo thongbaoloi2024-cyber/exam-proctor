@@ -1,18 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Quản lý kỳ thi · Giám Thị Số{% endblock %}
 {% block content %}
-<script>const MANAGE_EXAM_ID = {{ exam_id | tojson }};</script>
-<section class="card exam-detail-header">
-  <p><a href="/ui/exams">&larr; Danh sách kỳ thi</a></p>
-  <div class="exam-detail-heading">
-    <div><span class="eyebrow">Chi tiết kỳ thi</span><h1 id="manage-exam-title">Đang tải...</h1></div>
-    <div class="exam-code-summary">
-      <span class="muted">Mã tham gia</span>
-      <strong id="manage-join-code">–</strong>
-      <small id="manage-code-expiry" class="muted"></small>
-    </div>
+<section class="card exam-detail-header" id="exam-manage-root" data-exam-id="{{ exam_id }}">
+  <div class="exam-detail-header-top">
+    <a href="/ui/exams" id="dashboard-back-link" class="exam-detail-back-link">&larr; Danh sách kỳ thi</a>
   </div>
-  <p id="manage-exam-state" class="muted"></p>
+  <h1 id="detail-exam-title" class="exam-detail-title">Đang tải...</h1>
+  <dl class="exam-detail-meta" aria-label="Thông tin kỳ thi">
+    <div><dt>Ngày tạo</dt><dd id="detail-created-at">–</dd></div>
+    <div><dt>Ngày cập nhật</dt><dd id="detail-updated-at">–</dd></div>
+    <div><dt>Trạng thái</dt><dd><span id="detail-status" class="exam-status-badge">–</span></dd></div>
+    <div><dt>Mã tham gia</dt><dd><code id="detail-join-code">–</code></dd></div>
+  </dl>
   <div class="exam-manage-actions">
     <div id="lifecycle-actions" class="button-row"></div>
     <button type="button" id="manage-rotate-code" class="secondary-button hidden">Đổi mã tham gia</button>
@@ -66,4 +65,4 @@
   </div>
 </section>
 {% endblock %}
-{% block scripts %}<script src="/static/exam_manage.js"></script>{% endblock %}
+{% block scripts %}<script src="/static/exam_manage.js?v=20260811-exam-detail-3"></script>{% endblock %}
