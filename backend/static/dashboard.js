@@ -1,6 +1,7 @@
 const dashboardRoot = document.getElementById("dashboard-root");
 const EXAM_ID = dashboardRoot.dataset.examId;
 const sessionData = new Map();
+const TABLE_PAGE_SIZE = 10;
 let initialLoadDone = false;
 let lastUpdatedId = null;
 let reconnectTimer = null;
@@ -9,6 +10,9 @@ let canEndSessions = false;
 let canResetSessions = false;
 let endingSessionId = null;
 let dashboardExam = null;
+let sessionPage = 1;
+let incidentPage = 1;
+let incidentData = [];
 const SEVERITY_LABELS = { LOW: "Thông tin", MEDIUM: "Cảnh báo", HIGH: "Nghiêm trọng" };
 const VIOLATION_LABELS = {
   FACE_ABSENT: "Vắng mặt",
@@ -44,6 +48,48 @@ function showTableMessage(tbody, message, columns = 7) {
   cell.textContent = message;
   row.appendChild(cell);
   tbody.replaceChildren(row);
+}
+
+function paginateItems(items, requestedPage) {
+  const totalPages = Math.max(1, Math.ceil(items.length / TABLE_PAGE_SIZE));
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const start = (page - 1) * TABLE_PAGE_SIZE;
+  return {
+    items: items.slice(start, start + TABLE_PAGE_SIZE),
+    page,
+    totalPages,
+    firstItem: items.length ? start + 1 : 0,
+    lastItem: Math.min(start + TABLE_PAGE_SIZE, items.length),
+  };
+}
+
+function hidePagination(containerId) {
+  const container = document.getElementById(containerId);
+  container.classList.add("hidden");
+  container.replaceChildren();
+}
+
+function renderPagination(containerId, pageData, totalItems, onPageChange) {
+  const container = document.getElementById(containerId);
+  if (!totalItems) return hidePagination(containerId);
+  const label = document.createElement("span");
+  label.textContent = `Hiển thị ${pageData.firstItem}–${pageData.lastItem} / ${totalItems} · Trang ${pageData.page} / ${pageData.totalPages}`;
+  const actions = document.createElement("div");
+  const previous = document.createElement("button");
+  previous.type = "button";
+  previous.className = "secondary-button pagination-button";
+  previous.textContent = "← Trước";
+  previous.disabled = pageData.page <= 1;
+  previous.addEventListener("click", () => onPageChange(pageData.page - 1));
+  const next = document.createElement("button");
+  next.type = "button";
+  next.className = "secondary-button pagination-button";
+  next.textContent = "Sau →";
+  next.disabled = pageData.page >= pageData.totalPages;
+  next.addEventListener("click", () => onPageChange(pageData.page + 1));
+  actions.append(previous, next);
+  container.replaceChildren(label, actions);
+  container.classList.remove("hidden");
 }
 
 function renderKpis() {
@@ -170,10 +216,18 @@ function filteredSessions() {
 
 function renderTable() {
   const tbody = document.querySelector("#sessions-table tbody");
-  if (!initialLoadDone) return showTableMessage(tbody, "Đang tải...");
+  if (!initialLoadDone) {
+    hidePagination("session-pagination");
+    return showTableMessage(tbody, "Đang tải...");
+  }
   const items = filteredSessions();
-  if (!items.length) return showTableMessage(tbody, sessionData.size ? "Không có phiên phù hợp bộ lọc." : "Chưa có thí sinh nào tham gia kỳ thi này.");
-  const rows = items.map(([id, session]) => {
+  if (!items.length) {
+    hidePagination("session-pagination");
+    return showTableMessage(tbody, sessionData.size ? "Không có phiên phù hợp bộ lọc." : "Chưa có thí sinh nào tham gia kỳ thi này.");
+  }
+  const pageData = paginateItems(items, sessionPage);
+  sessionPage = pageData.page;
+  const rows = pageData.items.map(([id, session]) => {
     const row = document.createElement("tr");
     if (id === lastUpdatedId) row.classList.add("updated");
     appendTextCell(row, session.studentName);
@@ -197,19 +251,24 @@ function renderTable() {
     devices.textContent = [statusText(session.cameraStatus, "Camera"), statusText(session.microphoneStatus, "Micrô"), statusText(session.screenShareStatus, "Màn hình")].join(" · ");
     integrityCell.append(integrityBadge, devices); row.appendChild(integrityCell);
     const actions = document.createElement("td"); actions.className = "table-actions";
+    const actionGroup = document.createElement("div"); actionGroup.className = "table-actions-inner";
     const detail = document.createElement("a"); detail.href = `/ui/exams/${encodeURIComponent(EXAM_ID)}/sessions/${encodeURIComponent(id)}`; detail.textContent = "Chi tiết";
-    actions.appendChild(detail);
+    actionGroup.appendChild(detail);
     if (canEndSessions && session.status !== "ended") {
       const end = document.createElement("button"); end.type = "button"; end.className = "link-button danger-text"; end.textContent = "Kết thúc";
-      end.addEventListener("click", () => openEndDialog(id, session.studentName)); actions.appendChild(end);
+      end.addEventListener("click", () => openEndDialog(id, session.studentName)); actionGroup.appendChild(end);
     }
     if (canResetSessions && ["ended", "disconnected"].includes(session.status)) {
       const reset = document.createElement("button"); reset.type = "button"; reset.className = "link-button"; reset.textContent = "Cấp lại phiên";
-      reset.addEventListener("click", () => resetSession(id, session.studentName)); actions.appendChild(reset);
+      reset.addEventListener("click", () => resetSession(id, session.studentName)); actionGroup.appendChild(reset);
     }
-    row.appendChild(actions); return row;
+    actions.appendChild(actionGroup); row.appendChild(actions); return row;
   });
   tbody.replaceChildren(...rows);
+  renderPagination("session-pagination", pageData, items.length, (nextPage) => {
+    sessionPage = nextPage;
+    renderTable();
+  });
 }
 
 function renderAll() { renderKpis(); renderTable(); }
@@ -279,16 +338,37 @@ async function loadIncidents() {
   const suffix = filter ? `?review_status=${encodeURIComponent(filter)}` : "";
   const response = await API.request(`/exams/${encodeURIComponent(EXAM_ID)}/incidents${suffix}`);
   const tbody = document.querySelector("#incidents-table tbody");
-  if (!response.ok) return showTableMessage(tbody, response.status === 403 ? "Bạn không có quyền duyệt sự cố." : "Không tải được hàng đợi sự cố.", 6);
-  const incidents = await response.json();
-  if (!incidents.length) return showTableMessage(tbody, "Không có sự cố phù hợp.", 6);
-  tbody.replaceChildren(...incidents.map((item) => {
+  if (!response.ok) {
+    incidentData = [];
+    hidePagination("incident-pagination");
+    return showTableMessage(tbody, response.status === 403 ? "Bạn không có quyền duyệt sự cố." : "Không tải được hàng đợi sự cố.", 6);
+  }
+  incidentData = await response.json();
+  renderIncidents();
+}
+
+function renderIncidents() {
+  const tbody = document.querySelector("#incidents-table tbody");
+  if (!incidentData.length) {
+    hidePagination("incident-pagination");
+    return showTableMessage(tbody, "Không có sự cố phù hợp.", 6);
+  }
+  const pageData = paginateItems(incidentData, incidentPage);
+  incidentPage = pageData.page;
+  tbody.replaceChildren(...pageData.items.map((item) => {
     const row = document.createElement("tr"); appendTextCell(row, item.student_name);
     const severity = document.createElement("td"); const badge = document.createElement("span"); badge.className = `badge badge-${String(item.severity).toLowerCase()}`; badge.textContent = SEVERITY_LABELS[item.severity] || item.severity; severity.appendChild(badge); row.appendChild(severity);
     appendTextCell(row, VIOLATION_LABELS[item.primary_violation] || item.primary_violation); appendTextCell(row, ({ new: "Mới", in_review: "Đang xem xét", confirmed: "Đã xác nhận", dismissed: "Đã bỏ qua" })[item.status] || item.status);
     appendTextCell(row, item.reviewed_by_email || "-");
-    const action = document.createElement("td"); const link = document.createElement("a"); link.href = `/ui/exams/${encodeURIComponent(EXAM_ID)}/sessions/${encodeURIComponent(item.session_id)}`; link.textContent = "Xem và duyệt"; action.appendChild(link); row.appendChild(action); return row;
+    const action = document.createElement("td"); action.className = "table-actions";
+    const actionGroup = document.createElement("div"); actionGroup.className = "table-actions-inner";
+    const link = document.createElement("a"); link.href = `/ui/exams/${encodeURIComponent(EXAM_ID)}/sessions/${encodeURIComponent(item.session_id)}`; link.textContent = "Xem và duyệt";
+    actionGroup.appendChild(link); action.appendChild(actionGroup); row.appendChild(action); return row;
   }));
+  renderPagination("incident-pagination", pageData, incidentData.length, (nextPage) => {
+    incidentPage = nextPage;
+    renderIncidents();
+  });
 }
 
 function openEndDialog(id, studentName) { endingSessionId = id; document.getElementById("end-session-student").textContent = studentName; document.getElementById("end-session-dialog").showModal(); }
@@ -327,8 +407,14 @@ async function initializeDashboard() {
   } catch (error) { initialLoadDone = true; renderAll(); showToast(error.message || "Không tải được bảng giám sát.", "error"); }
 }
 
-["session-search", "session-status-filter", "session-sort"].forEach((id) => document.getElementById(id).addEventListener("input", renderTable));
-document.getElementById("incident-status-filter").addEventListener("change", () => loadIncidents().catch(() => {}));
+["session-search", "session-status-filter", "session-sort"].forEach((id) => document.getElementById(id).addEventListener("input", () => {
+  sessionPage = 1;
+  renderTable();
+}));
+document.getElementById("incident-status-filter").addEventListener("change", () => {
+  incidentPage = 1;
+  loadIncidents().catch(() => {});
+});
 document.getElementById("end-session-form").addEventListener("submit", submitEndSession);
 document.getElementById("end-session-close").addEventListener("click", closeEndDialog);
 document.getElementById("end-session-cancel").addEventListener("click", closeEndDialog);

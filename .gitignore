@@ -18,6 +18,7 @@ __pycache__/
 
 # Runtime data (sessions, captured video, downloaded model weights)
 sessions/
+/generated_reports/
 data/test_set/*.mp4
 *.pt
 *.onnx

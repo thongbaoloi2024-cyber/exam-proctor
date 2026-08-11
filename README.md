@@ -292,6 +292,53 @@ Backend chỉ append vào danh sách file đã cho phép và chỉ phục vụ f
 tổ chức/phiên. `client_timestamp` chỉ dùng để truy vết; thời gian chuẩn trong log
 server do backend sinh.
 
+## Sinh dữ liệu lớn cho báo cáo
+
+Kiểm tra trước phạm vi dữ liệu mà không ghi database:
+
+```bash
+python scripts/generate_report_dataset.py --dry-run
+```
+
+Sinh bộ mặc định gồm 9 tài khoản theo role, 10 kỳ thi, 1.000 phiên và các log
+evidence đồng bộ:
+
+```bash
+python scripts/generate_report_dataset.py --target-email test@gmail.com
+```
+
+`target-email` chỉ dùng để xác định tổ chức đích. Script tạo thêm tài khoản
+`org_admin`, `manager`, `proctor`, sau đó phân công owner/manager/proctor khác
+nhau theo từng kỳ thi. Có thể đặt mật khẩu demo dùng chung qua biến môi trường
+`REPORT_DATA_PASSWORD`; nếu không đặt, script sinh mật khẩu ngẫu nhiên.
+
+Mặc định dữ liệu hiển thị dùng domain `phenikaa.edu.vn`,
+`st.phenikaa.edu.vn` và `lms.phenikaa.edu.vn`. Có thể thay đổi bằng
+`--staff-domain`, `--student-domain`, `--exam-domain`. Batch mới tạo tên người,
+email, mã sinh viên, tên kỳ thi và audit action theo dạng dữ liệu vận hành; mã
+batch chỉ còn trong manifest/UUID nội bộ.
+
+Kết quả tổng hợp nằm trong `generated_reports/<batch-id>/`: thông tin đăng nhập,
+thống kê theo kỳ thi/ngày/loại vi phạm và manifest kiểm tra. Thư mục này bị Git
+bỏ qua vì `accounts.csv` có credential demo. Database SQLite được sao lưu trước
+khi ghi; batch trùng bị từ chối thay vì ghi đè dữ liệu hiện có.
+
+Ví dụ sinh bộ nhỏ tùy chỉnh:
+
+```bash
+python scripts/generate_report_dataset.py --batch-id demo-small --exam-count 4 --session-count 100 --sample-reports 2
+```
+
+Cập nhật một batch cũ tại chỗ mà không đổi ID hoặc số lượng:
+
+```bash
+python scripts/generate_report_dataset.py --refresh-existing --batch-id report-2026 --session-count 1000
+```
+
+Lệnh refresh sao lưu SQLite và thư mục CSV/manifest trước khi đổi tài khoản,
+kỳ thi, candidate identity, session metadata, browser event, audit log,
+snapshot và các báo cáo mẫu.
+
 ## Test
 
 Cài `requirements.txt`, sau đó:

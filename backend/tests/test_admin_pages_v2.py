@@ -183,6 +183,13 @@ def test_data_workspaces_use_wide_responsive_containers(client):
     dashboard = workspace_pages[0].text
     assert 'id="sessions-table" class="data-table workspace-table workspace-table-wide"' in dashboard
     assert 'id="incidents-table" class="data-table workspace-table"' in dashboard
+    assert 'id="session-pagination" class="pagination dashboard-pagination hidden"' in dashboard
+    assert 'id="incident-pagination" class="pagination dashboard-pagination hidden"' in dashboard
+
+    dashboard_script = client.get("/static/dashboard.js").text
+    assert "const TABLE_PAGE_SIZE = 10" in dashboard_script
+    assert 'renderPagination("session-pagination"' in dashboard_script
+    assert 'renderPagination("incident-pagination"' in dashboard_script
 
     session_detail = workspace_pages[2].text
     assert session_detail.count('class="data-table workspace-table"') == 3
@@ -190,6 +197,8 @@ def test_data_workspaces_use_wide_responsive_containers(client):
     stylesheet = client.get("/static/style.css").text
     assert ".system-container, .workspace-container { max-width: 1400px;" in stylesheet
     assert ".workspace-table-wide { min-width: 1080px; }" in stylesheet
+    assert ".table-actions { text-align: right !important; white-space: nowrap; }" in stylesheet
+    assert ".table-actions-inner { display: flex;" in stylesheet
     assert '.organization-panel[data-organization-panel="policy"]' in stylesheet
 
     organizations_script = client.get("/static/system-organizations.js").text

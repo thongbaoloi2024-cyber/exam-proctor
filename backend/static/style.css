@@ -620,7 +620,7 @@ code { background: var(--color-bg); padding: 2px 6px; border-radius: 4px; }
 }
 .dashboard-filters { margin-top: 18px; }
 .dashboard-last-seen, .device-status-line { display: block; margin-top: 6px; line-height: 1.35; }
-.table-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.table-actions-inner { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; align-items: center; }
 .link-button {
   min-height: 0;
   padding: 2px 1px;
@@ -1157,7 +1157,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid rgba(79, 142, 247
 .table-primary-link { display: block; color: #e4e9f0; font-weight: 600; text-decoration: none; }
 .admin-table td small { display: block; max-width: 240px; margin-top: 3px; color: #737d8b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-table .metric-link { display: block; margin-top: 5px; }
-.table-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; white-space: nowrap; }
+.table-actions { text-align: right !important; white-space: nowrap; }
 .table-action-button { padding: 4px 7px; color: #93baf5; background: transparent; border: 0; font-size: 0.72rem; }
 .icon-link { color: #9ba6b5; font-size: 0.72rem; text-decoration: none; }
 .truncate-cell { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1168,6 +1168,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid rgba(79, 142, 247
 .pagination { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 48px; padding: 13px 2px 0; color: #818b98; font-size: 0.75rem; }
 .pagination > div { display: flex; gap: 7px; }
 .pagination-button { padding: 6px 10px !important; font-size: 0.72rem !important; }
+.dashboard-pagination { margin-bottom: 4px; }
 .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; color: #aab3bf; background: #292f39; border: 1px solid #353c48; font-size: 0.68rem; font-weight: 650; white-space: nowrap; }
 .status-badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .status-active, .status-success { color: #5ed2aa; background: rgba(69, 214, 165, 0.09); border-color: rgba(69, 214, 165, 0.22); }
@@ -1313,6 +1314,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid rgba(79, 142, 247
   .filter-bar { align-items: stretch; flex-direction: column; }
   .filter-bar > * { width: 100%; }
   .filter-bar .compact-field select { width: 100%; }
+  .pagination { align-items: stretch; flex-direction: column; }
+  .pagination > div { width: 100%; }
+  .pagination-button { flex: 1; }
   .panel { padding: 16px; }
   .donut-layout { align-items: stretch; flex-direction: column; }
   .donut-visual { align-self: center; }

@@ -71,6 +71,8 @@ function renderOrganizationRows(organizations) {
     );
     const actions = document.createElement("td");
     actions.className = "table-actions";
+    const actionGroup = document.createElement("div");
+    actionGroup.className = "table-actions-inner";
     const detail = document.createElement("a");
     detail.className = "icon-link";
     detail.href = `/ui/system/organizations/${encodeURIComponent(organization.id)}`;
@@ -80,7 +82,8 @@ function renderOrganizationRows(organizations) {
     statusButton.className = "table-action-button";
     statusButton.textContent = organization.status === "active" ? "Tạm khóa" : "Mở khóa";
     statusButton.addEventListener("click", () => openOrganizationStatusDialog(organization));
-    actions.append(detail, statusButton);
+    actionGroup.append(detail, statusButton);
+    actions.appendChild(actionGroup);
     row.appendChild(actions);
     return row;
   });

@@ -60,6 +60,7 @@
       </tbody>
     </table>
   </div>
+  <nav id="session-pagination" class="pagination dashboard-pagination hidden" aria-label="Phân trang bảng giám sát"></nav>
 
   <div class="section-heading-row">
     <div><h2>Hàng đợi sự cố</h2><p class="muted">Sự cố mới và mức nghiêm trọng được ưu tiên trước.</p></div>
@@ -79,6 +80,7 @@
       <tbody><tr><td colspan="6" class="muted">Đang tải...</td></tr></tbody>
     </table>
   </div>
+  <nav id="incident-pagination" class="pagination dashboard-pagination hidden" aria-label="Phân trang hàng đợi sự cố"></nav>
 </section>
 
 <dialog id="end-session-dialog" class="admin-dialog admin-dialog-small">
@@ -101,5 +103,5 @@
 </dialog>
 {% endblock %}
 {% block scripts %}
-<script src="/static/dashboard.js?v=20260811-exam-detail-3"></script>
+<script src="/static/dashboard.js?v=20260812-dashboard-pagination-1"></script>
 {% endblock %}
