@@ -8,11 +8,23 @@ let refreshTimer = null;
 let canEndSessions = false;
 let canResetSessions = false;
 let endingSessionId = null;
+let dashboardExam = null;
+const SEVERITY_LABELS = { LOW: "Thông tin", MEDIUM: "Cảnh báo", HIGH: "Nghiêm trọng" };
+const VIOLATION_LABELS = {
+  FACE_ABSENT: "Vắng mặt",
+  MULTIPLE_FACES: "Nhiều người",
+  EYES_CLOSED: "Nhắm mắt kéo dài",
+  GAZE_AWAY: "Nhìn lệch khỏi màn hình",
+  TALKING: "Nói chuyện",
+  OBJECT_DETECTED: "Phát hiện vật thể cấm",
+  HEAD_POSE_AWAY: "Quay đầu khỏi màn hình",
+  IDENTITY_MISMATCH: "Nghi ngờ đổi người",
+};
 
 function stateBadgeInfo(status, sessionState) {
   if (status === "ended") return { cls: "badge-ended", label: "KẾT THÚC" };
   if (status === "disconnected") return { cls: "badge-medium", label: "MẤT KẾT NỐI" };
-  if (status === "pending") return { cls: "badge-medium", label: "CHỜ CLIENT" };
+  if (status === "pending") return { cls: "badge-medium", label: "CHỜ KẾT NỐI" };
   if (sessionState === "SESSION_ALERT") return { cls: "badge-high", label: "CẢNH BÁO" };
   return { cls: "badge-low", label: "BÌNH THƯỜNG" };
 }
@@ -44,7 +56,7 @@ function renderKpis() {
   const tiles = [
     ["Đang tham gia", active.length, false],
     ["Đang cảnh báo", alerting, alerting > 0],
-    ["Risk trung bình", avgRisk.toFixed(1), false],
+    ["Rủi ro trung bình", avgRisk.toFixed(1), false],
     ["Lỗi thiết bị", deviceIssues, deviceIssues > 0],
     ["Mất kết nối", disconnected, disconnected > 0],
   ];
@@ -63,7 +75,7 @@ function statusText(value, label) {
 }
 
 function formatLastSeen(value) {
-  if (!value) return "Chưa có heartbeat";
+  if (!value) return "Chưa có cập nhật";
   const seconds = Math.max(0, Math.round((Date.now() - new Date(value).getTime()) / 1000));
   if (seconds < 60) return `${seconds}s trước`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)} phút trước`;
@@ -93,12 +105,46 @@ function renderExamDetailHeader(exam) {
   const status = document.getElementById("detail-status");
   status.className = `exam-status-badge status-${exam.status}`;
   status.textContent = statusLabels[exam.status] || exam.status;
+  const canClose = (exam.allowed_actions || []).includes("exam.manage")
+    && exam.status === "open"
+    && (exam.allowed_transitions || []).includes("closed");
+  document.getElementById("detail-close-exam").classList.toggle("hidden", !canClose);
   const joinCode = document.getElementById("detail-join-code");
   joinCode.textContent = exam.join_code || "Đã ẩn";
-  joinCode.title = exam.join_code_expires_at
-    ? `Hết hạn ${formatExamHeaderDate(exam.join_code_expires_at)}`
-    : "";
+  joinCode.disabled = !exam.join_code;
+  joinCode.title = exam.join_code
+    ? `Nhấn để sao chép · Hết hạn ${formatExamHeaderDate(exam.join_code_expires_at)}`
+    : "Mã tham gia đã được ẩn";
   document.title = `${exam.name} · Giám Thị Số`;
+}
+
+async function copyDashboardJoinCode() {
+  if (!dashboardExam?.join_code) return;
+  try {
+    await navigator.clipboard.writeText(dashboardExam.join_code);
+    showToast(`Đã sao chép mã tham gia: ${dashboardExam.join_code}`, "success");
+  } catch (error) {
+    showToast(`Mã tham gia: ${dashboardExam.join_code} (trình duyệt không hỗ trợ tự chép)`, "info");
+  }
+}
+
+async function closeDashboardExam() {
+  if (!dashboardExam) return;
+  const button = document.getElementById("detail-close-exam");
+  button.disabled = true;
+  const response = await API.request(`/exams/${encodeURIComponent(EXAM_ID)}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "closed", expected_version: dashboardExam.version }),
+  });
+  const body = await response.json().catch(() => ({}));
+  button.disabled = false;
+  if (!response.ok) {
+    showToast(typeof body.detail === "string" ? body.detail : "Không đóng được kỳ thi.", "error");
+    return;
+  }
+  dashboardExam = body;
+  renderExamDetailHeader(dashboardExam);
+  showToast("Đã đóng kỳ thi.", "success");
 }
 
 function filteredSessions() {
@@ -133,8 +179,8 @@ function renderTable() {
     appendTextCell(row, session.studentName);
     appendTextCell(row, session.candidateIdentity || "-");
     const client = session.clientType === "browser_extension"
-      ? `${session.browserName || "Browser"} ${session.browserVersion || ""} · Ext ${session.extensionVersion || "-"}`
-      : "Desktop CV";
+      ? `${session.browserName || "Trình duyệt"} ${session.browserVersion || ""} · Tiện ích ${session.extensionVersion || "-"}`
+      : "Ứng dụng giám sát máy tính";
     appendTextCell(row, `${session.authenticationMethod === "google" ? "Google" : "Thủ công"} · ${client}${session.platform ? ` · ${session.platform}` : ""}`);
     const statusCell = document.createElement("td");
     const badgeInfo = stateBadgeInfo(session.status, session.sessionState);
@@ -146,9 +192,9 @@ function renderTable() {
     const integrityCell = document.createElement("td");
     const integrityBadge = document.createElement("span");
     integrityBadge.className = `badge ${session.integrityStatus === "alert" ? "badge-high" : session.integrityStatus === "warning" ? "badge-medium" : "badge-low"}`;
-    integrityBadge.textContent = `${session.integrityStatus.toUpperCase()} · ${session.browserEventCount}`;
+    integrityBadge.textContent = `${{ healthy: "Ổn định", warning: "Cảnh báo", alert: "Nguy cơ" }[session.integrityStatus] || session.integrityStatus} · ${session.browserEventCount} sự kiện`;
     const devices = document.createElement("small"); devices.className = "muted device-status-line";
-    devices.textContent = [statusText(session.cameraStatus, "Cam"), statusText(session.microphoneStatus, "Mic"), statusText(session.screenShareStatus, "Màn")].join(" · ");
+    devices.textContent = [statusText(session.cameraStatus, "Camera"), statusText(session.microphoneStatus, "Micrô"), statusText(session.screenShareStatus, "Màn hình")].join(" · ");
     integrityCell.append(integrityBadge, devices); row.appendChild(integrityCell);
     const actions = document.createElement("td"); actions.className = "table-actions";
     const detail = document.createElement("a"); detail.href = `/ui/exams/${encodeURIComponent(EXAM_ID)}/sessions/${encodeURIComponent(id)}`; detail.textContent = "Chi tiết";
@@ -158,7 +204,7 @@ function renderTable() {
       end.addEventListener("click", () => openEndDialog(id, session.studentName)); actions.appendChild(end);
     }
     if (canResetSessions && ["ended", "disconnected"].includes(session.status)) {
-      const reset = document.createElement("button"); reset.type = "button"; reset.className = "link-button"; reset.textContent = "Reset phiên";
+      const reset = document.createElement("button"); reset.type = "button"; reset.className = "link-button"; reset.textContent = "Cấp lại phiên";
       reset.addEventListener("click", () => resetSession(id, session.studentName)); actions.appendChild(reset);
     }
     row.appendChild(actions); return row;
@@ -208,6 +254,7 @@ async function loadExamPermissions() {
   const response = await API.request(`/exams/${encodeURIComponent(EXAM_ID)}`);
   if (!response.ok) return;
   const exam = await response.json();
+  dashboardExam = exam;
   canEndSessions = (exam.allowed_actions || []).includes("exam.sessions.end");
   canResetSessions = (exam.allowed_actions || []).includes("exam.manage");
   renderExamDetailHeader(exam);
@@ -218,13 +265,13 @@ async function loadExamPermissions() {
 }
 
 async function resetSession(id, studentName) {
-  const reason = prompt(`Lý do reset phiên của ${studentName}:`, "Khôi phục sau lỗi thiết bị/kết nối");
+  const reason = prompt(`Lý do cấp lại phiên cho ${studentName}:`, "Khôi phục sau lỗi thiết bị hoặc kết nối");
   if (!reason || reason.trim().length < 3) return;
   const response = await API.request(`/sessions/${encodeURIComponent(id)}/reset`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) return showToast(body.detail || "Không reset được phiên.", "error");
+  if (!response.ok) return showToast(body.detail || "Không cấp lại được phiên.", "error");
   upsertSession(id, { status: body.status, riskScore: 0, sessionState: "SESSION_NORMAL", integrityScore: 0, integrityStatus: "healthy", browserEventCount: 0, cameraStatus: body.camera_status, microphoneStatus: body.microphone_status, screenShareStatus: body.screen_share_status, resetCount: body.reset_count, lastSeenAt: body.last_seen_at, disconnectReason: null });
-  showToast("Đã lưu evidence attempt cũ và cấp lại phiên.", "success");
+  showToast("Đã lưu dữ liệu giám sát của lần thử trước và cấp lại phiên.", "success");
 }
 
 async function loadIncidents() {
@@ -237,8 +284,8 @@ async function loadIncidents() {
   if (!incidents.length) return showTableMessage(tbody, "Không có sự cố phù hợp.", 6);
   tbody.replaceChildren(...incidents.map((item) => {
     const row = document.createElement("tr"); appendTextCell(row, item.student_name);
-    const severity = document.createElement("td"); const badge = document.createElement("span"); badge.className = `badge badge-${String(item.severity).toLowerCase()}`; badge.textContent = item.severity; severity.appendChild(badge); row.appendChild(severity);
-    appendTextCell(row, item.primary_violation); appendTextCell(row, ({ new: "Mới", in_review: "Đang duyệt", confirmed: "Đã xác nhận", dismissed: "Đã bỏ qua" })[item.status] || item.status);
+    const severity = document.createElement("td"); const badge = document.createElement("span"); badge.className = `badge badge-${String(item.severity).toLowerCase()}`; badge.textContent = SEVERITY_LABELS[item.severity] || item.severity; severity.appendChild(badge); row.appendChild(severity);
+    appendTextCell(row, VIOLATION_LABELS[item.primary_violation] || item.primary_violation); appendTextCell(row, ({ new: "Mới", in_review: "Đang xem xét", confirmed: "Đã xác nhận", dismissed: "Đã bỏ qua" })[item.status] || item.status);
     appendTextCell(row, item.reviewed_by_email || "-");
     const action = document.createElement("td"); const link = document.createElement("a"); link.href = `/ui/exams/${encodeURIComponent(EXAM_ID)}/sessions/${encodeURIComponent(item.session_id)}`; link.textContent = "Xem và duyệt"; action.appendChild(link); row.appendChild(action); return row;
   }));
@@ -252,7 +299,7 @@ async function submitEndSession(event) {
   const reason = document.getElementById("end-session-reason").value.trim(); if (reason.length < 3) return;
   const response = await API.request(`/sessions/${encodeURIComponent(endingSessionId)}/end`, { method: "POST", body: JSON.stringify({ reason }) });
   if (!response.ok) return showToast("Không thể kết thúc phiên.", "error");
-  const ended = await response.json(); upsertSession(ended.id, { status: ended.status, disconnectReason: ended.disconnect_reason }); closeEndDialog(); showToast("Đã kết thúc phiên và ngắt client.", "success");
+  const ended = await response.json(); upsertSession(ended.id, { status: ended.status, disconnectReason: ended.disconnect_reason }); closeEndDialog(); showToast("Đã kết thúc phiên và ngắt kết nối ứng dụng giám sát.", "success");
 }
 
 function setWsStatus(text, error) { const el = document.getElementById("ws-status"); el.textContent = text; el.className = error ? "error" : "muted"; }
@@ -268,16 +315,16 @@ function connectDashboardWs() {
     else if (msg.type === "session_reset") upsertSession(msg.session_id, { status: "pending", riskScore: 0, sessionState: "SESSION_NORMAL", integrityScore: 0, integrityStatus: "healthy", browserEventCount: 0, resetCount: msg.data?.reset_count });
     else if (msg.type === "browser_event") { upsertSession(msg.session_id, { studentName: msg.student_name, status: "active", lastSeenAt: msg.server_received_at, integrityScore: msg.data.integrity_score, integrityStatus: msg.data.integrity_status, browserEventCount: msg.data.browser_event_count, cameraStatus: msg.data.camera_status, microphoneStatus: msg.data.microphone_status, screenShareStatus: msg.data.screen_share_status }); loadIncidents().catch(() => {}); }
   };
-  ws.onclose = (event) => { if ([4401, 4403].includes(event.code)) return location.replace("/ui/login"); setWsStatus("Mất kết nối backend - đang kết nối lại...", true); clearTimeout(reconnectTimer); reconnectTimer = setTimeout(connectDashboardWs, 3000); };
+  ws.onclose = (event) => { if ([4401, 4403].includes(event.code)) return location.replace("/ui/login"); setWsStatus("Mất kết nối máy chủ – đang kết nối lại...", true); clearTimeout(reconnectTimer); reconnectTimer = setTimeout(connectDashboardWs, 3000); };
 }
 
 async function initializeDashboard() {
   const user = await API.requireAuth(); if (!user) return;
-  if (user.is_system_admin) { const back = document.getElementById("dashboard-back-link"); back.href = "/ui/system/evidence"; back.textContent = "← Dữ liệu break-glass"; }
+  if (user.is_system_admin) { const back = document.getElementById("dashboard-back-link"); back.href = "/ui/system/evidence"; back.textContent = "← Dữ liệu được cấp quyền"; }
   try {
     await loadExamPermissions(); await loadInitialSessions(); await loadIncidents(); connectDashboardWs();
     refreshTimer = setInterval(() => { loadInitialSessions().catch(() => {}); loadIncidents().catch(() => {}); }, 30000);
-  } catch (error) { initialLoadDone = true; renderAll(); showToast(error.message || "Không tải được dashboard.", "error"); }
+  } catch (error) { initialLoadDone = true; renderAll(); showToast(error.message || "Không tải được bảng giám sát.", "error"); }
 }
 
 ["session-search", "session-status-filter", "session-sort"].forEach((id) => document.getElementById(id).addEventListener("input", renderTable));
@@ -285,4 +332,10 @@ document.getElementById("incident-status-filter").addEventListener("change", () 
 document.getElementById("end-session-form").addEventListener("submit", submitEndSession);
 document.getElementById("end-session-close").addEventListener("click", closeEndDialog);
 document.getElementById("end-session-cancel").addEventListener("click", closeEndDialog);
+document.getElementById("detail-close-exam").addEventListener("click", () => {
+  closeDashboardExam().catch((error) => showToast(error.message, "error"));
+});
+document.getElementById("detail-join-code").addEventListener("click", () => {
+  copyDashboardJoinCode().catch((error) => showToast(error.message, "error"));
+});
 initializeDashboard();

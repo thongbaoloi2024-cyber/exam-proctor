@@ -1,4 +1,4 @@
-"""System Admin isolation, tenant operations and break-glass tests."""
+"""System Admin isolation, tenant operations and exceptional-access tests."""
 from __future__ import annotations
 
 import sys
@@ -136,7 +136,7 @@ def test_system_admin_needs_approved_break_glass_for_evidence(client):
         headers=system_headers,
     )
     assert detail.status_code == 200
-    # Break-glass is read-only and never permits operational intervention.
+    # Exceptional access is read-only and never permits operational intervention.
     assert client.post(
         f"/sessions/{joined['session_id']}/end",
         headers=system_headers,

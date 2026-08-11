@@ -10,7 +10,7 @@ thí sinh.
 
 Hệ thống đã có nền tảng phân quyền tốt ở tầng backend: `system_admin`,
 `org_admin`, `exam_manager`, ba mức assignment `owner/manager/proctor`, và token
-thí sinh tách biệt. Các kiểm tra tenant/resource scope, break-glass và thu hồi
+thí sinh tách biệt. Các kiểm tra tenant/resource scope, quyền truy cập ngoại lệ và thu hồi
 phiên đã được thiết kế tập trung trong `backend/authorization.py`.
 
 Khoảng trống lớn nhất hiện không nằm ở mô hình role, mà ở việc quyền và chính
@@ -23,8 +23,8 @@ toàn tài khoản nên hiển thị hành động sai trên từng kỳ thi; ch
 
 | Role/phạm vi | Chức năng đã có | Điểm còn thiếu chính |
 |---|---|---|
-| `system_admin` | Dashboard platform; danh sách/chi tiết tổ chức; tạo, khóa/mở, quota và retention; audit toàn cục; yêu cầu break-glass; evidence chỉ đọc sau phê duyệt; bắt buộc MFA | Chưa có trang vận hành/health/worker/storage/report queue; chưa có chính sách sàn toàn hệ thống, feature flag và version policy; chưa quản lý vòng đời Organization Admin; chưa có re-auth cho thao tác nhạy cảm; security center chưa tổng hợp đăng nhập lỗi/rate limit |
-| `org_admin` | Xem/cập nhật thành viên; mời và đổi role/status; chính sách tổ chức; duyệt/thu hồi break-glass; audit tổ chức | Chưa có overview usage/quota; chưa hiển thị và thu hồi lời mời đang chờ; form chính sách thiếu nhiều trường và có thể ghi đè ngầm; chính sách chưa áp dụng vào kỳ thi; thiếu thông tin người yêu cầu khi duyệt break-glass; chưa có UI đổi tên/cài đặt tổ chức; bộ chuyển tổ chức bị ẩn |
+| `system_admin` | Dashboard platform; danh sách/chi tiết tổ chức; tạo, khóa/mở, quota và retention; nhật ký hoạt động toàn cục; yêu cầu quyền truy cập ngoại lệ; evidence chỉ đọc sau phê duyệt; bắt buộc MFA | Chưa có trang vận hành/health/worker/storage/report queue; chưa có chính sách sàn toàn hệ thống, feature flag và version policy; chưa quản lý vòng đời Organization Admin; chưa có re-auth cho thao tác nhạy cảm; security center chưa tổng hợp đăng nhập lỗi/rate limit |
+| `org_admin` | Xem/cập nhật thành viên; mời và đổi role/status; chính sách tổ chức; duyệt/thu hồi quyền truy cập ngoại lệ; nhật ký hoạt động của tổ chức | Chưa có overview usage/quota; chưa hiển thị và thu hồi lời mời đang chờ; form chính sách thiếu nhiều trường và có thể ghi đè ngầm; chính sách chưa áp dụng vào kỳ thi; thiếu thông tin người yêu cầu khi duyệt quyền truy cập ngoại lệ; chưa có UI đổi tên/cài đặt tổ chức; bộ chuyển tổ chức bị ẩn |
 | `exam_manager` + `owner/manager` | Tạo/list kỳ thi theo assignment; lifecycle; phân công; dashboard realtime; evidence, incident review, report | Capability frontend chưa theo từng kỳ thi; trang sửa draft chỉ có tên/lịch; thiếu readiness checklist, roster thí sinh, bộ lọc dashboard, incident queue và report job UI; quick action lifecycle chưa phản ánh đúng trạng thái; thiếu expiry/ca trực trong phân công |
 | `exam_manager` + `proctor` | Theo dõi dashboard, xem evidence, review incident, export report và API kết thúc phiên | UI chưa có nút kết thúc phiên; chưa hiển thị last-seen/disconnect reason; cảnh báo không được ưu tiên/sắp xếp; có thể thấy nhầm nút quản lý nếu tài khoản là manager ở kỳ thi khác |
 | Thí sinh/extension | Kiểm tra join code; manual/Google auth; consent; kiểm tra camera/mic; monitor camera/screen/fullscreen/clipboard; reconnect WebSocket; tự kết thúc phiên | Phiên đang chạy chỉ có thông báo, không có nút quay lại tab/kết thúc; chưa có luồng khôi phục khi mất local state hoặc đổi thiết bị; chưa có preflight theo từng bước và hướng dẫn xử lý lỗi; chưa hiển thị trạng thái đồng bộ/offline queue rõ ràng |
@@ -65,10 +65,10 @@ yếu hơn “chính sách mặc định” và form tạo kỳ thi luôn dùng 
   không chỉ dựa vào frontend.
 - Khi tạo kỳ thi, trả về policy đã resolve gồm `system floor → organization
   policy → exam override` và nêu trường nào bị khóa.
-- Ghi policy snapshot vào kỳ thi/phiên để audit được cấu hình thực tế.
+- Ghi policy snapshot vào kỳ thi/phiên để truy vết được cấu hình thực tế.
 - Thêm regression test chứng minh không thể hạ policy bắt buộc.
 
-#### P0.3. Duyệt break-glass thiếu ngữ cảnh để ra quyết định an toàn
+#### P0.3. Duyệt quyền truy cập ngoại lệ thiếu ngữ cảnh để ra quyết định an toàn
 
 Trang Organization Admin hiện chỉ hiển thị lý do, trạng thái và hết hạn. API có
 `requester_user_id`, `scope`, `read_only`, `created_at` nhưng UI không hiển thị;
@@ -83,7 +83,7 @@ rõ đang cấp quyền cho ai và phạm vi cụ thể nào.
   xác thực lại người duyệt.
 - Thông báo cho các Organization Admin khi yêu cầu được tạo, kích hoạt, sắp hết
   hạn và bị thu hồi.
-- Audit cả lần xem evidence và lần tải report theo grant cụ thể.
+- Ghi nhật ký cả lần xem evidence và lần tải report theo grant cụ thể.
 
 #### P0.4. Multi-organization đã có API nhưng không sử dụng được từ UI
 
@@ -119,7 +119,7 @@ rotate code tự thay đổi lifecycle ngoài ý muốn.
 4. Mở rộng Security Center với failed login, account lock, rate-limit event,
    bất thường token/WebSocket và bộ lọc theo IP/request ID.
 5. Yêu cầu recent MFA/re-auth cho suspend tenant, đổi quota lớn, cấp quyền nhạy
-   cảm hoặc xem evidence break-glass.
+   cảm hoặc xem evidence bằng quyền truy cập ngoại lệ.
 
 #### Organization Admin
 
@@ -129,7 +129,7 @@ rotate code tự thay đổi lifecycle ngoài ý muốn.
    resend/copy link và revoke.
 3. Thêm cài đặt tổ chức: tên, logo, timezone, domain email, contact và cấu hình
    Google Workspace mặc định.
-4. Audit UI cần search/filter/pagination, actor, reason, request ID và before/
+4. Giao diện nhật ký hoạt động cần search/filter/pagination, actor, reason, request ID và before/
    after giống System Admin.
 5. Thêm yêu cầu export/xóa dữ liệu và tiến trình phê duyệt theo retention.
 6. Thêm chính sách MFA/force logout và trang security posture của thành viên.
@@ -143,7 +143,7 @@ rotate code tự thay đổi lifecycle ngoài ý muốn.
 3. Thêm Exam Overview/readiness checklist: lịch hợp lệ, join code còn hạn,
    extension/OAuth sẵn sàng, đủ proctor, quota, số thí sinh và lỗi thiết bị.
 4. Thêm candidate roster với trạng thái join/auth/device, tìm kiếm và khả năng
-   reset/reissue một phiên lỗi có audit.
+   reset/reissue một phiên lỗi có ghi nhật ký.
 5. Bổ sung assignment expiry/ca trực, nhãn role tiếng Việt, chuyển owner theo
    quy trình xác nhận và cảnh báo khi kỳ thi không còn proctor.
 6. Cho chọn TTL khi tạo/rotate join code; hiển thị countdown và cảnh báo sắp hết
@@ -184,9 +184,9 @@ rotate code tự thay đổi lifecycle ngoài ý muốn.
 - Lịch thi dạng calendar và thông báo trước ca trực.
 - Báo cáo tổng hợp không định danh theo tổ chức/kỳ thi, so sánh xu hướng và SLA
   xử lý incident.
-- Notification center/email/webhook cho break-glass, quota, phiên mất kết nối,
+- Notification center/email/webhook cho quyền truy cập ngoại lệ, quota, phiên mất kết nối,
   join-code expiry và report hoàn tất.
-- Branding, đa ngôn ngữ, timezone theo tổ chức và accessibility audit đầy đủ.
+- Branding, đa ngôn ngữ, timezone theo tổ chức và đánh giá accessibility đầy đủ.
 - Export CSV/PDF theo bộ lọc, watermark, signed URL ngắn hạn và data-subject
   request workflow.
 
@@ -196,7 +196,7 @@ rotate code tự thay đổi lifecycle ngoài ý muốn.
 
 1. Per-exam allowed actions/capabilities.
 2. Full organization policy UI + backend policy resolution/enforcement.
-3. Break-glass approval context + re-auth.
+3. Ngữ cảnh phê duyệt quyền truy cập ngoại lệ + re-auth.
 4. Bật multi-org switcher.
 5. Lifecycle actions theo `allowed_transitions` và optimistic locking.
 
@@ -209,7 +209,7 @@ rotate code tự thay đổi lifecycle ngoài ý muốn.
 
 ### Đợt 3 — hoàn thiện quản trị platform/tenant
 
-1. Organization overview, invitation list, settings và audit nâng cao.
+1. Organization overview, invitation list, settings và nhật ký hoạt động nâng cao.
 2. System Operations Center và System Policy.
 3. Notification/security event center và data lifecycle workflow.
 
@@ -219,7 +219,7 @@ rotate code tự thay đổi lifecycle ngoài ý muốn.
 - UI test cho manager ở kỳ thi A/proctor ở B và archived lifecycle.
 - Policy resolution test cho system floor, org policy và exam override.
 - Regression test đảm bảo form policy không làm đổi trường không hiển thị.
-- Break-glass approval/detail/audit test gắn với requester và grant ID.
+- Kiểm thử phê duyệt/chi tiết/nhật ký quyền truy cập ngoại lệ gắn với requester và grant ID.
 - Multi-org switch test kiểm tra cookie/JWT, menu và scope sau chuyển context.
 - Resume/rejoin test sau crash/mất local state và chống duplicate/replay.
 - Dashboard test cho force-end, sorting alert, disconnected state và report job.

@@ -6,14 +6,14 @@
 <section class="auth-shell auth-shell-compact">
   <aside class="auth-visual auth-visual-mfa">
     <a class="auth-brand" href="/ui/login"><span class="auth-brand-mark" aria-hidden="true">◉</span><span>Giám Thị Số</span></a>
-    <div class="auth-visual-copy"><span class="eyebrow">Lớp bảo vệ thứ hai</span><h2>Xác minh an toàn.<br>Truy cập đúng người.</h2><p>Session chỉ được tạo sau khi mã xác minh hợp lệ.</p></div>
+    <div class="auth-visual-copy"><span class="eyebrow">Lớp bảo vệ thứ hai</span><h2>Xác minh an toàn.<br>Truy cập đúng người.</h2><p>Phiên đăng nhập chỉ được tạo sau khi mã xác minh hợp lệ.</p></div>
   </aside>
   <article class="auth-panel">
     <div class="security-icon" aria-hidden="true">✓</div>
-    <div class="auth-heading"><span class="eyebrow">Xác minh danh tính</span><h1>Nhập mã bảo mật</h1><p id="mfa-account">Dùng mã từ ứng dụng Authenticator hoặc recovery code.</p></div>
+    <div class="auth-heading"><span class="eyebrow">Xác minh danh tính</span><h1>Nhập mã bảo mật</h1><p id="mfa-account">Dùng mã từ ứng dụng xác thực hoặc mã khôi phục.</p></div>
     <div class="code-type-switch" role="tablist" aria-label="Loại mã">
-      <button type="button" class="active" data-code-type="totp" role="tab" aria-selected="true">Authenticator</button>
-      <button type="button" data-code-type="recovery" role="tab" aria-selected="false">Recovery code</button>
+      <button type="button" class="active" data-code-type="totp" role="tab" aria-selected="true">Ứng dụng xác thực</button>
+      <button type="button" data-code-type="recovery" role="tab" aria-selected="false">Mã khôi phục</button>
     </div>
     <form id="mfa-verify-form" class="auth-form">
       <label id="mfa-code-label">Mã xác thực 6 chữ số<input id="mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required></label>

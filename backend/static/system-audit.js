@@ -62,13 +62,13 @@ function showAuditDetail(entry) {
   SystemUI.text("audit-detail-time", SystemUI.formatDate(entry.created_at, true));
   const description = document.getElementById("audit-detail-description");
   description.replaceChildren(
-    auditDescriptionItem("Hành động", entry.action),
+    auditDescriptionItem("Hành động", SystemUI.actionLabel(entry.action)),
     auditDescriptionItem("Kết quả", SystemUI.statusLabel(entry.outcome)),
-    auditDescriptionItem("Tài nguyên", `${entry.resource_type}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`),
+    auditDescriptionItem("Tài nguyên", `${SystemUI.resourceLabel(entry.resource_type)}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`),
     auditDescriptionItem("Tổ chức", auditState.organizations.get(entry.org_id) || entry.org_id),
     auditDescriptionItem("Người dùng", auditActorDetail(entry)),
-    auditDescriptionItem("Request ID", entry.request_id),
-    auditDescriptionItem("IP", entry.ip_address),
+    auditDescriptionItem("Mã yêu cầu", entry.request_id),
+    auditDescriptionItem("Địa chỉ IP", entry.ip_address),
     auditDescriptionItem("Lý do", entry.reason),
   );
   SystemUI.text("audit-before", prettyAuditJson(entry.before_json));
@@ -82,7 +82,7 @@ function renderAuditRows(entries) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
     cell.colSpan = 7;
-    cell.appendChild(SystemUI.empty("Không có sự kiện audit phù hợp."));
+    cell.appendChild(SystemUI.empty("Không có hoạt động phù hợp."));
     row.appendChild(cell);
     tbody.replaceChildren(row);
     return;
@@ -91,9 +91,9 @@ function renderAuditRows(entries) {
     const row = document.createElement("tr");
     SystemUI.cell(row, SystemUI.formatDate(entry.created_at, true));
     appendAuditActorCell(row, entry);
-    const actionCell = SystemUI.cell(row, entry.action, "audit-action-cell");
+    const actionCell = SystemUI.cell(row, SystemUI.actionLabel(entry.action), "audit-action-cell");
     actionCell.title = entry.action;
-    SystemUI.cell(row, `${entry.resource_type}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`, "truncate-cell");
+    SystemUI.cell(row, `${SystemUI.resourceLabel(entry.resource_type)}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`, "truncate-cell");
     SystemUI.cell(row, auditState.organizations.get(entry.org_id) || entry.org_id || "Toàn hệ thống");
     const outcome = document.createElement("td");
     outcome.appendChild(SystemUI.badge(entry.outcome));

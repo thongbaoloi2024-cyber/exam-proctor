@@ -7,7 +7,7 @@
   data-exam-id="{{ exam_id }}"
   data-session-id="{{ session_id }}"
 >
-  <p><a href="/ui/exams/{{ exam_id }}/detail">&larr; Quay lại dashboard</a></p>
+  <p><a href="/ui/exams/{{ exam_id }}/detail">&larr; Quay lại bảng giám sát</a></p>
   <h1 id="student-name-heading">Chi tiết phiên</h1>
   <p id="session-summary" class="muted">Đang tải...</p>
   <div class="report-job-actions">
@@ -25,14 +25,14 @@
     </div>
   </div>
   <div class="section-heading-row">
-    <div><h2>Timeline hợp nhất</h2><p class="muted">CV và sự kiện trình duyệt theo cùng trục thời gian.</p></div>
-    <label>Mức độ<select id="timeline-severity-filter"><option value="">Tất cả</option><option value="HIGH">HIGH</option><option value="MEDIUM">MEDIUM</option><option value="LOW">LOW</option></select></label>
+    <div><h2>Dòng thời gian tổng hợp</h2><p class="muted">Phân tích hình ảnh và sự kiện trình duyệt trên cùng trục thời gian.</p></div>
+    <label>Mức độ<select id="timeline-severity-filter"><option value="">Tất cả</option><option value="HIGH">Nghiêm trọng</option><option value="MEDIUM">Cảnh báo</option><option value="LOW">Thông tin</option></select></label>
   </div>
   <table id="unified-timeline-table" class="data-table">
     <thead><tr><th>Thời điểm (s)</th><th>Nguồn</th><th>Mức độ</th><th>Sự kiện</th><th>Chi tiết</th></tr></thead>
     <tbody><tr><td colspan="5" class="muted">Đang tải...</td></tr></tbody>
   </table>
-  <h2>Timeline vi phạm</h2>
+  <h2>Dòng thời gian vi phạm</h2>
   <table id="violations-table" class="data-table">
     <thead><tr><th>Thời điểm (s)</th><th>Mức độ</th><th>Loại vi phạm chính</th><th>Ảnh chụp</th><th>Duyệt sự cố</th></tr></thead>
     <tbody>

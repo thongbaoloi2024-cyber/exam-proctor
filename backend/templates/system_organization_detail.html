@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Chi tiết tổ chức · System Admin · Giám Thị Số{% endblock %}
+{% block title %}Chi tiết tổ chức · Quản trị hệ thống · Giám Thị Số{% endblock %}
 {% block body_class %}system-admin-page{% endblock %}
 {% block container_class %}system-container{% endblock %}
 {% block content %}
@@ -11,7 +11,7 @@
       <p class="muted" id="organization-meta">Đang tải thông tin tổ chức.</p>
     </div>
     <div class="header-actions">
-      <button type="button" id="request-break-glass" class="secondary-button">Yêu cầu break-glass</button>
+      <button type="button" id="request-break-glass" class="secondary-button">Yêu cầu quyền truy cập ngoại lệ</button>
       <button type="button" id="edit-organization" disabled>Chỉnh sửa</button>
       <button type="button" id="toggle-organization-status" class="danger-outline" disabled>Tạm khóa</button>
     </div>
@@ -19,9 +19,9 @@
 
   <section class="metric-grid metric-grid-four" aria-label="Chỉ số tổ chức">
     <article class="metric-card"><span class="metric-label">Người dùng</span><strong class="metric-value metric-value-small" id="detail-users">–</strong><span class="metric-caption" id="detail-admins-caption">– quản trị viên</span></article>
-    <article class="metric-card"><span class="metric-label">Kỳ thi</span><strong class="metric-value metric-value-small" id="detail-exams">–</strong><span class="metric-caption">Tất cả lifecycle</span></article>
-    <article class="metric-card"><span class="metric-label">Phiên hoạt động</span><strong class="metric-value metric-value-small" id="detail-sessions">–</strong><span class="metric-caption">Pending, active, disconnected</span></article>
-    <article class="metric-card"><span class="metric-label">Retention</span><strong class="metric-value metric-value-small" id="detail-retention">–</strong><span class="metric-caption">Chính sách lưu trữ</span></article>
+    <article class="metric-card"><span class="metric-label">Kỳ thi</span><strong class="metric-value metric-value-small" id="detail-exams">–</strong><span class="metric-caption">Tất cả trạng thái</span></article>
+    <article class="metric-card"><span class="metric-label">Phiên hoạt động</span><strong class="metric-value metric-value-small" id="detail-sessions">–</strong><span class="metric-caption">Chờ kết nối, đang thi hoặc mất kết nối</span></article>
+    <article class="metric-card"><span class="metric-label">Thời hạn lưu trữ</span><strong class="metric-value metric-value-small" id="detail-retention">–</strong><span class="metric-caption">Số ngày lưu dữ liệu</span></article>
   </section>
 
   <section class="chart-grid chart-grid-primary">
@@ -30,23 +30,23 @@
       <div id="organization-session-chart" class="chart-canvas chart-line" role="img" aria-label="Biểu đồ phiên thi của tổ chức"></div>
     </article>
     <article class="panel quota-panel">
-      <div class="panel-heading"><div><h2>Sử dụng quota</h2><p class="muted">Phiên đồng thời tại thời điểm hiện tại</p></div></div>
+      <div class="panel-heading"><div><h2>Mức sử dụng hạn mức</h2><p class="muted">Phiên đồng thời tại thời điểm hiện tại</p></div></div>
       <div class="quota-value"><strong id="quota-current">–</strong><span id="quota-limit">/ –</span></div>
-      <div class="progress-track" role="progressbar" aria-label="Mức sử dụng quota" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="quota-progress"></span></div>
+      <div class="progress-track" role="progressbar" aria-label="Mức sử dụng hạn mức phiên" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="quota-progress"></span></div>
       <p class="metric-caption" id="quota-caption">Đang tải hạn mức...</p>
     </article>
   </section>
 
   <section class="detail-grid">
     <article class="panel">
-      <div class="panel-heading"><div><h2>Organization Admin</h2><p class="muted">Quản trị viên thuộc tenant này</p></div><button type="button" class="secondary-button" id="invite-organization-admin">Mời admin</button></div>
+      <div class="panel-heading"><div><h2>Quản trị tổ chức</h2><p class="muted">Quản trị viên của tổ chức này</p></div><button type="button" class="secondary-button" id="invite-organization-admin">Mời quản trị viên</button></div>
       <div id="organization-admin-list" class="person-list"><div class="empty-state compact">Đang tải...</div></div>
     </article>
     <article class="panel">
       <div class="panel-heading"><div><h2>Cấu hình</h2><p class="muted">Thông số vận hành hiện tại</p></div></div>
       <dl class="description-list">
-        <div><dt>Slug</dt><dd id="detail-slug">–</dd></div>
-        <div><dt>Quota đồng thời</dt><dd id="detail-quota">–</dd></div>
+        <div><dt>Mã định danh</dt><dd id="detail-slug">–</dd></div>
+        <div><dt>Hạn mức phiên đồng thời</dt><dd id="detail-quota">–</dd></div>
         <div><dt>Ngày tạo</dt><dd id="detail-created">–</dd></div>
         <div><dt>Cập nhật cuối</dt><dd id="detail-updated">–</dd></div>
       </dl>
@@ -54,16 +54,16 @@
   </section>
 
   <section class="panel">
-    <div class="panel-heading"><div><h2>Hoạt động gần nhất</h2><p class="muted">10 sự kiện audit mới nhất của tổ chức</p></div><a href="/ui/system/audit" class="text-link">Xem toàn bộ <span aria-hidden="true">→</span></a></div>
+    <div class="panel-heading"><div><h2>Hoạt động gần nhất</h2><p class="muted">10 hoạt động mới nhất của tổ chức</p></div><a href="/ui/system/audit" class="text-link">Xem toàn bộ <span aria-hidden="true">→</span></a></div>
     <div id="organization-audit-list" class="timeline-list"><div class="empty-state compact">Đang tải...</div></div>
   </section>
 </div>
 
 <dialog id="edit-organization-dialog" class="admin-dialog admin-dialog-small">
   <form id="edit-organization-form">
-    <div class="dialog-header"><div><h2>Chỉnh sửa cấu hình</h2><p class="muted">Thay đổi có hiệu lực ngay và được ghi audit.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
+    <div class="dialog-header"><div><h2>Chỉnh sửa cấu hình</h2><p class="muted">Thay đổi có hiệu lực ngay và được ghi vào nhật ký hoạt động.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
     <div class="dialog-body form-stack">
-      <label>Retention (ngày)<input id="edit-retention" type="number" min="1" max="3650" required></label>
+      <label>Thời hạn lưu trữ (ngày)<input id="edit-retention" type="number" min="1" max="3650" required></label>
       <label>Phiên đồng thời tối đa<input id="edit-quota" type="number" min="1" max="1000000" placeholder="Để trống nếu không giới hạn"></label>
       <label>Lý do thay đổi<textarea id="edit-reason" minlength="3" maxlength="500" rows="3" required></textarea></label>
     </div>
@@ -81,7 +81,7 @@
 
 <dialog id="break-glass-dialog" class="admin-dialog admin-dialog-small">
   <form id="break-glass-form">
-    <div class="dialog-header"><div><h2>Yêu cầu break-glass</h2><p class="muted">Chỉ đọc evidence sau khi Organization Admin phê duyệt.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
+    <div class="dialog-header"><div><h2>Yêu cầu quyền truy cập ngoại lệ</h2><p class="muted">Chỉ được xem dữ liệu giám sát sau khi quản trị tổ chức phê duyệt.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
     <div class="dialog-body form-stack">
       <label>Lý do điều tra<textarea id="break-glass-reason" minlength="10" maxlength="500" rows="4" required></textarea></label>
       <label>Thời hạn yêu cầu<select id="break-glass-duration"><option value="15">15 phút</option><option value="30" selected>30 phút</option><option value="60">60 phút</option><option value="120">120 phút</option></select></label>
@@ -92,7 +92,7 @@
 
 <dialog id="invite-admin-dialog" class="admin-dialog admin-dialog-small">
   <form id="invite-admin-form">
-    <div class="dialog-header"><div><h2>Mời Organization Admin</h2><p class="muted">Token chỉ hiển thị một lần sau khi tạo.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
+    <div class="dialog-header"><div><h2>Mời quản trị tổ chức</h2><p class="muted">Mã lời mời chỉ hiển thị một lần sau khi tạo.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
     <div class="dialog-body form-stack"><label>Email<input id="invite-admin-email" type="email" required></label><label>Hiệu lực (giờ)<input id="invite-admin-hours" type="number" min="1" max="336" value="72" required></label><div id="invite-admin-result" class="invitation-result hidden"></div></div>
     <div class="dialog-actions"><button type="button" class="secondary-button dialog-close">Hủy</button><button type="submit">Tạo lời mời</button></div>
   </form>

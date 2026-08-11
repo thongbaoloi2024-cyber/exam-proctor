@@ -67,7 +67,7 @@ function renderOrganizationAttention(data) {
   if (data.quota_usage_percent != null && data.quota_usage_percent >= 80) {
     items.push(organizationAttention(
       data.quota_usage_percent >= 100 ? "danger" : "warning",
-      `Đang dùng ${data.quota_usage_percent}% quota phiên đồng thời`,
+      `Đang dùng ${data.quota_usage_percent}% hạn mức phiên đồng thời`,
       "Theo dõi các kỳ thi đang mở để tránh vượt hạn mức.",
       "/ui/organization/policy",
     ));
@@ -76,7 +76,7 @@ function renderOrganizationAttention(data) {
     items.push(organizationAttention(
       "success",
       "Không có cảnh báo quản trị nổi bật",
-      "Thành viên, lời mời và quota hiện trong trạng thái ổn định.",
+      "Thành viên, lời mời và hạn mức hiện trong trạng thái ổn định.",
       "/ui/organization/audit",
     ));
   }
@@ -113,7 +113,7 @@ async function initializeOrganizationOverview() {
   SystemUI.text("org-kpi-sessions", `${data.sessions_active}/${data.concurrent_session_quota ?? "∞"}`);
   SystemUI.text(
     "org-caption-sessions",
-    data.quota_usage_percent == null ? "Không giới hạn quota" : `${data.quota_usage_percent}% quota đồng thời`,
+    data.quota_usage_percent == null ? "Không giới hạn số phiên" : `${data.quota_usage_percent}% hạn mức phiên đồng thời`,
   );
   SystemUI.text("org-kpi-invitations", SystemUI.formatNumber(data.pending_invitations));
   SystemUI.renderBarChart("organization-exam-chart", organizationChartItems(data.exam_status));

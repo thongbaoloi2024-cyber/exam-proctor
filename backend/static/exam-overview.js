@@ -52,7 +52,7 @@ function workspaceSuccessAttention() {
   const title = document.createElement("strong");
   title.textContent = "Không có kỳ thi cần xử lý ngay";
   const detail = document.createElement("small");
-  detail.textContent = "Các assignment hiện không có cảnh báo vận hành nổi bật.";
+  detail.textContent = "Các kỳ thi được phân công hiện không có cảnh báo vận hành nổi bật.";
   copy.append(title, detail);
   const arrow = document.createElement("span");
   arrow.textContent = "→";

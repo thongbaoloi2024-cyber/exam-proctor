@@ -23,19 +23,29 @@ bằng chứng tại thời điểm sinh vi phạm.
 
 ## Quản trị và phân quyền
 
-Backend đã triển khai ba mức quản trị bằng capability + tenant/resource scope:
+Backend đã triển khai ba mức quản trị bằng quyền chức năng và phạm vi tổ
+chức/tài nguyên:
 
 | Vai trò | Phạm vi chính |
 |---|---|
-| `system_admin` | Quản lý platform, tổ chức, hạn mức, vận hành và audit toàn cục; không mặc định xem bằng chứng thí sinh |
-| `org_admin` | Quản lý thành viên, vai trò, chính sách và audit của một tổ chức; không vận hành kỳ thi |
+| `system_admin` | Quản trị hệ thống: quản lý nền tảng, tổ chức, hạn mức, vận hành và nhật ký hoạt động toàn cục; không mặc định xem dữ liệu giám sát của thí sinh |
+| `org_admin` | Quản lý thành viên, vai trò, chính sách và nhật ký hoạt động của một tổ chức; không vận hành kỳ thi |
 | `exam_manager` | Chỉ tạo/vận hành kỳ thi do mình sở hữu hoặc được phân công |
 
 `User.role` (`admin/proctor`) vẫn được dual-write để tương thích với client cũ;
 quyết định quyền mới đọc `OrganizationMembership`, `SystemRole` và
-`ExamAssignment`. Exam Manager chỉ thấy kỳ thi được giao. System Admin bắt buộc
-MFA và chỉ đọc evidence khi có break-glass grant được Organization Admin duyệt.
+`ExamAssignment`. Người quản lý kỳ thi chỉ thấy kỳ thi được giao. Quản trị hệ
+thống bắt buộc dùng MFA và chỉ đọc dữ liệu giám sát khi có quyền truy cập ngoại
+lệ được quản trị tổ chức phê duyệt.
 Chi tiết tại [docs/QUAN_TRI_VA_PHAN_QUYEN.md](docs/QUAN_TRI_VA_PHAN_QUYEN.md).
+
+Các thuật ngữ hiển thị trên giao diện:
+
+- **MFA**: xác thực đa yếu tố; “Tài khoản đã bật MFA” là số tài khoản đã kích hoạt tính năng này.
+- **Hạn mức phiên đồng thời**: số phiên thi được phép hoạt động cùng lúc.
+- **Thời hạn lưu trữ**: số ngày hệ thống giữ dữ liệu trước khi dọn dẹp theo chính sách.
+- **Dữ liệu giám sát**: ảnh và thông tin được ghi nhận để xem xét một phiên thi.
+- **Nhật ký hoạt động**: lịch sử thao tác quản trị và truy cập dữ liệu.
 
 ## Các thay đổi an toàn quan trọng
 
@@ -58,7 +68,7 @@ Phiên bản này đã được harden so với bản demo ban đầu:
   join code có thời hạn và có thể xoay mã. Rate limit dùng Redis khi cấu hình,
   nếu không dùng bộ đếm in-process cho development một worker.
 - Thay đổi role/assignment làm token cũ mất hiệu lực; WebSocket dashboard kiểm
-  tra lại quyền định kỳ. Audit log ghi thay đổi quyền và truy cập evidence.
+  tra lại quyền định kỳ. Nhật ký hoạt động ghi lại thay đổi quyền và truy cập evidence.
 - Production không chấp nhận JWT secret/DB password mặc định. Docker backend chỉ
   cài dependency web/reporting nhẹ.
 - Enrollment có thử thách chớp mắt `mở → nhắm → mở` trước khi chấp nhận
@@ -214,12 +224,12 @@ lệ, chưa cấp session cho tới khi TOTP/recovery code được xác minh. M
 chỉ cho phép tối đa ba lần nhập sai. `/ui/mfa` tiếp tục là trang thiết lập MFA.
 Khu vực
 System Admin được tách rõ thành tổng quan (`/ui/system`), danh sách/chi tiết
-tổ chức (`/ui/system/organizations`), bảo mật và break-glass
+tổ chức (`/ui/system/organizations`), bảo mật và quyền truy cập ngoại lệ
 (`/ui/system/security`), dữ liệu được cấp quyền tạm thời
 (`/ui/system/evidence`) và nhật ký toàn hệ thống (`/ui/system/audit`).
 Tenant nội bộ `slug=system` không xuất hiện trong danh mục khách hàng và
 không thể bị khóa qua API. System Admin chỉ thấy exam/session khi chính tài
-khoản đó có break-glass grant đang active; mã tham gia và URL bài thi luôn bị
+khoản đó có quyền truy cập ngoại lệ đang hiệu lực; mã tham gia và URL bài thi luôn bị
 ẩn trong phạm vi này.
 Các giao diện theo tenant tiếp tục tại `/ui/organization`, `/ui/exams` và
 `/ui/exams/{exam_id}/manage`.
@@ -279,7 +289,7 @@ sessions/<session_id>/
 ```
 
 Backend chỉ append vào danh sách file đã cho phép và chỉ phục vụ file thuộc đúng
-tổ chức/phiên. `client_timestamp` chỉ dùng cho audit; thời gian chuẩn trong log
+tổ chức/phiên. `client_timestamp` chỉ dùng để truy vết; thời gian chuẩn trong log
 server do backend sinh.
 
 ## Test
@@ -320,7 +330,7 @@ python scripts/cleanup_retention.py
 
 Chỉ khi đã kiểm tra danh sách dry-run mới chạy
 `python scripts/cleanup_retention.py --apply`. Tác vụ xóa thư mục evidence,
-review/report job liên quan và ẩn danh row phiên, đồng thời ghi audit.
+review/report job liên quan và ẩn danh row phiên, đồng thời ghi nhật ký hoạt động.
 
 `tests/manual_webcam_demo.py` dành cho kiểm tra thủ công camera/ánh sáng/góc mặt
 trên máy triển khai.
@@ -339,7 +349,7 @@ người đang ngồi trước camera.
 Để dùng trong kỳ thi có rủi ro cao cần thêm ít nhất: extension được ký và
 force-install bằng managed browser, client/native companion được ký và quản lý,
 secure boot/attestation hoặc lockdown browser, liveness/anti-replay chuyên dụng,
-HTTPS bắt buộc, audit vận hành, object storage/backup phù hợp và chính sách bảo
+HTTPS bắt buộc, nhật ký vận hành, object storage/backup phù hợp và chính sách bảo
 vệ dữ liệu. Hệ thống hiện phù hợp nghiên cứu, đồ án và triển khai có kiểm soát;
 không coi đây là lockdown browser/remote-attestation hoàn chỉnh.
 

@@ -136,6 +136,90 @@ def test_exam_lifecycle_and_optimistic_locking(client):
     assert archived.json()["archived_at"]
 
 
+def test_exam_configuration_is_editable_only_without_live_sessions(client):
+    _, token = _register_exam_owner(client, "editability-admin@test.local")
+    headers = _headers(token)
+    created = client.post(
+        "/exams",
+        json={"name": "Editable Open Exam"},
+        headers=headers,
+    )
+    assert created.status_code == 201
+    exam = created.json()
+
+    readiness = client.get(f"/exams/{exam['id']}/readiness", headers=headers).json()
+    assert readiness["active_sessions"] == 0
+    assert readiness["configuration_editable"] is True
+
+    updated = client.patch(
+        f"/exams/{exam['id']}",
+        json={"expected_version": exam["version"], "name": "Updated While Open"},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    current_version = updated.json()["version"]
+
+    joined = client.post(
+        "/exams/join",
+        json={"join_code": exam["join_code"], "student_name": "Live Student"},
+    )
+    assert joined.status_code == 200
+    session_id = joined.json()["session_id"]
+
+    for live_status in ("pending", "active", "disconnected"):
+        with SessionLocal() as db:
+            exam_session = db.get(models.ExamSession, session_id)
+            exam_session.status = live_status
+            db.commit()
+        blocked = client.patch(
+            f"/exams/{exam['id']}",
+            json={"expected_version": current_version, "name": f"Blocked {live_status}"},
+            headers=headers,
+        )
+        assert blocked.status_code == 409
+        assert "phien dang tham gia" in blocked.json()["detail"]
+
+    readiness = client.get(f"/exams/{exam['id']}/readiness", headers=headers).json()
+    assert readiness["active_sessions"] == 1
+    assert readiness["configuration_editable"] is False
+
+    with SessionLocal() as db:
+        exam_session = db.get(models.ExamSession, session_id)
+        exam_session.status = "ended"
+        db.commit()
+
+    updated_after_end = client.patch(
+        f"/exams/{exam['id']}",
+        json={"expected_version": current_version, "name": "Editable After End"},
+        headers=headers,
+    )
+    assert updated_after_end.status_code == 200
+    assert updated_after_end.json()["name"] == "Editable After End"
+
+    closed = client.patch(
+        f"/exams/{exam['id']}/status",
+        json={"status": "closed", "expected_version": updated_after_end.json()["version"]},
+        headers=headers,
+    )
+    assert closed.status_code == 200
+    archived = client.patch(
+        f"/exams/{exam['id']}/status",
+        json={"status": "archived", "expected_version": closed.json()["version"]},
+        headers=headers,
+    )
+    assert archived.status_code == 200
+    archived_update = client.patch(
+        f"/exams/{exam['id']}",
+        json={"expected_version": archived.json()["version"], "name": "Archived Update"},
+        headers=headers,
+    )
+    assert archived_update.status_code == 409
+
+    archived_readiness = client.get(f"/exams/{exam['id']}/readiness", headers=headers).json()
+    assert archived_readiness["active_sessions"] == 0
+    assert archived_readiness["configuration_editable"] is False
+
+
 def test_assignment_api_controls_exam_scope(client):
     admin_token, owner_token = _register_exam_owner(client, "assign-admin@test.local")
     headers = _headers(owner_token)

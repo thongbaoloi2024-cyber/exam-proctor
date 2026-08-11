@@ -43,7 +43,7 @@ document.getElementById("system-policy-form").addEventListener("submit", async (
   const body = await response.json().catch(() => ({}));
   if (!response.ok) return showToast(body.detail?.message || body.detail || "Không lưu được chính sách.", "error");
   document.getElementById("system-policy-reason").value = "";
-  showToast("Đã cập nhật security floor.", "success");
+  showToast("Đã cập nhật mức bảo mật tối thiểu.", "success");
   await loadPlatformPolicy();
 });
 

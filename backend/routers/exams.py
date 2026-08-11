@@ -56,6 +56,7 @@ _ALLOWED_STATUS_TRANSITIONS: dict[str, frozenset[str]] = {
     "closed": frozenset({"open", "archived"}),
     "archived": frozenset(),
 }
+_LIVE_SESSION_STATUSES = frozenset({"pending", "active", "disconnected"})
 
 
 def _generate_join_code(db: Session) -> str:
@@ -64,6 +65,13 @@ def _generate_join_code(db: Session) -> str:
         if db.query(models.Exam).filter(models.Exam.join_code == code).first() is None:
             return code
     raise RuntimeError("Khong sinh duoc join_code duy nhat sau 20 lan thu")
+
+
+def _active_exam_session_count(db: Session, exam_id: str) -> int:
+    return db.query(models.ExamSession).filter(
+        models.ExamSession.exam_id == exam_id,
+        models.ExamSession.status.in_(_LIVE_SESSION_STATUSES),
+    ).count()
 
 
 def _normalize_human_text(value: Optional[str], *, label: str) -> Optional[str]:
@@ -260,7 +268,7 @@ def _exam_response_for_user(
             "is_pinned": bool(assignment and assignment.is_pinned),
             "pinned_at": assignment.pinned_at if assignment and assignment.is_pinned else None,
         })
-    # Break-glass exposes monitoring/evidence metadata, never operational
+    # Exceptional access exposes monitoring/evidence metadata, never operational
     # credentials or the external exam destination.
     return response.model_copy(update={
         "join_code": None,
@@ -409,6 +417,8 @@ class ReadinessItem(BaseModel):
 
 class ExamReadinessResponse(BaseModel):
     ready: bool
+    active_sessions: int
+    configuration_editable: bool
     items: list[ReadinessItem]
 
 
@@ -725,7 +735,7 @@ def get_exam_workspace_overview(
         if disconnected_count:
             attention.append(f"{disconnected_count} phiên mất kết nối")
         if review_count:
-            attention.append(f"{review_count} incident đang xử lý")
+            attention.append(f"{review_count} sự cố đang được xem xét")
         if (
             Permission.EXAM_MANAGE.value in response.allowed_actions
             and exam.status in {"draft", "scheduled", "open"}
@@ -830,10 +840,7 @@ def get_exam_readiness(
             | (models.ExamAssignment.expires_at > now)
         ),
     ).count()
-    active_sessions = db.query(models.ExamSession).filter(
-        models.ExamSession.exam_id == exam.id,
-        models.ExamSession.status.in_(["pending", "active", "disconnected"]),
-    ).count()
+    active_sessions = _active_exam_session_count(db, exam.id)
     organization = db.get(models.Organization, exam.org_id)
     quota_ready = (
         organization is None
@@ -892,6 +899,8 @@ def get_exam_readiness(
     ]
     return ExamReadinessResponse(
         ready=all(item.ready for item in items),
+        active_sessions=active_sessions,
+        configuration_editable=exam.status != "archived" and active_sessions == 0,
         items=items,
     )
 
@@ -905,12 +914,18 @@ def update_exam(
     user: models.User = Depends(get_current_user),
 ) -> ExamResponse:
     exam = authorize_exam(db, user, exam_id, Permission.EXAM_MANAGE)
-    if exam.status != "draft":
+    _assert_version(exam, payload.expected_version)
+    if exam.status == "archived":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Chi duoc sua cau hinh day du khi ky thi o trang thai draft",
+            detail="Ky thi da luu tru khong the sua cau hinh",
         )
-    _assert_version(exam, payload.expected_version)
+    active_sessions = _active_exam_session_count(db, exam.id)
+    if active_sessions:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Khong the sua cau hinh khi con {active_sessions} phien dang tham gia",
+        )
     before = {"name": exam.name, "version": exam.version, "status": exam.status}
     changes = payload.model_dump(exclude_unset=True, exclude={"expected_version"})
     candidate_policy = exam_policy_values(exam)

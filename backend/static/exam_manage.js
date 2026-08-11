@@ -3,6 +3,8 @@ const MANAGE_EXAM_ID = manageRoot?.dataset.examId || "";
 let managedExam = null;
 let canAssign = false;
 let managePolicyFloor = null;
+let manageActiveSessions = null;
+let manageConfigurationEditable = false;
 
 function manageCell(row, value) {
   const cell = document.createElement("td");
@@ -47,9 +49,16 @@ function renderManageDetailHeader(exam) {
   const status = document.getElementById("detail-status");
   status.className = `exam-status-badge status-${exam.status}`;
   status.textContent = statusLabels[exam.status] || exam.status;
+  const canClose = (exam.allowed_actions || []).includes("exam.manage")
+    && exam.status === "open"
+    && (exam.allowed_transitions || []).includes("closed");
+  document.getElementById("detail-close-exam").classList.toggle("hidden", !canClose);
   const joinCode = document.getElementById("detail-join-code");
   joinCode.textContent = exam.join_code || "Đã ẩn";
-  joinCode.title = manageExpiryText(exam.join_code_expires_at);
+  joinCode.disabled = !exam.join_code;
+  joinCode.title = exam.join_code
+    ? `Nhấn để sao chép · ${manageExpiryText(exam.join_code_expires_at)}`
+    : "Mã tham gia đã được ẩn";
   document.title = `${exam.name} · Giám Thị Số`;
 }
 
@@ -66,6 +75,7 @@ async function setLifecycle(status) {
   managedExam = body;
   renderManagedExam();
   await loadReadiness();
+  showToast(status === "closed" ? "Đã đóng kỳ thi." : "Đã cập nhật trạng thái kỳ thi.", "success");
 }
 
 function isoFromManageInput(value) {
@@ -74,7 +84,20 @@ function isoFromManageInput(value) {
 
 function manageConfigIsEditable() {
   return Boolean(managedExam?.allowed_actions?.includes("exam.manage"))
-    && managedExam.status === "draft";
+    && manageConfigurationEditable;
+}
+
+function renderManageEditability() {
+  const help = document.getElementById("exam-config-help");
+  if (!managedExam || manageActiveSessions == null) {
+    help.textContent = "Đang kiểm tra các phiên tham gia trước khi cho phép chỉnh sửa.";
+  } else if (managedExam.status === "archived") {
+    help.textContent = "Kỳ thi đã lưu trữ nên cấu hình chỉ được xem.";
+  } else if (manageActiveSessions > 0) {
+    help.textContent = `Tạm khóa chỉnh sửa vì còn ${manageActiveSessions} phiên đang tham gia.`;
+  } else {
+    help.textContent = "Có thể chỉnh sửa vì hiện không có thí sinh đang tham gia.";
+  }
 }
 
 function syncManageAuthMode() {
@@ -125,12 +148,14 @@ function renderManagedExam() {
   document.getElementById("manage-require-microphone").checked = managedExam.require_microphone;
   document.getElementById("manage-require-screen-share").checked = managedExam.require_screen_share;
   document.getElementById("manage-block-clipboard").checked = managedExam.block_clipboard;
+  const canEdit = canManage && manageConfigIsEditable();
   document.getElementById("exam-config-form").querySelectorAll("input,select,button").forEach((element) => {
-    element.disabled = !canManage || managedExam.status !== "draft";
+    element.disabled = !canEdit;
   });
   applyManagePolicyConstraints();
+  renderManageEditability();
   const labels = { draft: "Về bản nháp", scheduled: "Lên lịch", open: "Mở", closed: "Đóng", archived: "Lưu trữ" };
-  const buttons = (managedExam.allowed_transitions || []).map((status) => {
+  const buttons = (managedExam.allowed_transitions || []).filter((status) => status !== "closed").map((status) => {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = labels[status];
@@ -138,6 +163,7 @@ function renderManagedExam() {
     return button;
   });
   document.getElementById("lifecycle-actions").replaceChildren(...buttons);
+  document.querySelector(".exam-manage-actions").classList.toggle("hidden", buttons.length === 0);
   document.getElementById("manage-rotate-code").classList.toggle(
     "hidden",
     !canManage || managedExam.status === "archived",
@@ -166,6 +192,16 @@ async function rotateManagedJoinCode() {
   showToast("Đã tạo mã tham gia mới; mã cũ không còn hiệu lực.", "success");
 }
 
+async function copyManagedJoinCode() {
+  if (!managedExam?.join_code) return;
+  try {
+    await navigator.clipboard.writeText(managedExam.join_code);
+    showToast(`Đã sao chép mã tham gia: ${managedExam.join_code}`, "success");
+  } catch (error) {
+    showToast(`Mã tham gia: ${managedExam.join_code} (trình duyệt không hỗ trợ tự chép)`, "info");
+  }
+}
+
 async function loadManagePolicyFloor() {
   const response = await API.request("/exams/policy/defaults");
   if (!response.ok) return;
@@ -176,6 +212,8 @@ async function loadReadiness() {
   const response = await API.request(`/exams/${encodeURIComponent(MANAGE_EXAM_ID)}/readiness`);
   if (!response.ok) return;
   const readiness = await response.json();
+  manageActiveSessions = Number(readiness.active_sessions || 0);
+  manageConfigurationEditable = Boolean(readiness.configuration_editable);
   document.getElementById("readiness-summary").textContent = readiness.ready
     ? "Tất cả kiểm tra đều đạt."
     : "Còn hạng mục cần xử lý trước khi mở kỳ thi.";
@@ -191,6 +229,7 @@ async function loadReadiness() {
     return wrapper;
   });
   document.getElementById("readiness-list").replaceChildren(...items);
+  renderManagedExam();
 }
 
 async function loadManagedExam() {
@@ -217,7 +256,7 @@ async function loadAssignments() {
     const row = document.createElement("tr");
     manageCell(row, assignment.email);
     manageCell(row, { owner: "Chủ kỳ thi", manager: "Quản lý", proctor: "Giám thị" }[assignment.assignment_role] || assignment.assignment_role);
-    manageCell(row, assignment.status);
+    manageCell(row, { active: "Đang hiệu lực", revoked: "Đã thu hồi", expired: "Hết hạn" }[assignment.status] || assignment.status);
     manageCell(row, assignment.expires_at ? new Date(assignment.expires_at).toLocaleString("vi-VN") : "Không giới hạn");
     const actions = document.createElement("td");
     if (canAssign && assignment.assignment_role !== "owner" && assignment.status === "active") {
@@ -314,4 +353,10 @@ document.getElementById("manage-auth-mode").addEventListener("change", syncManag
 document.getElementById("manage-require-extension").addEventListener("change", syncManageAuthMode);
 document.getElementById("manage-rotate-code").addEventListener("click", () => {
   rotateManagedJoinCode().catch((error) => showToast(error.message, "error"));
+});
+document.getElementById("detail-close-exam").addEventListener("click", () => {
+  setLifecycle("closed").catch((error) => showToast(error.message, "error"));
+});
+document.getElementById("detail-join-code").addEventListener("click", () => {
+  copyManagedJoinCode().catch((error) => showToast(error.message, "error"));
 });

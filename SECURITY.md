@@ -38,7 +38,7 @@ Server thực hiện các kiểm tra có thể xác minh từ protocol:
 
 ## Kiểm soát quản trị ba cấp
 
-> RBAC, assignment, audit, break-glass và MFA đã được triển khai. Các mục mở còn
+> RBAC, assignment, nhật ký hoạt động, quyền truy cập ngoại lệ và MFA đã được triển khai. Các mục mở còn
 > Redis WebSocket pub/sub, distributed rate limit/client lease, report worker,
 > quota và retention job đã có. Object storage và PostgreSQL RLS vẫn là các lớp
 > hardening tiếp theo. Đặc tả đầy đủ nằm tại
@@ -47,22 +47,22 @@ Server thực hiện các kiểm tra có thể xác minh từ protocol:
 - Quyền phải được quyết định từ role + `org_id` + `ExamAssignment`, không dựa
   vào menu frontend hoặc chỉ dựa vào role ghi trong JWT.
 - System Admin quản lý hạ tầng nhưng không mặc định đọc evidence của thí sinh;
-  truy cập hỗ trợ cần break-glass có lý do, hết hạn, chỉ đọc và audit.
+  truy cập hỗ trợ cần quyền truy cập ngoại lệ có lý do, hết hạn, chỉ đọc và được ghi nhật ký.
 - Thay đổi membership/assignment phải làm mất hiệu lực REST session và đóng
   WebSocket không còn quyền.
 - Mọi endpoint REST, WebSocket, snapshot và report phải dùng cùng policy; query
   tenant trước khi tra resource ID để chống IDOR và rò rỉ sự tồn tại dữ liệu.
-- Audit log cho đổi quyền và truy cập dữ liệu nhạy cảm là append-only, loại bỏ
+- Nhật ký hoạt động cho đổi quyền và truy cập dữ liệu nhạy cảm là append-only, loại bỏ
   token/password hash/sinh trắc khỏi before-after snapshot.
 - System Admin phải dùng MFA; các thao tác cấp quyền cao, suspend tổ chức, export
-  hàng loạt và break-glass phải xác thực lại.
+  hàng loạt và quyền truy cập ngoại lệ phải xác thực lại.
 
 ## Giới hạn không thể che giấu
 
 Một client Python chạy trên máy do thí sinh sở hữu có thể bị patch. Kẻ tấn công
 có thể giả cả bảy signal và risk theo một chuỗi toán học hợp lệ, thay camera hoặc
 can thiệp trước khi telemetry được tạo. Server-side validation làm giả mạo đơn
-giản khó hơn và tạo audit trail tốt hơn, nhưng không phải remote attestation.
+giản khó hơn và tạo dấu vết truy vết tốt hơn, nhưng không phải remote attestation.
 
 Điều tương tự áp dụng cho extension unpacked hoặc máy mà thí sinh có quyền quản
 trị: họ có thể gỡ, sửa hoặc giả message. Heartbeat làm hành vi tắt extension dễ

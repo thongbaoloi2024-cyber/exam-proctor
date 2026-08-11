@@ -194,7 +194,7 @@ async function loadExams() {
     showTableMessage(
       tbody,
       currentUser?.is_system_admin
-        ? "Không có kỳ thi thuộc quyền break-glass đang hiệu lực."
+        ? "Không có kỳ thi nào đang được cấp quyền truy cập ngoại lệ."
         : "Chưa có kỳ thi nào. Nhấn nút + để tạo kỳ thi đầu tiên.",
     );
     return;
@@ -272,10 +272,10 @@ function isoFromLocalInput(value) {
 
 function renderExamReview() {
   const deviceLabels = [
-    ["require-extension", "Extension"],
-    ["require-fullscreen", "Fullscreen"],
+    ["require-extension", "Tiện ích trình duyệt"],
+    ["require-fullscreen", "Toàn màn hình"],
     ["require-camera", "Camera"],
-    ["require-microphone", "Microphone"],
+    ["require-microphone", "Micrô"],
     ["require-screen-share", "Chia sẻ màn hình"],
     ["block-clipboard", "Chặn clipboard"],
   ].filter(([id]) => document.getElementById(id).checked).map(([, label]) => label);
@@ -346,7 +346,7 @@ async function initializeExams() {
     return;
   }
   if (currentUser.is_system_admin) {
-    document.getElementById("exams-page-title").textContent = "Dữ liệu break-glass";
+    document.getElementById("exams-page-title").textContent = "Dữ liệu được cấp quyền";
     document.getElementById("exams-page-description").classList.remove("hidden");
     document.getElementById("exam-code-heading").textContent = "Mã tham gia (đã ẩn)";
   }

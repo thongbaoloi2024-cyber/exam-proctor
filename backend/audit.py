@@ -1,4 +1,4 @@
-"""Append-only security and administration audit helpers."""
+"""Append-only security and administration activity-log helpers."""
 from __future__ import annotations
 
 import json
@@ -43,9 +43,9 @@ def enrich_audit_actor_identity(
     db: Session,
     entries: list[models.AuditLog],
 ) -> list[models.AuditLog]:
-    """Attach display-safe actor fields to a batch of audit rows.
+    """Attach display-safe actor fields to a batch of activity-log rows.
 
-    Audit rows retain the immutable user ID while the directory remains the
+    Activity-log rows retain the immutable user ID while the directory remains the
     source of truth for the current display name and email. Loading all actors
     in one query avoids an extra query for every row in a paged response.
     """

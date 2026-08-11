@@ -33,7 +33,7 @@ function renderAttention(data) {
   if (data.totals.pending_access_grants > 0) {
     items.push(attentionItem(
       "warning",
-      `${data.totals.pending_access_grants} yêu cầu break-glass đang chờ duyệt`,
+      `${data.totals.pending_access_grants} yêu cầu quyền truy cập ngoại lệ đang chờ duyệt`,
       "Kiểm tra lý do, tổ chức và thời hạn của từng yêu cầu.",
       "/ui/system/security",
     ));
@@ -91,15 +91,17 @@ function formatBytes(value) {
 
 async function loadOperations() {
   const data = await SystemUI.fetchJson("/system/operations");
-  const jobs = Object.entries(data.report_jobs).map(([key, value]) => `${key}: ${value}`).join(" · ") || "Không có job";
-  const versions = Object.entries(data.extension_versions).map(([key, value]) => `${key}: ${value}`).join(" · ") || "Chưa có extension";
+  const reportStatusLabels = { pending: "Đang chờ", processing: "Đang xử lý", completed: "Hoàn tất", failed: "Thất bại" };
+  const jobs = Object.entries(data.report_jobs).map(([key, value]) => `${reportStatusLabels[key] || key}: ${value}`).join(" · ") || "Không có tác vụ";
+  const versions = Object.entries(data.extension_versions).map(([key, value]) => `${key}: ${value}`).join(" · ") || "Chưa có tiện ích kết nối";
+  const databaseStatus = data.database_status === "healthy" ? "Bình thường" : "Có lỗi";
   const cards = [
-    ["Database", `${data.database_status} · ${data.database_latency_ms} ms`, data.database_status === "healthy"],
-    ["Redis", data.redis_status === "configured" ? "Đã cấu hình" : "Chưa cấu hình (single-worker)", data.redis_status === "configured"],
-    ["Report queue", jobs, data.recent_report_failures === 0],
-    ["Evidence storage", formatBytes(data.evidence_storage_bytes), data.evidence_storage_bytes >= 0],
-    ["Phiên connected", data.sessions_connected, true],
-    ["Extension versions", versions, true],
+    ["Cơ sở dữ liệu", `${databaseStatus} · ${data.database_latency_ms} ms`, data.database_status === "healthy"],
+    ["Redis", data.redis_status === "configured" ? "Đã cấu hình" : "Chưa cấu hình (một tiến trình)", data.redis_status === "configured"],
+    ["Hàng đợi báo cáo", jobs, data.recent_report_failures === 0],
+    ["Dung lượng dữ liệu giám sát", formatBytes(data.evidence_storage_bytes), data.evidence_storage_bytes >= 0],
+    ["Phiên đang kết nối", data.sessions_connected, true],
+    ["Phiên bản tiện ích", versions, true],
   ];
   document.getElementById("operations-grid").replaceChildren(...cards.map(([labelText, valueText, healthy]) => {
     const card = document.createElement("article");

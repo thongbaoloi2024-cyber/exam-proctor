@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Bảo mật & truy cập · System Admin · Giám Thị Số{% endblock %}
+{% block title %}Bảo mật & truy cập · Quản trị hệ thống · Giám Thị Số{% endblock %}
 {% block body_class %}system-admin-page{% endblock %}
 {% block container_class %}system-container{% endblock %}
 {% block content %}
 <header class="system-page-header">
   <div>
-    <div class="breadcrumb"><span>System Admin</span><span aria-hidden="true">/</span><strong>Bảo mật & truy cập</strong></div>
+    <div class="breadcrumb"><span>Quản trị hệ thống</span><span aria-hidden="true">/</span><strong>Bảo mật & truy cập</strong></div>
     <h1>Bảo mật & truy cập</h1>
-    <p class="muted">Theo dõi các yêu cầu truy cập evidence đặc biệt trên toàn hệ thống.</p>
+    <p class="muted">Theo dõi các yêu cầu xem dữ liệu giám sát ngoài quyền thông thường.</p>
   </div>
   <button type="button" id="open-break-glass-request" class="primary-action"><span aria-hidden="true">＋</span>Tạo yêu cầu</button>
 </header>
 
-<section class="metric-grid metric-grid-four" id="security-metrics" aria-label="Thống kê break-glass">
-  <article class="metric-card"><span class="metric-label">Chờ duyệt</span><strong class="metric-value metric-value-small text-warning" data-status-kpi="pending">–</strong><span class="metric-caption">Cần Organization Admin xử lý</span></article>
+<section class="metric-grid metric-grid-four" id="security-metrics" aria-label="Thống kê quyền truy cập ngoại lệ">
+  <article class="metric-card"><span class="metric-label">Chờ duyệt</span><strong class="metric-value metric-value-small text-warning" data-status-kpi="pending">–</strong><span class="metric-caption">Cần quản trị tổ chức xử lý</span></article>
   <article class="metric-card"><span class="metric-label">Đang hiệu lực</span><strong class="metric-value metric-value-small text-success" data-status-kpi="active">–</strong><span class="metric-caption">Quyền chỉ đọc có thời hạn</span></article>
   <article class="metric-card"><span class="metric-label">Hết hạn</span><strong class="metric-value metric-value-small" data-status-kpi="expired">–</strong><span class="metric-caption">Không còn quyền truy cập</span></article>
   <article class="metric-card"><span class="metric-label">Đã thu hồi</span><strong class="metric-value metric-value-small" data-status-kpi="revoked">–</strong><span class="metric-caption">Bị thu hồi trước thời hạn</span></article>
@@ -22,21 +22,21 @@
 <section class="chart-grid">
   <article class="panel chart-panel">
     <div class="panel-heading"><div><h2>Yêu cầu theo thời gian</h2><p class="muted">30 ngày gần nhất</p></div></div>
-    <div id="security-trend-chart" class="chart-canvas chart-line" role="img" aria-label="Biểu đồ yêu cầu break-glass theo ngày"></div>
+    <div id="security-trend-chart" class="chart-canvas chart-line" role="img" aria-label="Biểu đồ yêu cầu quyền truy cập ngoại lệ theo ngày"></div>
   </article>
   <article class="panel chart-panel">
     <div class="panel-heading"><div><h2>Phân bổ trạng thái</h2><p class="muted">Tất cả yêu cầu</p></div></div>
-    <div id="security-status-chart" class="chart-canvas chart-donut" role="img" aria-label="Biểu đồ trạng thái break-glass"></div>
+    <div id="security-status-chart" class="chart-canvas chart-donut" role="img" aria-label="Biểu đồ trạng thái quyền truy cập ngoại lệ"></div>
   </article>
 </section>
 
 <section class="panel">
-  <div class="panel-heading"><div><h2>Security events</h2><p class="muted">Đăng nhập và MFA trong 30 ngày; xem audit để tra cứu IP/request ID.</p></div><a href="/ui/system/audit?search=security." class="text-link">Mở audit →</a></div>
+  <div class="panel-heading"><div><h2>Sự kiện bảo mật</h2><p class="muted">Đăng nhập và xác minh MFA trong 30 ngày; xem nhật ký hoạt động để tra cứu địa chỉ IP hoặc mã yêu cầu.</p></div><a href="/ui/system/audit?search=security." class="text-link">Mở nhật ký →</a></div>
   <div id="security-events-grid" class="operations-grid"><div class="empty-state compact">Đang tổng hợp...</div></div>
 </section>
 
 <section class="panel">
-  <div class="panel-heading"><div><h2>Lịch sử yêu cầu</h2><p class="muted">System Admin không thể tự phê duyệt yêu cầu của mình.</p></div></div>
+  <div class="panel-heading"><div><h2>Lịch sử yêu cầu</h2><p class="muted">Quản trị hệ thống không thể tự phê duyệt yêu cầu của mình.</p></div></div>
   <form id="security-filters" class="filter-bar">
     <label class="compact-field"><span class="sr-only">Trạng thái</span><select id="security-status-filter"><option value="">Tất cả trạng thái</option><option value="pending">Chờ duyệt</option><option value="active">Đang hiệu lực</option><option value="expired">Hết hạn</option><option value="revoked">Đã thu hồi</option></select></label>
     <label class="compact-field grow"><span class="sr-only">Tổ chức</span><select id="security-organization-filter"><option value="">Tất cả tổ chức</option></select></label>
@@ -53,7 +53,7 @@
 
 <dialog id="security-request-dialog" class="admin-dialog admin-dialog-small">
   <form id="security-request-form">
-    <div class="dialog-header"><div><h2>Tạo yêu cầu break-glass</h2><p class="muted">Organization Admin phải phê duyệt trước khi quyền chỉ đọc có hiệu lực.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
+    <div class="dialog-header"><div><h2>Tạo yêu cầu quyền truy cập ngoại lệ</h2><p class="muted">Quản trị tổ chức phải phê duyệt trước khi quyền chỉ đọc có hiệu lực.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
     <div class="dialog-body form-stack">
       <label>Tổ chức<select id="security-request-organization" required><option value="">Chọn tổ chức</option></select></label>
       <label>Lý do điều tra<textarea id="security-request-reason" minlength="10" maxlength="500" rows="4" required></textarea></label>

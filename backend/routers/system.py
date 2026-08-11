@@ -984,11 +984,31 @@ def audit_analytics(
         parts = entry.action.split(".")
         category_counts[parts[1] if len(parts) > 1 else parts[0]] += 1
     outcome_counts = Counter(entry.outcome for entry in entries)
+    category_labels = {
+        "profile": "Hồ sơ",
+        "member": "Thành viên",
+        "invitation": "Lời mời",
+        "policy": "Chính sách",
+        "break_glass": "Quyền truy cập ngoại lệ",
+        "organization": "Tổ chức",
+        "login": "Đăng nhập",
+        "mfa": "Xác minh MFA",
+        "password": "Mật khẩu",
+        "create": "Tạo kỳ thi",
+        "update": "Cập nhật kỳ thi",
+        "assignment": "Phân công kỳ thi",
+        "status": "Trạng thái kỳ thi",
+        "join_code": "Mã tham gia",
+        "session": "Phiên thi",
+        "evidence": "Dữ liệu giám sát",
+        "incident": "Sự cố",
+        "report": "Báo cáo",
+    }
     return SystemAuditAnalyticsResponse(
         days=days,
         activity_trend=_trend([entry.created_at for entry in entries], days),
         action_categories=[
-            ChartCategory(key=key, label=key.replace("_", " ").title(), value=value)
+            ChartCategory(key=key, label=category_labels.get(key, key), value=value)
             for key, value in category_counts.most_common(8)
         ],
         outcomes=[

@@ -80,7 +80,7 @@ async function loadSecurityAnalytics() {
     const label = document.createElement("span"); label.className = "metric-label"; label.textContent = item.label;
     const value = document.createElement("strong"); value.textContent = SystemUI.formatNumber(item.value);
     card.append(label, value); return card;
-  }) : [SystemUI.empty("Chưa có security event trong khoảng này.")]));
+  }) : [SystemUI.empty("Chưa có sự kiện bảo mật trong khoảng thời gian này.")]));
 }
 
 async function loadSecurityGrants() {
@@ -108,7 +108,7 @@ async function submitSecurityRequest(event) {
     });
     document.getElementById("security-request-dialog").close();
     event.target.reset();
-    showToast("Đã gửi yêu cầu; đang chờ Organization Admin phê duyệt.", "success");
+    showToast("Đã gửi yêu cầu; đang chờ quản trị tổ chức phê duyệt.", "success");
     await Promise.all([loadSecurityAnalytics(), loadSecurityGrants()]);
   } catch (error) {
     showToast(error.message, "error");

@@ -9,15 +9,14 @@
   <dl class="exam-detail-meta" aria-label="Thông tin kỳ thi">
     <div><dt>Ngày tạo</dt><dd id="detail-created-at">–</dd></div>
     <div><dt>Ngày cập nhật</dt><dd id="detail-updated-at">–</dd></div>
-    <div><dt>Trạng thái</dt><dd><span id="detail-status" class="exam-status-badge">–</span></dd></div>
-    <div><dt>Mã tham gia</dt><dd><code id="detail-join-code">–</code></dd></div>
+    <div><dt>Trạng thái</dt><dd class="exam-meta-control"><span id="detail-status" class="exam-status-badge">–</span><button type="button" id="detail-close-exam" class="exam-meta-text-button hidden">Đóng</button></dd></div>
+    <div><dt>Mã tham gia</dt><dd class="exam-meta-control"><button type="button" id="detail-join-code" class="exam-join-code-button" disabled>–</button><button type="button" id="manage-rotate-code" class="exam-meta-icon-button hidden" aria-label="Đổi mã tham gia" title="Đổi mã tham gia"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6v5h-5M4 18v-5h5M6.1 9a7 7 0 0 1 11.7-2.1L20 9M4 15l2.2 2.1A7 7 0 0 0 17.9 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></dd></div>
   </dl>
   <div class="exam-manage-actions">
     <div id="lifecycle-actions" class="button-row"></div>
-    <button type="button" id="manage-rotate-code" class="secondary-button hidden">Đổi mã tham gia</button>
   </div>
   <nav class="exam-detail-tabs" aria-label="Nội dung chi tiết kỳ thi">
-    <a href="/ui/exams/{{ exam_id }}/detail" class="exam-detail-tab">Dashboard</a>
+    <a href="/ui/exams/{{ exam_id }}/detail" class="exam-detail-tab">Giám sát</a>
     <a href="/ui/exams/{{ exam_id }}/detail?tab=manage" class="exam-detail-tab active" aria-current="page">Quản lý</a>
   </nav>
 </section>
@@ -33,27 +32,27 @@
     <label>Tên kỳ thi<input id="manage-exam-name" required></label>
     <label>URL bài thi<input id="manage-exam-url" type="url"></label>
     <label>Chế độ xác thực<select id="manage-auth-mode"><option value="manual">Họ tên + mã thí sinh</option><option value="google">Tài khoản Google</option></select></label>
-    <label id="manage-google-domain-wrap" class="hidden">Google Workspace domain<input id="manage-google-domain"></label>
+    <label id="manage-google-domain-wrap" class="hidden">Tên miền Google Workspace<input id="manage-google-domain"></label>
     <label>Bắt đầu<input id="manage-exam-start" type="datetime-local"></label>
     <label>Kết thúc<input id="manage-exam-end" type="datetime-local"></label>
-    <label>Phiên bản extension tối thiểu<input id="manage-extension-version" pattern="\d+\.\d+\.\d+" required></label>
+    <label>Phiên bản tiện ích tối thiểu<input id="manage-extension-version" pattern="\d+\.\d+\.\d+" required></label>
     <label>Rời cửa sổ tối đa (giây)<input id="manage-focus-loss" type="number" min="0" max="300" step="0.5" required></label>
-    <label class="checkbox-label"><input id="manage-require-extension" type="checkbox"> Bắt buộc extension</label>
-    <label class="checkbox-label"><input id="manage-require-fullscreen" type="checkbox"> Bắt buộc fullscreen</label>
+    <label class="checkbox-label"><input id="manage-require-extension" type="checkbox"> Bắt buộc tiện ích trình duyệt</label>
+    <label class="checkbox-label"><input id="manage-require-fullscreen" type="checkbox"> Bắt buộc toàn màn hình</label>
     <label class="checkbox-label"><input id="manage-require-camera" type="checkbox"> Bắt buộc camera</label>
-    <label class="checkbox-label"><input id="manage-require-microphone" type="checkbox"> Bắt buộc microphone</label>
+    <label class="checkbox-label"><input id="manage-require-microphone" type="checkbox"> Bắt buộc micrô</label>
     <label class="checkbox-label"><input id="manage-require-screen-share" type="checkbox"> Bắt buộc chia sẻ màn hình</label>
-    <label class="checkbox-label"><input id="manage-block-clipboard" type="checkbox"> Chặn clipboard</label>
+    <label class="checkbox-label"><input id="manage-block-clipboard" type="checkbox"> Chặn sao chép và dán</label>
     <div><button type="submit">Lưu cấu hình</button></div>
   </form>
-  <p class="muted">Cấu hình đầy đủ chỉ sửa khi kỳ thi ở trạng thái bản nháp.</p>
+  <p class="muted" id="exam-config-help">Đang kiểm tra các phiên tham gia trước khi cho phép chỉnh sửa.</p>
 </section>
 
 <section class="card" id="assignment-card">
   <h2>Nhân sự kỳ thi</h2>
   <form id="assignment-form" class="inline-form hidden">
     <select id="assignment-user" required></select>
-    <select id="assignment-role"><option value="manager">Manager</option><option value="proctor">Proctor</option></select>
+    <select id="assignment-role"><option value="manager">Quản lý</option><option value="proctor">Giám thị</option></select>
     <input id="assignment-expiry" type="datetime-local" aria-label="Hết hạn phân công">
     <button type="submit">Phân công</button>
   </form>
@@ -65,4 +64,4 @@
   </div>
 </section>
 {% endblock %}
-{% block scripts %}<script src="/static/exam_manage.js?v=20260811-exam-detail-3"></script>{% endblock %}
+{% block scripts %}<script src="/static/exam_manage.js?v=20260811-exam-detail-4"></script>{% endblock %}

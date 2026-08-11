@@ -72,7 +72,7 @@ async function loadOrganization() {
   if (organizationName) organizationName.value = organization.name;
   const title = document.getElementById("sidebar-brand-title");
   const meta = document.getElementById("sidebar-brand-context");
-  const metaText = `${organization.status} · retention ${organization.retention_days} ngày`;
+  const metaText = `${SystemUI.statusLabel(organization.status)} · lưu trữ ${organization.retention_days} ngày`;
   if (title) {
     title.textContent = organization.name;
     title.title = organization.name;
@@ -88,12 +88,12 @@ async function loadOrganizationOverview() {
   if (!response.ok) return;
   const data = await response.json();
   const tiles = [
-    ["Thành viên active", `${data.members_active}/${data.members_total}`],
-    ["Đã bật MFA", `${data.members_with_mfa}/${data.members_total}`],
-    ["Lời mời chờ", data.pending_invitations],
+    ["Thành viên đang hoạt động", `${data.members_active}/${data.members_total}`],
+    ["Tài khoản đã bật MFA", `${data.members_with_mfa}/${data.members_total}`],
+    ["Lời mời đang chờ", data.pending_invitations],
     ["Kỳ thi", data.exams_total],
     ["Phiên đồng thời", `${data.sessions_active}/${data.concurrent_session_quota ?? "∞"}`],
-    ["Retention", `${data.retention_days} ngày`],
+    ["Thời hạn lưu trữ", `${data.retention_days} ngày`],
   ];
   document.getElementById("organization-kpis").replaceChildren(...tiles.map(([labelText, valueText]) => {
     const tile = document.createElement("div"); tile.className = "kpi-tile";
@@ -127,14 +127,14 @@ async function loadMembers() {
     if (member.mfa_enabled) { const badge = document.createElement("span"); badge.className = "badge badge-low member-mfa-badge"; badge.textContent = "MFA"; emailCell.appendChild(badge); }
     const roleCell = document.createElement("td");
     const role = orgSelect(
-      [["exam_manager", "Exam Manager"], ["org_admin", "Organization Admin"]],
+      [["exam_manager", "Quản lý kỳ thi"], ["org_admin", "Quản trị tổ chức"]],
       member.role,
     );
     roleCell.appendChild(role);
     row.appendChild(roleCell);
     const statusCell = document.createElement("td");
     const memberStatus = orgSelect(
-      [["active", "Active"], ["suspended", "Suspended"], ["revoked", "Revoked"]],
+      [["active", "Đang hoạt động"], ["suspended", "Tạm khóa"], ["revoked", "Đã thu hồi"]],
       member.membership_status,
     );
     statusCell.appendChild(memberStatus);
@@ -160,7 +160,9 @@ async function loadInvitations() {
   }
   tbody.replaceChildren(...invitations.map((invitation) => {
     const row = document.createElement("tr");
-    orgCell(row, invitation.email); orgCell(row, invitation.role); orgCell(row, invitation.status);
+    orgCell(row, invitation.email);
+    orgCell(row, { exam_manager: "Quản lý kỳ thi", org_admin: "Quản trị tổ chức" }[invitation.role] || invitation.role);
+    orgCell(row, SystemUI.statusLabel(invitation.status));
     orgCell(row, new Date(invitation.created_at).toLocaleString("vi-VN")); orgCell(row, new Date(invitation.expires_at).toLocaleString("vi-VN"));
     const action = document.createElement("td");
     if (invitation.status === "pending") { const revoke = document.createElement("button"); revoke.type = "button"; revoke.className = "secondary-button"; revoke.textContent = "Thu hồi"; revoke.addEventListener("click", () => revokeInvitation(invitation.id)); action.appendChild(revoke); }
@@ -202,10 +204,10 @@ function syncOrganizationPolicyConstraints() {
 function openGrantDecision(grant, action) {
   selectedGrantDecision = { grant, action };
   document.getElementById("grant-decision-title").textContent = action === "approve"
-    ? "Phê duyệt break-glass"
-    : "Thu hồi break-glass";
+    ? "Phê duyệt quyền truy cập ngoại lệ"
+    : "Thu hồi quyền truy cập ngoại lệ";
   document.getElementById("grant-decision-requester").textContent = grant.requester_email;
-  document.getElementById("grant-decision-scope").textContent = `${grant.scope} · ${grant.read_only ? "chỉ đọc" : "có thể chỉnh sửa"}`;
+  document.getElementById("grant-decision-scope").textContent = `${grant.scope === "evidence.read" ? "Xem dữ liệu giám sát" : grant.scope} · ${grant.read_only ? "chỉ đọc" : "có thể chỉnh sửa"}`;
   document.getElementById("grant-decision-expiry").textContent = new Date(grant.expires_at).toLocaleString("vi-VN");
   document.getElementById("grant-decision-request-reason").textContent = grant.reason;
   document.getElementById("grant-decision-reason").value = "";
@@ -227,11 +229,11 @@ async function grantAction(event) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    showToast(body.detail || "Không cập nhật được yêu cầu break-glass.", "error");
+    showToast(body.detail || "Không cập nhật được quyền truy cập ngoại lệ.", "error");
     return;
   }
   document.getElementById("grant-decision-dialog").close();
-  showToast(action === "approve" ? "Đã phê duyệt quyền chỉ đọc." : "Đã thu hồi quyền break-glass.", "success");
+  showToast(action === "approve" ? "Đã phê duyệt quyền chỉ đọc." : "Đã thu hồi quyền truy cập ngoại lệ.", "success");
   await loadAccessGrants();
 }
 
@@ -243,9 +245,9 @@ async function loadAccessGrants() {
     const row = document.createElement("tr");
     orgCell(row, grant.requester_email);
     orgCell(row, grant.reason);
-    orgCell(row, `${grant.scope} · ${grant.read_only ? "Chỉ đọc" : "Có ghi"}`);
+    orgCell(row, `${grant.scope === "evidence.read" ? "Xem dữ liệu giám sát" : grant.scope} · ${grant.read_only ? "Chỉ đọc" : "Có thể chỉnh sửa"}`);
     orgCell(row, new Date(grant.created_at).toLocaleString("vi-VN"));
-    orgCell(row, grant.effective_status);
+    orgCell(row, SystemUI.statusLabel(grant.effective_status));
     orgCell(row, new Date(grant.expires_at).toLocaleString("vi-VN"));
     const actions = document.createElement("td");
     if (grant.effective_status === "pending") {
@@ -335,8 +337,8 @@ async function loadOrganizationAudit() {
     const row = document.createElement("tr");
     orgCell(row, new Date(entry.created_at).toLocaleString("vi-VN"));
     appendOrganizationAuditUserCell(row, entry);
-    orgCell(row, entry.action);
-    orgCell(row, `${entry.resource_type}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`);
+    orgCell(row, SystemUI.actionLabel(entry.action));
+    orgCell(row, `${SystemUI.resourceLabel(entry.resource_type)}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`);
     appendOrganizationAuditOutcomeCell(row, entry.outcome);
     orgCell(row, entry.reason || "–");
     return row;
@@ -344,7 +346,7 @@ async function loadOrganizationAudit() {
   const tbody = document.querySelector("#organization-audit-table tbody");
   if (!rows.length) {
     const row = document.createElement("tr");
-    const cell = orgCell(row, "Không có sự kiện audit phù hợp.");
+    const cell = orgCell(row, "Không có hoạt động phù hợp.");
     cell.colSpan = 6;
     tbody.replaceChildren(row);
   } else {
@@ -371,7 +373,7 @@ function bindOrganizationPage() {
     }
     const result = document.getElementById("invitation-result");
     result.classList.remove("hidden");
-    result.textContent = `Token lời mời (chỉ hiển thị lần này): ${body.invitation_token}`;
+    result.textContent = `Mã lời mời (chỉ hiển thị lần này): ${body.invitation_token}`;
     document.getElementById("invitation-email").value = "";
     await Promise.all([loadInvitations(), loadOrganizationOverview()]);
   });

@@ -6,7 +6,7 @@ const organizationDetailState = {
 function renderOrganizationAdmins(administrators) {
   const list = document.getElementById("organization-admin-list");
   if (!administrators.length) {
-    list.replaceChildren(SystemUI.empty("Chưa có Organization Admin."));
+    list.replaceChildren(SystemUI.empty("Chưa có quản trị tổ chức."));
     return;
   }
   list.replaceChildren(...administrators.map((administrator) => {
@@ -19,7 +19,7 @@ function renderOrganizationAdmins(administrators) {
     const email = document.createElement("strong");
     email.textContent = administrator.email;
     const role = document.createElement("small");
-    role.textContent = "Organization Admin";
+    role.textContent = "Quản trị tổ chức";
     info.append(email, role);
     row.append(avatar, info, SystemUI.badge(administrator.status));
     return row;
@@ -39,9 +39,10 @@ function renderOrganizationAudit(entries) {
     marker.className = `timeline-marker ${entry.outcome === "success" ? "success" : "warning"}`;
     const content = document.createElement("div");
     const action = document.createElement("strong");
-    action.textContent = entry.action;
+    action.textContent = SystemUI.actionLabel(entry.action);
+    action.title = entry.action;
     const meta = document.createElement("small");
-    meta.textContent = `${entry.resource_type}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`;
+    meta.textContent = `${SystemUI.resourceLabel(entry.resource_type)}${entry.resource_id ? ` · ${entry.resource_id}` : ""}`;
     content.append(action, meta);
     const time = document.createElement("time");
     time.dateTime = entry.created_at;
@@ -162,7 +163,7 @@ async function submitBreakGlass(event) {
     });
     document.getElementById("break-glass-dialog").close();
     event.target.reset();
-    showToast("Đã gửi yêu cầu; Organization Admin cần phê duyệt.", "success");
+    showToast("Đã gửi yêu cầu; quản trị tổ chức cần phê duyệt.", "success");
   } catch (error) {
     showToast(error.message, "error");
   } finally {
@@ -181,8 +182,8 @@ async function submitAdminInvitation(event) {
     });
     const result = document.getElementById("invite-admin-result");
     result.classList.remove("hidden");
-    result.textContent = `Token lời mời: ${data.invitation_token}`;
-    showToast("Đã tạo lời mời Organization Admin.", "success");
+    result.textContent = `Mã lời mời: ${data.invitation_token}`;
+    showToast("Đã tạo lời mời quản trị tổ chức.", "success");
   } catch (error) {
     showToast(error.message, "error");
   } finally {

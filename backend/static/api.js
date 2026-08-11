@@ -51,8 +51,8 @@ const API = {
     const brandContext = document.getElementById("sidebar-brand-context");
     if (brandContext) {
       brandContext.textContent = isSystemAdmin
-        ? "Control Center"
-        : isOrganizationAdmin ? "Organization Console" : "Exam Workspace";
+        ? "Trung tâm điều hành"
+        : isOrganizationAdmin ? "Quản trị tổ chức" : "Không gian kỳ thi";
     }
     document.getElementById("system-platform-badge")?.classList.toggle("hidden", !isSystemAdmin);
     document.getElementById("organization-platform-badge")?.classList.toggle(

@@ -202,7 +202,7 @@ def capabilities_for_user(db: Session, user: models.User) -> list[str]:
         if _active_break_glass_grants(db, user).first() is not None:
             capabilities.update(_BREAK_GLASS_READ_PERMISSIONS)
         # A System Admin is never treated as a tenant administrator. Resource
-        # access is added only by an active, read-only break-glass grant.
+        # access is added only by an active, read-only exceptional-access grant.
         return sorted(permission.value for permission in capabilities)
     try:
         membership = active_membership(db, user)
@@ -293,7 +293,7 @@ def _valid_break_glass_grant(
 ) -> bool:
     if active_system_role(db, user) is None:
         return False
-    # Break-glass is deliberately read-only. It never permits lifecycle,
+    # Exceptional access is deliberately read-only. It never permits lifecycle,
     # assignment, session-end or incident-review mutations.
     if permission not in _BREAK_GLASS_READ_PERMISSIONS:
         return False
@@ -308,7 +308,7 @@ def active_break_glass_grant(
     user: models.User,
     org_id: str,
 ) -> models.AccessGrant | None:
-    """Return the active grant used for sensitive-read audit attribution."""
+    """Return the active grant used to attribute sensitive reads in the activity log."""
 
     if active_system_role(db, user) is None:
         return None

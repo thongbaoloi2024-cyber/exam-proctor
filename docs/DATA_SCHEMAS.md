@@ -5,7 +5,7 @@
 > Cập nhật hardening: protocol mạng dùng schema chặt trong
 > `backend/ws_schemas.py`. Client gửi `telemetry_update` chứa đủ 7 signal;
 > server tự tính lại risk/state và chỉ lưu snapshot bytes đã kiểm tra. Timestamp
-> server là thời gian chuẩn, timestamp client chỉ dùng audit.
+> server là thời gian chuẩn, timestamp client chỉ dùng để truy vết.
 
 ---
 
@@ -350,7 +350,7 @@ User --< AccessGrant >-- Organization
 | `ExamAssignment` | unique `exam_id + user_id` | Giới hạn giáo viên theo `owner/manager/proctor` của kỳ thi |
 | `Invitation` | `org_id + token_hash` | Mời thành viên bằng token một lần, không gửi mật khẩu |
 | `AuditLog` | `org_id/resource/created_at` | Nhật ký append-only cho quyền và dữ liệu nhạy cảm |
-| `AccessGrant` | `requester + org_id + expires_at` | Break-glass có lý do, phê duyệt và thời hạn |
+| `AccessGrant` | `requester + org_id + expires_at` | Quyền truy cập ngoại lệ có lý do, phê duyệt và thời hạn |
 
 `User.org_id` và chuỗi role hiện tại sẽ được migration theo mapping
 `admin → org_admin`, `proctor → exam_manager`. `ExamAssignment` phải được

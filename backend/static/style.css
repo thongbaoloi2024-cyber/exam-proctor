@@ -1290,7 +1290,43 @@ input:focus, select:focus, textarea:focus { outline: 2px solid rgba(79, 142, 247
 .exam-detail-meta > div + div { border-left: 1px solid var(--color-border); }
 .exam-detail-meta dt { margin-bottom: 6px; color: #778290; font-size: 0.68rem; font-weight: 650; letter-spacing: 0.035em; text-transform: uppercase; }
 .exam-detail-meta dd { margin: 0; color: #d7dde5; font-size: 0.79rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
-.exam-detail-meta code { color: #dce9fb; background: rgba(79, 142, 247, 0.08); font-size: 0.82rem; letter-spacing: 0.08em; }
+.exam-meta-control { display: flex; min-height: 27px; align-items: center; justify-content: center; gap: 7px; }
+.exam-join-code-button {
+  padding: 3px 6px;
+  color: #dce9fb;
+  background: rgba(79, 142, 247, 0.08);
+  border: 0;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+}
+.exam-join-code-button:not(:disabled):hover { color: #fff; background: rgba(79, 142, 247, 0.16); opacity: 1; }
+.exam-join-code-button:disabled { cursor: default; }
+.exam-meta-text-button {
+  padding: 3px 7px;
+  color: #f09aa4;
+  background: rgba(239, 106, 120, 0.08);
+  border: 1px solid rgba(239, 106, 120, 0.2);
+  border-radius: 6px;
+  font-size: 0.69rem;
+  font-weight: 650;
+}
+.exam-meta-text-button:hover { background: rgba(239, 106, 120, 0.14); opacity: 1; }
+.exam-meta-icon-button {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  place-items: center;
+  color: #9fc3f8;
+  background: transparent;
+  border: 1px solid rgba(79, 142, 247, 0.2);
+  border-radius: 7px;
+}
+.exam-meta-icon-button svg { width: 15px; height: 15px; }
+.exam-meta-icon-button:hover { color: #d8e8ff; background: rgba(79, 142, 247, 0.1); opacity: 1; }
 .exam-detail-tabs { display: flex; margin-top: 20px; gap: 24px; border-bottom: 1px solid var(--color-border); }
 .exam-detail-tab { position: relative; padding: 11px 2px 13px; color: var(--color-muted); text-decoration: none; font-size: 0.86rem; font-weight: 650; }
 .exam-detail-tab:hover { color: var(--color-text); }

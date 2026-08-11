@@ -6,7 +6,7 @@
 <section class="card exams-page-card" id="create-exam-card">
   <div class="exams-page-heading">
     <div>
-      <h1 id="exams-page-title">{{ 'Dữ liệu break-glass' if system_evidence else 'Kỳ thi của tôi' }}</h1>
+      <h1 id="exams-page-title">{{ 'Dữ liệu được cấp quyền' if system_evidence else 'Kỳ thi của tôi' }}</h1>
       <p id="exams-page-description" class="muted{% if not system_evidence %} hidden{% endif %}">Chỉ hiển thị kỳ thi thuộc các yêu cầu đang hiệu lực. Quyền truy cập hoàn toàn chỉ đọc.</p>
     </div>
     <button type="button" id="create-exam-toggle" class="create-exam-toggle hidden" aria-expanded="false" aria-controls="create-exam-form" aria-label="Thêm kỳ thi" title="Thêm kỳ thi">
@@ -60,7 +60,7 @@
           <option value="google">Tài khoản Google</option>
         </select>
       </label>
-      <label id="google-domain-wrap" class="hidden">Google Workspace domain (tùy chọn)
+      <label id="google-domain-wrap" class="hidden">Tên miền Google Workspace (tùy chọn)
         <input type="text" id="google-domain" placeholder="school.edu.vn">
       </label>
       </div>
@@ -68,7 +68,7 @@
     <fieldset class="wizard-step hidden" data-wizard-step="2">
       <legend>Thiết bị và giám sát</legend>
       <div class="form-grid">
-      <label>Phiên bản extension tối thiểu
+      <label>Phiên bản tiện ích tối thiểu
         <input type="text" id="min-extension-version" value="1.0.0" pattern="\d+\.\d+\.\d+" required>
       </label>
       <label>Cho phép rời cửa sổ tối đa (giây)
@@ -76,12 +76,12 @@
       </label>
       </div>
       <div class="checkbox-grid">
-      <label><input type="checkbox" id="require-extension" checked> Bắt buộc browser extension</label>
+      <label><input type="checkbox" id="require-extension" checked> Bắt buộc tiện ích trình duyệt</label>
       <label><input type="checkbox" id="require-fullscreen" checked> Bắt buộc toàn màn hình</label>
       <label><input type="checkbox" id="require-camera" checked> Bắt buộc camera</label>
-      <label><input type="checkbox" id="require-microphone"> Bắt buộc microphone</label>
+      <label><input type="checkbox" id="require-microphone"> Bắt buộc micrô</label>
       <label><input type="checkbox" id="require-screen-share"> Bắt buộc chia sẻ toàn màn hình</label>
-      <label><input type="checkbox" id="block-clipboard" checked> Chặn copy/paste/menu chuột phải</label>
+      <label><input type="checkbox" id="block-clipboard" checked> Chặn sao chép, dán và trình đơn chuột phải</label>
       </div>
       <p class="muted">Các trường bị khóa là mức tối thiểu do tổ chức áp dụng.</p>
     </fieldset>
@@ -106,7 +106,7 @@
       </tbody>
     </table>
   </div>
-  <p class="muted">Phát mã cho thí sinh. Extension sẽ đọc chính sách của kỳ thi và chỉ hiển thị đúng chế độ xác thực đã chọn ở đây.</p>
+  <p class="muted">Phát mã cho thí sinh. Tiện ích trình duyệt sẽ đọc chính sách của kỳ thi và chỉ hiển thị chế độ xác thực đã chọn ở đây.</p>
 </section>
 
 <section class="card hidden" id="organization-admin-hint">

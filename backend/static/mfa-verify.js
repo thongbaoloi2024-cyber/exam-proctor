@@ -22,7 +22,7 @@ async function loadChallenge() {
     return;
   }
   const body = await response.json();
-  document.getElementById("mfa-account").textContent = `Xác minh cho ${body.email} bằng Authenticator hoặc recovery code.`;
+  document.getElementById("mfa-account").textContent = `Xác minh cho ${body.email} bằng ứng dụng xác thực hoặc mã khôi phục.`;
   showRemaining(body.attempts_remaining);
 }
 
@@ -39,7 +39,7 @@ document.querySelectorAll("[data-code-type]").forEach((button) => {
       : "Mã xác thực 6 chữ số ";
     mfaCode.inputMode = recovery ? "text" : "numeric";
     mfaCode.maxLength = recovery ? 32 : 6;
-    mfaCode.placeholder = recovery ? "Nhập recovery code" : "000000";
+    mfaCode.placeholder = recovery ? "Nhập mã khôi phục" : "000000";
     mfaCode.value = "";
     mfaCode.focus();
   });

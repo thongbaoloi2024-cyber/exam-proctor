@@ -69,6 +69,28 @@ def test_system_admin_sidebar_has_control_panel_navigation_and_account(client):
     assert 'isOrganizationAdmin ? "/ui/organization/overview" : "/ui/exams/overview"' in api_script
 
 
+def test_admin_pages_use_clear_vietnamese_security_terms(client):
+    system_overview = client.get("/ui/system")
+    system_security = client.get("/ui/system/security")
+    system_evidence = client.get("/ui/system/evidence")
+    system_activity = client.get("/ui/system/audit")
+    organization_overview = client.get("/ui/organization/overview")
+    organization_access = client.get("/ui/organization/break-glass")
+    organization_activity = client.get("/ui/organization/audit")
+
+    assert "Tình trạng vận hành" in system_overview.text
+    assert "Tạo yêu cầu quyền truy cập ngoại lệ" in system_security.text
+    assert "Sự kiện bảo mật" in system_security.text
+    assert "Dữ liệu được cấp quyền" in system_evidence.text
+    assert "Nhật ký hoạt động" in system_activity.text
+    assert "Tài khoản đã bật MFA" in organization_overview.text
+    assert "hạn mức phiên đồng thời" in organization_overview.text
+    assert "Yêu cầu quyền truy cập ngoại lệ" in organization_access.text
+    assert "Nhật ký hoạt động" in organization_activity.text
+    assert "Độ phủ MFA" not in organization_overview.text
+    assert "Security events" not in system_security.text
+
+
 def test_tenant_sidebars_are_role_aware_and_capability_scoped(client):
     response = client.get("/ui/exams")
     assert response.status_code == 200

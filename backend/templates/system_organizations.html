@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Tổ chức · System Admin · Giám Thị Số{% endblock %}
+{% block title %}Tổ chức · Quản trị hệ thống · Giám Thị Số{% endblock %}
 {% block body_class %}system-admin-page{% endblock %}
 {% block container_class %}system-container{% endblock %}
 {% block content %}
 <header class="system-page-header">
   <div>
-    <div class="breadcrumb"><span>System Admin</span><span aria-hidden="true">/</span><strong>Tổ chức</strong></div>
+    <div class="breadcrumb"><span>Quản trị hệ thống</span><span aria-hidden="true">/</span><strong>Tổ chức</strong></div>
     <h1>Quản lý tổ chức</h1>
-    <p class="muted">Quản lý tenant, hạn mức và trạng thái sử dụng nền tảng.</p>
+    <p class="muted">Quản lý tổ chức, hạn mức và trạng thái sử dụng nền tảng.</p>
   </div>
   <button type="button" id="open-create-organization" class="primary-action"><span aria-hidden="true">＋</span>Tạo tổ chức</button>
 </header>
@@ -20,7 +20,7 @@
 
 <section class="panel">
   <form id="organization-filters" class="filter-bar">
-    <label class="search-field"><span class="sr-only">Tìm kiếm tổ chức</span><span class="search-icon" aria-hidden="true">⌕</span><input id="organization-search" type="search" placeholder="Tìm theo tên hoặc slug..." maxlength="100"></label>
+    <label class="search-field"><span class="sr-only">Tìm kiếm tổ chức</span><span class="search-icon" aria-hidden="true">⌕</span><input id="organization-search" type="search" placeholder="Tìm theo tên hoặc mã định danh..." maxlength="100"></label>
     <label class="compact-field"><span class="sr-only">Lọc trạng thái</span>
       <select id="organization-status"><option value="">Tất cả trạng thái</option><option value="active">Hoạt động</option><option value="suspended">Tạm khóa</option></select>
     </label>
@@ -31,7 +31,7 @@
   </form>
   <div class="table-scroll">
     <table class="data-table admin-table" id="system-organizations-table">
-      <thead><tr><th>Tổ chức</th><th>Trạng thái</th><th>Người dùng</th><th>Kỳ thi</th><th>Phiên hoạt động</th><th>Quota</th><th><span class="sr-only">Thao tác</span></th></tr></thead>
+      <thead><tr><th>Tổ chức</th><th>Trạng thái</th><th>Người dùng</th><th>Kỳ thi</th><th>Phiên hoạt động</th><th>Hạn mức phiên</th><th><span class="sr-only">Thao tác</span></th></tr></thead>
       <tbody><tr><td colspan="7"><div class="table-loading">Đang tải tổ chức...</div></td></tr></tbody>
     </table>
   </div>
@@ -40,18 +40,18 @@
 
 <dialog id="create-organization-dialog" class="admin-dialog">
   <form id="system-create-org">
-    <div class="dialog-header"><div><h2>Tạo tổ chức mới</h2><p class="muted">Thiết lập tenant và gửi lời mời quản trị đầu tiên.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
+    <div class="dialog-header"><div><h2>Tạo tổ chức mới</h2><p class="muted">Thiết lập tổ chức và gửi lời mời cho quản trị viên đầu tiên.</p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
     <div class="dialog-body form-stack">
       <label>Tên tổ chức<input id="system-org-name" required maxlength="200" autocomplete="organization"></label>
-      <label>Email Organization Admin<input id="system-org-admin" type="email" required autocomplete="email"></label>
+      <label>Email quản trị tổ chức<input id="system-org-admin" type="email" required autocomplete="email"></label>
       <div class="form-grid">
-        <label>Retention (ngày)<input id="system-org-retention" type="number" min="1" max="3650" value="365" required></label>
+        <label>Thời hạn lưu trữ (ngày)<input id="system-org-retention" type="number" min="1" max="3650" value="365" required></label>
         <label>Phiên đồng thời tối đa<input id="system-org-quota" type="number" min="1" max="1000000" placeholder="Không giới hạn"></label>
       </div>
       <div id="system-invitation-result" class="invitation-result hidden">
-        <div><strong>Token lời mời</strong><p>Chỉ hiển thị một lần. Hãy chuyển qua kênh an toàn.</p></div>
+        <div><strong>Mã lời mời</strong><p>Chỉ hiển thị một lần. Hãy chuyển qua kênh an toàn.</p></div>
         <code id="invitation-token"></code>
-        <button type="button" id="copy-invitation-token" class="secondary-button">Sao chép token</button>
+        <button type="button" id="copy-invitation-token" class="secondary-button">Sao chép mã</button>
       </div>
     </div>
     <div class="dialog-actions"><button type="button" class="secondary-button dialog-close">Hủy</button><button type="submit" id="create-organization-submit">Tạo tổ chức</button></div>

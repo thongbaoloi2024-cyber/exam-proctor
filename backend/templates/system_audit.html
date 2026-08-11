@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Nhật ký audit · System Admin · Giám Thị Số{% endblock %}
+{% block title %}Nhật ký hoạt động · Quản trị hệ thống · Giám Thị Số{% endblock %}
 {% block body_class %}system-admin-page{% endblock %}
 {% block container_class %}system-container{% endblock %}
 {% block content %}
 <header class="system-page-header">
   <div>
-    <div class="breadcrumb"><span>System Admin</span><span aria-hidden="true">/</span><strong>Nhật ký audit</strong></div>
-    <h1>Nhật ký audit</h1>
+    <div class="breadcrumb"><span>Quản trị hệ thống</span><span aria-hidden="true">/</span><strong>Nhật ký hoạt động</strong></div>
+    <h1>Nhật ký hoạt động</h1>
     <p class="muted">Theo dõi hoạt động quản trị và điều tra thay đổi trên toàn nền tảng.</p>
   </div>
   <label class="compact-field">Khoảng thời gian
@@ -16,24 +16,24 @@
 
 <section class="chart-grid chart-grid-primary">
   <article class="panel chart-panel chart-panel-wide">
-    <div class="panel-heading"><div><h2>Hoạt động theo thời gian</h2><p class="muted">Số bản ghi audit phát sinh theo ngày</p></div></div>
-    <div id="audit-trend-chart" class="chart-canvas chart-line" role="img" aria-label="Biểu đồ hoạt động audit theo ngày"></div>
+    <div class="panel-heading"><div><h2>Hoạt động theo thời gian</h2><p class="muted">Số bản ghi hoạt động phát sinh theo ngày</p></div></div>
+    <div id="audit-trend-chart" class="chart-canvas chart-line" role="img" aria-label="Biểu đồ nhật ký hoạt động theo ngày"></div>
   </article>
   <article class="panel chart-panel">
-    <div class="panel-heading"><div><h2>Kết quả</h2><p class="muted">Phân bổ outcome trong kỳ</p></div></div>
-    <div id="audit-outcome-chart" class="chart-canvas chart-donut" role="img" aria-label="Biểu đồ kết quả audit"></div>
+    <div class="panel-heading"><div><h2>Kết quả</h2><p class="muted">Phân bổ kết quả trong khoảng thời gian đã chọn</p></div></div>
+    <div id="audit-outcome-chart" class="chart-canvas chart-donut" role="img" aria-label="Biểu đồ kết quả hoạt động"></div>
   </article>
 </section>
 
 <section class="panel chart-panel">
   <div class="panel-heading"><div><h2>Nhóm hành động phổ biến</h2><p class="muted">Tối đa 8 nhóm có tần suất cao nhất</p></div></div>
-  <div id="audit-actions-chart" class="chart-canvas chart-bars-wide" role="img" aria-label="Biểu đồ nhóm hành động audit"></div>
+  <div id="audit-actions-chart" class="chart-canvas chart-bars-wide" role="img" aria-label="Biểu đồ nhóm hoạt động"></div>
 </section>
 
 <section class="panel">
-  <div class="panel-heading"><div><h2>Chi tiết sự kiện</h2><p class="muted">Dữ liệu before/after đã được loại bỏ secret khi ghi audit.</p></div></div>
+  <div class="panel-heading"><div><h2>Chi tiết sự kiện</h2><p class="muted">Dữ liệu trước và sau thay đổi đã được loại bỏ thông tin bí mật khi ghi nhật ký.</p></div></div>
   <form id="audit-filters" class="filter-bar">
-    <label class="search-field"><span class="sr-only">Tìm audit</span><span class="search-icon" aria-hidden="true">⌕</span><input id="audit-search" type="search" placeholder="Người dùng, hành động hoặc tài nguyên..." maxlength="100"></label>
+    <label class="search-field"><span class="sr-only">Tìm nhật ký hoạt động</span><span class="search-icon" aria-hidden="true">⌕</span><input id="audit-search" type="search" placeholder="Người dùng, hành động hoặc tài nguyên..." maxlength="100"></label>
     <label class="compact-field"><span class="sr-only">Kết quả</span><select id="audit-outcome-filter"><option value="">Tất cả kết quả</option><option value="success">Thành công</option><option value="failed">Thất bại</option><option value="denied">Bị từ chối</option></select></label>
     <label class="compact-field grow"><span class="sr-only">Tổ chức</span><select id="audit-organization-filter"><option value="">Tất cả tổ chức</option></select></label>
     <button type="submit" class="secondary-button">Áp dụng</button>
@@ -41,14 +41,14 @@
   <div class="table-scroll">
     <table class="data-table admin-table" id="system-audit-table">
       <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Tài nguyên</th><th>Tổ chức</th><th>Kết quả</th><th><span class="sr-only">Chi tiết</span></th></tr></thead>
-      <tbody><tr><td colspan="7"><div class="table-loading">Đang tải audit...</div></td></tr></tbody>
+      <tbody><tr><td colspan="7"><div class="table-loading">Đang tải nhật ký...</div></td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="audit-pagination"></div>
 </section>
 
 <dialog id="audit-detail-dialog" class="admin-dialog">
-  <div class="dialog-header"><div><h2>Chi tiết sự kiện audit</h2><p class="muted" id="audit-detail-time"></p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
+  <div class="dialog-header"><div><h2>Chi tiết hoạt động</h2><p class="muted" id="audit-detail-time"></p></div><button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button></div>
   <div class="dialog-body">
     <dl class="description-list audit-description" id="audit-detail-description"></dl>
     <div class="audit-json-grid">

@@ -1,7 +1,7 @@
 # Kiến trúc quản trị và phân quyền
 
 > **Trạng thái cập nhật 2026-08-03:** các giai đoạn nền tảng RBAC, membership,
-> assignment, quản trị tổ chức/kỳ thi, System Admin, audit, break-glass, MFA và
+> phân công, quản trị tổ chức/kỳ thi, quản trị hệ thống, nhật ký hoạt động, quyền truy cập ngoại lệ, MFA và
 > giao diện theo capability đã được triển khai. `User.org_id`/`User.role` vẫn
 > được giữ để tương thích trong giai đoạn migration. Redis đã phục vụ rate
 > limit, WebSocket pub/sub và distributed client lease; report worker, quota và
@@ -12,10 +12,10 @@
 
 Hệ thống cần hỗ trợ ba mức quản trị:
 
-1. **System Admin** (`system_admin`): vận hành toàn platform và quản lý tổ chức.
-2. **Organization Admin** (`org_admin`): quản trị một tổ chức, người dùng và
+1. **Quản trị hệ thống** (`system_admin`): vận hành toàn nền tảng và quản lý tổ chức.
+2. **Quản trị tổ chức** (`org_admin`): quản trị một tổ chức, người dùng và
    chính sách của tổ chức đó.
-3. **Exam Manager/Giáo viên** (`exam_manager`): tạo hoặc vận hành các kỳ thi
+3. **Quản lý kỳ thi/Giáo viên** (`exam_manager`): tạo hoặc vận hành các kỳ thi
    được giao, theo dõi thí sinh và xử lý báo cáo.
 
 Thí sinh không thuộc hệ thống vai trò quản trị. Thí sinh tiếp tục dùng token
@@ -34,32 +34,32 @@ cáo chi tiết của thí sinh.
 
 ## 2. Ranh giới vai trò
 
-### 2.1. System Admin
+### 2.1. Quản trị hệ thống
 
-Phạm vi: toàn platform, không gắn cố định với một `org_id`.
+Phạm vi: toàn nền tảng, không gắn cố định với một `org_id`.
 
 Chức năng chính:
 
 - Xem dashboard vận hành: số tổ chức, người dùng, kỳ thi đang mở, phiên đang
   hoạt động, dung lượng và lỗi hệ thống.
 - Tạo, khóa, mở khóa và cấu hình hạn mức tổ chức.
-- Mời hoặc thu hồi Organization Admin đầu tiên của một tổ chức.
+- Mời hoặc thu hồi quản trị tổ chức đầu tiên của một tổ chức.
 - Quản lý cấu hình toàn cục, phiên bản extension tối thiểu, feature flag và
   chính sách bảo mật bắt buộc.
-- Xem audit log toàn hệ thống và sự kiện an ninh.
+- Xem nhật ký hoạt động toàn hệ thống và sự kiện an ninh.
 - Thực hiện tác vụ hỗ trợ có kiểm soát.
 
 Không được mặc định:
 
 - Tham gia vận hành kỳ thi thay giáo viên.
 - Xem ảnh, timeline hoặc báo cáo chứa dữ liệu cá nhân của thí sinh.
-- Sửa điểm rủi ro, vi phạm hoặc audit log.
+- Sửa điểm rủi ro, vi phạm hoặc nhật ký hoạt động.
 
-Khi cần hỗ trợ dữ liệu nhạy cảm, dùng **break-glass access**: nhập lý do, xác
-thực lại, giới hạn thời gian, chỉ đọc, thông báo cho Organization Admin và ghi
-audit đầy đủ.
+Khi cần hỗ trợ dữ liệu nhạy cảm, dùng **quyền truy cập ngoại lệ**: nhập lý do, xác
+thực lại, giới hạn thời gian, chỉ đọc, thông báo cho quản trị tổ chức và ghi
+nhật ký đầy đủ.
 
-### 2.2. Organization Admin
+### 2.2. Quản trị tổ chức
 
 Phạm vi: một tổ chức đang được chọn.
 
@@ -70,7 +70,7 @@ Chức năng chính:
   `exam_manager` trong tổ chức.
 - Thiết lập chính sách mặc định: xác thực thí sinh, thiết bị bắt buộc, thời hạn
   lưu dữ liệu, ngưỡng cảnh báo và phiên bản extension tối thiểu.
-- Xem audit log quản trị và mức sử dụng của tổ chức.
+- Xem nhật ký hoạt động quản trị và mức sử dụng của tổ chức.
 - Duyệt yêu cầu xuất hoặc xóa dữ liệu theo chính sách.
 
 Không được:
@@ -79,10 +79,10 @@ Không được:
 - Tạo `system_admin` hay thay đổi cấu hình toàn platform.
 - Tạo, đọc, sửa, phân công, giám sát hoặc xuất dữ liệu kỳ thi; assignment lịch
   sử không cấp lại các quyền này.
-- Sửa/xóa audit log.
+- Sửa/xóa nhật ký hoạt động.
 - Hạ chính sách dưới mức tối thiểu do System Admin bắt buộc.
 
-### 2.3. Exam Manager/Giáo viên
+### 2.3. Quản lý kỳ thi/Giáo viên
 
 Phạm vi: các kỳ thi do mình tạo hoặc được ghi trong `ExamAssignment`.
 
@@ -101,7 +101,7 @@ Chức năng chính:
 Không được:
 
 - Xem kỳ thi không được phân công, kể cả biết `exam_id`.
-- Quản lý người dùng, chính sách, hạn mức hoặc audit log toàn tổ chức.
+- Quản lý người dùng, chính sách, hạn mức hoặc nhật ký hoạt động toàn tổ chức.
 - Chuyển kỳ thi sang tổ chức khác, thay đổi retention hoặc xóa bằng chứng trước
   hạn.
 - Cấp cho người khác quyền cao hơn quyền mình có trên kỳ thi.
@@ -110,7 +110,7 @@ Trong một kỳ thi, `ExamAssignment.assignment_role` có ba mức nhỏ:
 
 - `owner`: toàn quyền vận hành kỳ thi và quản lý phân công.
 - `manager`: chỉnh cấu hình, mở/đóng, quản lý phiên và báo cáo.
-- `proctor`: chỉ theo dõi live, xem chi tiết và xử lý phiên trong ca được giao.
+- `proctor`: chỉ theo dõi trực tiếp, xem chi tiết và xử lý phiên trong ca được giao.
 
 Ba mức này là phạm vi tài nguyên, không phải vai trò platform mới.
 
@@ -125,17 +125,17 @@ không được phép.
 | Gán System Admin | Theo quy trình bảo mật riêng | — | — |
 | Quản lý thành viên/vai trò | Admin tổ chức | Trong tổ chức | — |
 | Cấu hình chính sách mặc định | Mức sàn toàn cục | Trong tổ chức | — |
-| Tạo kỳ thi | Hỗ trợ có audit | — | Tự tạo và được gán owner |
+| Tạo kỳ thi | Hỗ trợ có ghi nhật ký | — | Tự tạo và được gán owner |
 | Xem danh sách kỳ thi | Metadata vận hành | — | Kỳ thi được giao |
-| Sửa/mở/đóng kỳ thi | Hỗ trợ có audit | — | Theo assignment |
-| Phân công giáo viên/giám thị | Hỗ trợ có audit | — | Người dùng có sẵn, theo assignment |
+| Sửa/mở/đóng kỳ thi | Hỗ trợ có ghi nhật ký | — | Theo assignment |
+| Phân công giáo viên/giám thị | Hỗ trợ có ghi nhật ký | — | Người dùng có sẵn, theo assignment |
 | Theo dõi dashboard live | Không mặc định | — | Kỳ thi được giao |
-| Xem ảnh/báo cáo thí sinh | Break-glass, chỉ đọc | — | Kỳ thi được giao |
+| Xem ảnh/báo cáo thí sinh | Quyền truy cập ngoại lệ, chỉ đọc | — | Kỳ thi được giao |
 | Kết thúc một phiên thi | — | — | Kỳ thi được giao |
 | Ghi chú/duyệt sự cố | — | — | Kỳ thi được giao |
 | Xuất báo cáo | Thống kê không định danh | — | Kỳ thi được giao |
 | Xóa dữ liệu trước retention | Quy trình hệ thống | Theo quy trình phê duyệt | — |
-| Xem audit log | Toàn hệ thống | Trong tổ chức | Hành động của mình/kỳ thi được giao |
+| Xem nhật ký hoạt động | Toàn hệ thống | Trong tổ chức | Hành động của mình/kỳ thi được giao |
 
 Quy tắc phủ định luôn thắng quyền tổng quát: tài khoản `suspended`, tổ chức
 `suspended`, kỳ thi đã `archived`, assignment hết hạn hoặc chính sách deny cụ
@@ -159,24 +159,24 @@ Nếu một người thuộc nhiều tổ chức, họ phải chọn **active or
 đổi tổ chức tạo context mới phía server; không tin `org_id` tùy ý do frontend
 gửi trong body.
 
-### 4.2. Giao diện System Admin
+### 4.2. Giao diện quản trị hệ thống
 
 Đường dẫn đề xuất dưới `/ui/system`:
 
 | Màn hình | Nội dung/chức năng |
 |---|---|
-| Tổng quan | KPI toàn platform, tổ chức/phiên active, lỗi, dung lượng, phiên bản client |
-| Tổ chức | Tìm/lọc/tạo/khóa tổ chức, hạn mức, retention, trạng thái |
-| Chi tiết tổ chức | Metadata, usage, admin, lịch sử thay đổi; không mở dữ liệu thí sinh mặc định |
-| Quản trị viên | Mời/thu hồi Organization Admin, khóa phiên đăng nhập |
-| Chính sách hệ thống | Mức bảo mật tối thiểu, feature flag, version policy |
-| Vận hành | Health, worker, DB/storage, hàng đợi báo cáo, cảnh báo |
-| Audit & Security | Tìm kiếm audit, đăng nhập lỗi, rate limit, break-glass session |
+| Tổng quan | Chỉ số toàn nền tảng, tổ chức/phiên đang hoạt động, lỗi, dung lượng, phiên bản tiện ích |
+| Tổ chức | Tìm, lọc, tạo hoặc khóa tổ chức; cấu hình hạn mức, thời hạn lưu trữ và trạng thái |
+| Chi tiết tổ chức | Thông tin, mức sử dụng, quản trị viên và lịch sử thay đổi; không mở dữ liệu thí sinh theo mặc định |
+| Quản trị viên | Mời hoặc thu hồi quản trị tổ chức, khóa phiên đăng nhập |
+| Chính sách hệ thống | Mức bảo mật tối thiểu, cờ tính năng và chính sách phiên bản |
+| Vận hành | Tình trạng dịch vụ, tiến trình xử lý, cơ sở dữ liệu, kho lưu trữ, hàng đợi báo cáo và cảnh báo |
+| Nhật ký & Bảo mật | Tìm kiếm nhật ký hoạt động, đăng nhập lỗi, rate limit, phiên truy cập ngoại lệ |
 
-Các thao tác `suspend organization`, đổi hạn mức hoặc break-glass cần modal xác
+Các thao tác `suspend organization`, đổi hạn mức hoặc cấp quyền truy cập ngoại lệ cần modal xác
 nhận, nhập lý do và xác thực lại.
 
-### 4.3. Giao diện Organization Admin
+### 4.3. Giao diện quản trị tổ chức
 
 Đường dẫn đề xuất dưới `/ui/org`:
 
@@ -185,12 +185,12 @@ nhận, nhập lý do và xác thực lại.
 | Tổng quan tổ chức | Usage, trạng thái chính sách và người dùng |
 | Người dùng | Danh sách, mời mới, vai trò, trạng thái, đăng xuất cưỡng bức |
 | Nhóm/đơn vị | Nhóm giáo viên hoặc khoa/phòng nếu tổ chức cần phân cấp thêm |
-| Chính sách | Mẫu cấu hình kỳ thi, xác thực, extension, retention, quyền riêng tư |
+| Chính sách | Mẫu cấu hình kỳ thi, xác thực, tiện ích trình duyệt, thời hạn lưu trữ và quyền riêng tư |
 | Báo cáo | Thống kê tổng hợp, xuất dữ liệu theo phạm vi và thời gian |
-| Audit | Hoạt động quản trị và truy cập dữ liệu trong tổ chức |
+| Nhật ký hoạt động | Hoạt động quản trị và truy cập dữ liệu trong tổ chức |
 | Cài đặt | Tên, logo, miền email cho phép, múi giờ, thông tin liên hệ |
 
-### 4.4. Giao diện Exam Manager/Giáo viên
+### 4.4. Giao diện quản lý kỳ thi/Giáo viên
 
 Đường dẫn chính tiếp tục dưới `/ui/exams` nhưng danh sách đã được lọc theo
 assignment:
@@ -199,12 +199,12 @@ assignment:
 |---|---|
 | Kỳ thi của tôi | Thẻ/bảng kỳ thi được giao, trạng thái và hành động nhanh |
 | Tạo kỳ thi | Wizard: thông tin → thời gian → xác thực → thiết bị → giám sát → rà soát |
-| Tổng quan kỳ thi | Thời gian, join code, readiness checklist, số thí sinh/phiên |
+| Tổng quan kỳ thi | Thời gian, mã tham gia, danh sách kiểm tra mức sẵn sàng và số thí sinh/phiên |
 | Cấu hình | Chính sách đã kế thừa và phần được phép ghi đè |
-| Nhân sự | Owner/manager/proctor và ca trực; chỉ chọn thành viên sẵn có |
+| Nhân sự | Chủ kỳ thi, người quản lý, giám thị và ca trực; chỉ chọn thành viên sẵn có |
 | Thí sinh | Danh sách, trạng thái tham gia, vấn đề xác thực/thiết bị |
-| Giám sát trực tiếp | Risk CV và browser integrity tách riêng, bộ lọc cảnh báo |
-| Sự cố cần duyệt | Hàng đợi evidence, ghi chú, kết luận, lịch sử người xử lý |
+| Giám sát trực tiếp | Điểm rủi ro từ hình ảnh và mức toàn vẹn trình duyệt được tách riêng, kèm bộ lọc cảnh báo |
+| Sự cố cần duyệt | Hàng đợi dữ liệu giám sát, ghi chú, kết luận và lịch sử người xử lý |
 | Báo cáo | Báo cáo kỳ thi/phiên, trạng thái sinh file, tải xuống |
 
 Nút hành động cần phản ánh lifecycle. Ví dụ chỉ sửa cấu hình đầy đủ khi `draft`,
@@ -226,7 +226,7 @@ quản trị và chỉ mục truy vấn.
 | `exam_assignments` | `exam_id, user_id, assignment_role, assigned_by, expires_at` | Owner/manager/proctor của từng kỳ thi |
 | `invitations` | `org_id, email, role, token_hash, expires_at, accepted_at` | Mời người dùng bằng token một lần |
 | `audit_logs` | actor, scope, action, resource, outcome, request metadata, change summary | Nhật ký bất biến phục vụ điều tra |
-| `access_grants` | requester, org_id, reason, scope, approved_by, expires_at | Phiên break-glass có thời hạn |
+| `access_grants` | requester, org_id, reason, scope, approved_by, expires_at | Phiên truy cập ngoại lệ có thời hạn |
 
 `Exam` cần thêm `owner_user_id`, lifecycle `draft/scheduled/open/closed/archived`,
 `scheduled_start_at`, `scheduled_end_at`, `version` để optimistic locking và
@@ -241,7 +241,7 @@ quản trị và chỉ mục truy vấn.
 - `system_admin` không được tạo qua endpoint quản lý thành viên tổ chức.
 - Organization Admin không được tự xóa Organization Admin cuối cùng.
 - Không cho đổi `Exam.org_id` sau khi đã tạo.
-- Audit log chỉ append; ứng dụng không có endpoint update/delete.
+- Nhật ký hoạt động chỉ append; ứng dụng không có endpoint update/delete.
 - Index tối thiểu trên `org_id`, `exam_id`, `user_id`, `status`, `created_at` và
   tổ hợp dùng trong danh sách dashboard.
 
@@ -257,7 +257,7 @@ Mỗi request quản trị đi qua các bước:
 4. Kiểm tra capability của vai trò.
 5. Kiểm tra resource scope: cùng `org_id` và assignment hợp lệ.
 6. Kiểm tra trạng thái tổ chức/kỳ thi, chính sách deny và điều kiện nghiệp vụ.
-7. Thực hiện giao dịch và ghi audit với cùng `request_id`.
+7. Thực hiện giao dịch và ghi nhật ký với cùng `request_id`.
 
 Policy cốt lõi cho dữ liệu kỳ thi:
 
@@ -326,14 +326,14 @@ gian dài. Có hai lựa chọn:
   hay đổi quyền và từ chối token cũ.
 
 Sau khi thu hồi role/assignment phải đóng WebSocket liên quan, hủy session web
-và ghi audit. Token `exam_session` của thí sinh vẫn tách loại hoàn toàn với token
+và ghi nhật ký. Token `exam_session` của thí sinh vẫn tách loại hoàn toàn với token
 người quản trị như hiện tại.
 
-## 7. Audit, bảo mật và quyền riêng tư
+## 7. Nhật ký hoạt động, bảo mật và quyền riêng tư
 
-Audit tối thiểu cho: đăng nhập, đăng xuất, đăng nhập thất bại, mời/khóa user,
+Nhật ký hoạt động tối thiểu gồm: đăng nhập, đăng xuất, đăng nhập thất bại, mời/khóa user,
 đổi role, đổi policy, tạo/mở/đóng kỳ thi, xoay join code, xem/tải evidence, kết
-thúc phiên, xuất báo cáo, break-glass và yêu cầu xóa dữ liệu.
+thúc phiên, xuất báo cáo, quyền truy cập ngoại lệ và yêu cầu xóa dữ liệu.
 
 Mỗi bản ghi gồm:
 
@@ -347,11 +347,11 @@ Các kiểm soát bổ sung:
 
 - MFA bắt buộc cho System Admin, khuyến nghị/bắt buộc theo chính sách cho
   Organization Admin.
-- Xác thực lại khi đổi role, khóa tổ chức, xuất hàng loạt hoặc break-glass.
+- Xác thực lại khi đổi role, khóa tổ chức, xuất hàng loạt hoặc cấp quyền truy cập ngoại lệ.
 - Least privilege cho tài khoản DB; backup/restore và retention theo tenant.
 - Không dùng kết quả AI làm quyết định kỷ luật duy nhất; sự cố cần trạng thái
   `new/in_review/confirmed/dismissed` và lưu người kết luận.
-- Export dùng job nền, link tải một lần có hạn, watermark/audit và không gửi file
+- Export dùng job nền, link tải một lần có hạn, watermark/ghi nhật ký và không gửi file
   nhạy cảm trực tiếp qua email.
 
 ## 8. Lộ trình triển khai
@@ -368,7 +368,7 @@ Các kiểm soát bổ sung:
 ### Giai đoạn 2 — quản trị tổ chức
 
 - Thêm membership, invitation, trạng thái user và màn hình Người dùng/Chính sách.
-- Thêm audit log append-only và ghi audit cho mọi mutation/truy cập evidence.
+- Thêm nhật ký hoạt động append-only và ghi nhật ký cho mọi mutation/truy cập evidence.
 - Bổ sung lifecycle kỳ thi, review queue và optimistic locking.
 
 ### Giai đoạn 3 — System Admin
@@ -376,7 +376,7 @@ Các kiểm soát bổ sung:
 - Tách namespace `/system`, dashboard vận hành và quản lý tenant/quota.
 - Thêm System Admin qua bootstrap CLI hoặc quy trình hai người; không có public
   registration cho vai trò này.
-- Thêm MFA, break-glass access, cảnh báo an ninh và thu hồi phiên tức thời.
+- Thêm MFA, quyền truy cập ngoại lệ, cảnh báo an ninh và thu hồi phiên tức thời.
 
 ### Giai đoạn 4 — tăng cường production
 
@@ -392,8 +392,8 @@ Các kiểm soát bổ sung:
 - Thay URL/ID không thể đọc kỳ thi, phiên, ảnh hoặc report ngoài scope.
 - Exam Manager không được phân công không nhận được event WebSocket của kỳ thi.
 - Thu hồi role/assignment có hiệu lực với REST và WebSocket đang mở.
-- System Admin không xem được evidence nếu chưa có break-glass grant hợp lệ.
-- Mọi thay đổi quyền và truy cập dữ liệu nhạy cảm đều có audit log tra cứu được.
+- System Admin không xem được evidence nếu chưa có quyền truy cập ngoại lệ hợp lệ.
+- Mọi thay đổi quyền và truy cập dữ liệu nhạy cảm đều có nhật ký hoạt động tra cứu được.
 - Không thể tạo System Admin từ UI/API của Organization Admin.
 - Tổ chức bị khóa không thể đăng nhập mới, mở kỳ thi hay nối dashboard.
 - Các test isolation hiện có tiếp tục pass trong suốt migration.

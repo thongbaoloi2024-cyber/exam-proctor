@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard giám thị · Giám Thị Số{% endblock %}
+{% block title %}Bảng giám sát · Giám Thị Số{% endblock %}
 {% block content %}
 <section class="card exam-detail-header" id="exam-detail-header">
   <div class="exam-detail-header-top">
@@ -9,18 +9,18 @@
   <dl class="exam-detail-meta" aria-label="Thông tin kỳ thi">
     <div><dt>Ngày tạo</dt><dd id="detail-created-at">–</dd></div>
     <div><dt>Ngày cập nhật</dt><dd id="detail-updated-at">–</dd></div>
-    <div><dt>Trạng thái</dt><dd><span id="detail-status" class="exam-status-badge">–</span></dd></div>
-    <div><dt>Mã tham gia</dt><dd><code id="detail-join-code">–</code></dd></div>
+    <div><dt>Trạng thái</dt><dd class="exam-meta-control"><span id="detail-status" class="exam-status-badge">–</span><button type="button" id="detail-close-exam" class="exam-meta-text-button hidden">Đóng</button></dd></div>
+    <div><dt>Mã tham gia</dt><dd class="exam-meta-control"><button type="button" id="detail-join-code" class="exam-join-code-button" disabled>–</button></dd></div>
   </dl>
   <nav class="exam-detail-tabs" aria-label="Nội dung chi tiết kỳ thi">
-    <a href="/ui/exams/{{ exam_id }}/detail" class="exam-detail-tab active" aria-current="page">Dashboard</a>
+    <a href="/ui/exams/{{ exam_id }}/detail" class="exam-detail-tab active" aria-current="page">Giám sát</a>
     <a href="/ui/exams/{{ exam_id }}/detail?tab=manage" class="exam-detail-tab hidden" id="detail-manage-tab">Quản lý</a>
   </nav>
 </section>
 
 <section class="card" id="dashboard-root" data-exam-id="{{ exam_id }}">
-  <h2>Dashboard giám thị</h2>
-  <p class="muted">Risk CV và cảnh báo toàn vẹn trình duyệt được hiển thị riêng; sự kiện trình duyệt là dấu hiệu cần giám thị xem xét, không phải kết luận gian lận tự động.</p>
+  <h2>Bảng giám sát</h2>
+  <p class="muted">Điểm rủi ro từ hình ảnh và cảnh báo trình duyệt được hiển thị riêng. Đây là dấu hiệu để giám thị xem xét, không phải kết luận gian lận tự động.</p>
   <p id="ws-status" class="muted"></p>
 
   <div id="kpi-row" class="kpi-row"></div>
@@ -34,7 +34,7 @@
         <option value="all">Tất cả</option>
         <option value="alert">Có cảnh báo</option>
         <option value="active">Đang tham gia</option>
-        <option value="pending">Chờ client</option>
+        <option value="pending">Chờ kết nối</option>
         <option value="disconnected">Mất kết nối</option>
         <option value="ended">Đã kết thúc</option>
       </select>
@@ -42,16 +42,16 @@
     <label>Sắp xếp
       <select id="session-sort">
         <option value="alert">Ưu tiên cảnh báo</option>
-        <option value="risk">Risk cao nhất</option>
+        <option value="risk">Điểm rủi ro cao nhất</option>
         <option value="name">Tên thí sinh</option>
-        <option value="recent">Heartbeat gần nhất</option>
+        <option value="recent">Cập nhật gần nhất</option>
       </select>
     </label>
   </div>
 
   <table id="sessions-table" class="data-table">
     <thead>
-      <tr><th>Thí sinh</th><th>Mã/Email</th><th>Xác thực · Client</th><th>Trạng thái</th><th>Risk CV</th><th>Trình duyệt</th><th></th></tr>
+      <tr><th>Thí sinh</th><th>Mã/Email</th><th>Xác thực · Thiết bị</th><th>Trạng thái</th><th>Rủi ro hình ảnh</th><th>Trình duyệt</th><th></th></tr>
     </thead>
     <tbody>
       <tr class="loading-row"><td colspan="7">Đang tải...</td></tr>
@@ -59,12 +59,12 @@
   </table>
 
   <div class="section-heading-row">
-    <div><h2>Hàng đợi sự cố</h2><p class="muted">Sự cố mới và mức HIGH được ưu tiên trước.</p></div>
+    <div><h2>Hàng đợi sự cố</h2><p class="muted">Sự cố mới và mức nghiêm trọng được ưu tiên trước.</p></div>
     <label>Trạng thái
       <select id="incident-status-filter">
         <option value="">Tất cả</option>
         <option value="new">Mới</option>
-        <option value="in_review">Đang duyệt</option>
+        <option value="in_review">Đang xem xét</option>
         <option value="confirmed">Đã xác nhận</option>
         <option value="dismissed">Đã bỏ qua</option>
       </select>
@@ -86,7 +86,7 @@
       <label>Lý do bắt buộc
         <textarea id="end-session-reason" rows="3" minlength="3" maxlength="200" required>Kết thúc bởi giám thị</textarea>
       </label>
-      <p class="muted">Client sẽ bị ngắt ngay và thao tác được ghi vào audit log.</p>
+      <p class="muted">Ứng dụng giám sát sẽ bị ngắt kết nối ngay và thao tác được ghi vào nhật ký hoạt động.</p>
     </div>
     <div class="dialog-actions">
       <button type="button" class="secondary" id="end-session-cancel">Hủy</button>
@@ -96,5 +96,5 @@
 </dialog>
 {% endblock %}
 {% block scripts %}
-<script src="/static/dashboard.js?v=20260811-exam-detail-2"></script>
+<script src="/static/dashboard.js?v=20260811-exam-detail-3"></script>
 {% endblock %}

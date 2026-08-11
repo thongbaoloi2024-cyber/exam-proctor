@@ -120,7 +120,7 @@ async function createOrganization(event) {
     SystemUI.text("invitation-token", body.admin_invitation_token);
     document.getElementById("system-invitation-result").classList.remove("hidden");
     submit.classList.add("hidden");
-    showToast("Đã tạo tổ chức và sinh token lời mời.", "success");
+    showToast("Đã tạo tổ chức và tạo mã lời mời.", "success");
     organizationState.page = 1;
     await loadOrganizationDirectory();
   } catch (error) {
@@ -180,9 +180,9 @@ async function initializeSystemOrganizations() {
   document.getElementById("copy-invitation-token").addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(document.getElementById("invitation-token").textContent);
-      showToast("Đã sao chép token.", "success");
+      showToast("Đã sao chép mã lời mời.", "success");
     } catch (error) {
-      showToast("Trình duyệt không cho phép sao chép tự động. Hãy chọn và sao chép token thủ công.", "error");
+      showToast("Trình duyệt không cho phép sao chép tự động. Hãy chọn và sao chép mã thủ công.", "error");
     }
   });
   try {

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ {'organization': 'Quản trị tổ chức', 'policy': 'Chính sách tổ chức', 'break-glass': 'Yêu cầu break-glass', 'audit': 'Audit tổ chức'}[organization_section] }} · Giám Thị Số{% endblock %}
+{% block title %}{{ {'organization': 'Quản trị tổ chức', 'policy': 'Chính sách tổ chức', 'break-glass': 'Quyền truy cập ngoại lệ', 'audit': 'Nhật ký hoạt động của tổ chức'}[organization_section] }} · Giám Thị Số{% endblock %}
 {% block content %}
 <div id="organization-page" data-section="{{ organization_section }}" hidden></div>
 {% if organization_section == "organization" %}
@@ -31,21 +31,21 @@
 {% if organization_section == "policy" %}
 <section class="card organization-panel" data-organization-panel="policy">
   <h2>Chính sách mặc định</h2>
-  <p class="muted">Kỳ thi kế thừa các giá trị này. Các yêu cầu đã bật là mức tối thiểu và Exam Manager không thể tắt.</p>
+  <p class="muted">Kỳ thi kế thừa các giá trị này. Các yêu cầu đã bật là mức tối thiểu và người quản lý kỳ thi không thể tắt.</p>
   <form id="policy-form" class="form-grid">
     <label>Xác thực thí sinh mặc định<select id="policy-auth-mode">
       <option value="manual">Họ tên + mã thí sinh</option>
       <option value="google">Tài khoản Google</option>
     </select></label>
-    <label>Phiên bản extension tối thiểu<input id="policy-extension-version" value="1.0.0" required></label>
-    <label>Retention (ngày)<input id="policy-retention" type="number" min="1" max="3650" required></label>
+    <label>Phiên bản tiện ích tối thiểu<input id="policy-extension-version" value="1.0.0" required></label>
+    <label>Thời hạn lưu trữ (ngày)<input id="policy-retention" type="number" min="1" max="3650" required></label>
     <label>Rời cửa sổ tối đa (giây)<input id="policy-focus" type="number" min="0" max="300" step="0.5"></label>
-    <label class="checkbox-label"><input id="policy-require-extension" type="checkbox"> Bắt buộc extension</label>
+    <label class="checkbox-label"><input id="policy-require-extension" type="checkbox"> Bắt buộc tiện ích trình duyệt</label>
     <label class="checkbox-label"><input id="policy-require-camera" type="checkbox"> Bắt buộc camera</label>
-    <label class="checkbox-label"><input id="policy-require-fullscreen" type="checkbox"> Bắt buộc fullscreen</label>
-    <label class="checkbox-label"><input id="policy-require-microphone" type="checkbox"> Bắt buộc microphone</label>
+    <label class="checkbox-label"><input id="policy-require-fullscreen" type="checkbox"> Bắt buộc toàn màn hình</label>
+    <label class="checkbox-label"><input id="policy-require-microphone" type="checkbox"> Bắt buộc micrô</label>
     <label class="checkbox-label"><input id="policy-require-screen-share" type="checkbox"> Bắt buộc chia sẻ màn hình</label>
-    <label class="checkbox-label"><input id="policy-block-clipboard" type="checkbox"> Chặn copy/paste/menu chuột phải</label>
+    <label class="checkbox-label"><input id="policy-block-clipboard" type="checkbox"> Chặn sao chép, dán và trình đơn chuột phải</label>
     <div><button type="submit">Lưu chính sách</button></div>
   </form>
 </section>
@@ -53,7 +53,7 @@
 
 {% if organization_section == "break-glass" %}
 <section class="card organization-panel" data-organization-panel="break-glass">
-  <h2>Yêu cầu break-glass</h2>
+  <h2>Yêu cầu quyền truy cập ngoại lệ</h2>
   <div class="table-scroll">
     <table class="data-table" id="access-grants-table">
       <thead><tr><th>Người yêu cầu</th><th>Lý do</th><th>Phạm vi</th><th>Khởi tạo</th><th>Trạng thái</th><th>Hết hạn</th><th>Thao tác</th></tr></thead>
@@ -65,7 +65,7 @@
 
 {% if organization_section == "audit" %}
 <section class="card organization-panel" data-organization-panel="audit">
-  <h2>Nhật ký audit</h2>
+  <h2>Nhật ký hoạt động</h2>
   <div class="filter-bar">
     <label class="grow">Tìm kiếm<input id="audit-search" type="search" placeholder="Người dùng, hành động hoặc tài nguyên"></label>
     <label>Kết quả<select id="audit-outcome"><option value="">Tất cả</option><option value="success">Thành công</option><option value="failed">Thất bại</option><option value="denied">Bị từ chối</option></select></label>
@@ -91,8 +91,8 @@
     <div class="dialog-body form-stack">
       <label>Email thành viên<input id="invitation-email" type="email" placeholder="giaovien@example.edu" autocomplete="email" required></label>
       <label>Vai trò<select id="invitation-role">
-        <option value="exam_manager">Exam Manager / Giáo viên</option>
-        <option value="org_admin">Organization Admin</option>
+        <option value="exam_manager">Quản lý kỳ thi / Giáo viên</option>
+        <option value="org_admin">Quản trị tổ chức</option>
       </select></label>
       <div id="invitation-result" class="invitation-result hidden"></div>
     </div>
@@ -108,7 +108,7 @@
 <dialog id="grant-decision-dialog" class="admin-dialog admin-dialog-small">
   <form id="grant-decision-form">
     <div class="dialog-header">
-      <div><h2 id="grant-decision-title">Xử lý yêu cầu break-glass</h2><p class="muted">Kiểm tra kỹ danh tính và phạm vi trước khi xác nhận.</p></div>
+      <div><h2 id="grant-decision-title">Xử lý quyền truy cập ngoại lệ</h2><p class="muted">Kiểm tra kỹ danh tính và phạm vi trước khi xác nhận.</p></div>
       <button type="button" class="icon-button dialog-close" aria-label="Đóng">×</button>
     </div>
     <div class="dialog-body form-stack">
@@ -119,12 +119,12 @@
         <div><dt>Lý do yêu cầu</dt><dd id="grant-decision-request-reason">–</dd></div>
       </dl>
       <label>Lý do quyết định<textarea id="grant-decision-reason" minlength="3" maxlength="500" rows="3" required></textarea></label>
-      <label>Mật khẩu hoặc mã Authenticator<input id="grant-verification-code" type="password" autocomplete="current-password" maxlength="128" required></label>
-      <p class="muted">Tài khoản Google phải bật MFA và dùng mã Authenticator cho thao tác này.</p>
+      <label>Mật khẩu hoặc mã từ ứng dụng xác thực<input id="grant-verification-code" type="password" autocomplete="current-password" maxlength="128" required></label>
+      <p class="muted">Tài khoản Google phải bật xác thực đa yếu tố (MFA) và dùng mã từ ứng dụng xác thực cho thao tác này.</p>
     </div>
     <div class="dialog-actions"><button type="button" class="secondary-button dialog-close">Hủy</button><button type="submit" id="grant-decision-submit">Xác nhận</button></div>
   </form>
 </dialog>
 {% endif %}
 {% endblock %}
-{% block scripts %}<script src="/static/organization.js?v=20260811-path-routes-1"></script>{% endblock %}
+{% block scripts %}<script src="/static/system-common.js"></script><script src="/static/organization.js?v=20260811-path-routes-1"></script>{% endblock %}

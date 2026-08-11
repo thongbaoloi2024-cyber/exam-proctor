@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Thiết lập MFA · Giám Thị Số{% endblock %}
+{% block title %}Thiết lập xác thực đa yếu tố · Giám Thị Số{% endblock %}
 {% block body_class %}auth-page{% endblock %}
 {% block container_class %}auth-container auth-container-compact{% endblock %}
 {% block content %}
 <section class="auth-shell auth-shell-compact">
   <aside class="auth-visual auth-visual-mfa"><a class="auth-brand" href="/ui/login"><span class="auth-brand-mark" aria-hidden="true">◉</span><span>Giám Thị Số</span></a><div class="auth-visual-copy"><span class="eyebrow">Bảo vệ tài khoản</span><h2>Thiết lập lớp<br>xác minh thứ hai.</h2><p>Mã TOTP được tạo trên thiết bị của bạn và không được gửi qua email.</p></div></aside>
   <article class="auth-panel auth-panel-scroll">
-    <div class="auth-heading"><span class="eyebrow">Thiết lập bảo mật</span><h1>Kích hoạt MFA</h1><p>System Admin phải kích hoạt MFA trước khi dùng chức năng vận hành.</p></div>
+    <div class="auth-heading"><span class="eyebrow">Thiết lập bảo mật</span><h1>Kích hoạt xác thực đa yếu tố (MFA)</h1><p>Quản trị hệ thống phải kích hoạt MFA trước khi dùng chức năng vận hành.</p></div>
     <button id="mfa-start" class="auth-submit" type="button">Tạo mã QR</button>
     <p id="mfa-status" class="muted" role="status" aria-live="polite"></p>
     <div id="mfa-setup-data" class="hidden">
@@ -20,7 +20,7 @@
         <code id="mfa-secret"></code>
         <p><a id="mfa-uri" href="#">Mở trực tiếp bằng ứng dụng xác thực</a></p>
       </details>
-      <p>Lưu các recovery code ở nơi an toàn; mỗi mã chỉ dùng một lần:</p>
+      <p>Lưu các mã khôi phục ở nơi an toàn; mỗi mã chỉ dùng một lần:</p>
       <pre id="mfa-recovery"></pre>
       <form id="mfa-confirm-form" class="auth-form">
         <label>Mã 6 chữ số<input id="mfa-confirm-code" pattern="\d{6}" required autocomplete="one-time-code"></label>

@@ -2,10 +2,25 @@ const detailRoot = document.getElementById("session-detail-root");
 const EXAM_ID = detailRoot.dataset.examId;
 const SESSION_ID = detailRoot.dataset.sessionId;
 const SEVERITY_BADGE_CLASS = { LOW: "badge-low", MEDIUM: "badge-medium", HIGH: "badge-high" };
+const SEVERITY_LABELS = { LOW: "Thông tin", MEDIUM: "Cảnh báo", HIGH: "Nghiêm trọng" };
+const VIOLATION_LABELS = {
+  FACE_ABSENT: "Vắng mặt",
+  MULTIPLE_FACES: "Nhiều người",
+  EYES_CLOSED: "Nhắm mắt kéo dài",
+  GAZE_AWAY: "Nhìn lệch khỏi màn hình",
+  TALKING: "Nói chuyện",
+  OBJECT_DETECTED: "Phát hiện vật thể cấm",
+  HEAD_POSE_AWAY: "Quay đầu khỏi màn hình",
+  IDENTITY_MISMATCH: "Nghi ngờ đổi người",
+};
+const SESSION_STATUS_LABELS = { pending: "Chờ kết nối", active: "Đang tham gia", disconnected: "Mất kết nối", ended: "Đã kết thúc" };
+const AUTHENTICATION_LABELS = { google: "Tài khoản Google", manual: "Họ tên và mã thí sinh" };
+const CLIENT_LABELS = { browser_extension: "Tiện ích trình duyệt", desktop_cv: "Ứng dụng giám sát máy tính" };
+const DEVICE_STATUS_LABELS = { ready: "sẵn sàng", issue: "có lỗi", pending: "đang chờ", unknown: "chưa rõ", not_required: "không yêu cầu" };
 const snapshotObjectUrls = [];
 const incidentReviews = new Map();
 const BROWSER_EVENT_LABELS = {
-  MEDIA_READY: "Camera, microphone và chia sẻ màn hình sẵn sàng",
+  MEDIA_READY: "Camera, micrô và chia sẻ màn hình sẵn sàng",
   CONTENT_MONITOR_READY: "Bộ giám sát trang sẵn sàng",
   TAB_HIDDEN: "Ẩn tab bài thi",
   TAB_VISIBLE: "Quay lại tab bài thi",
@@ -16,13 +31,13 @@ const BROWSER_EVENT_LABELS = {
   NAVIGATION_AWAY: "Điều hướng khỏi miền bài thi",
   FULLSCREEN_EXIT: "Thoát toàn màn hình",
   FULLSCREEN_ENTER: "Vào toàn màn hình",
-  CLIPBOARD_COPY: "Copy/Cut",
-  CLIPBOARD_PASTE: "Paste",
-  CONTEXT_MENU: "Menu chuột phải",
+  CLIPBOARD_COPY: "Sao chép hoặc cắt nội dung",
+  CLIPBOARD_PASTE: "Dán nội dung",
+  CONTEXT_MENU: "Mở trình đơn chuột phải",
   CAMERA_MUTED: "Camera tạm dừng",
   CAMERA_ENDED: "Camera dừng",
-  MICROPHONE_MUTED: "Microphone tạm dừng",
-  MICROPHONE_ENDED: "Microphone dừng",
+  MICROPHONE_MUTED: "Micrô tạm dừng",
+  MICROPHONE_ENDED: "Micrô dừng",
   SCREEN_SHARE_ENDED: "Chia sẻ màn hình dừng",
   MONITOR_CLOSED: "Cửa sổ giám sát đóng",
   PERMISSION_MISSING: "Thiếu quyền bắt buộc",
@@ -54,7 +69,7 @@ function appendBrowserEventRow(tbody, browserEvent) {
   const badge = document.createElement("span");
   const severity = String(browserEvent.severity || "LOW");
   badge.className = `badge ${SEVERITY_BADGE_CLASS[severity] || "badge-low"}`;
-  badge.textContent = severity;
+  badge.textContent = SEVERITY_LABELS[severity] || severity;
   severityCell.appendChild(badge);
 
   const eventCell = document.createElement("td");
@@ -92,7 +107,7 @@ function renderRiskChart(riskTimeline) {
   if (!Array.isArray(riskTimeline) || riskTimeline.length === 0) {
     const note = document.createElement("p");
     note.className = "muted";
-    note.textContent = "Chưa có dữ liệu risk score cho phiên này.";
+    note.textContent = "Chưa có dữ liệu điểm rủi ro cho phiên này.";
     svg.parentElement.replaceChildren(note);
     return;
   }
@@ -120,7 +135,7 @@ function renderRiskChart(riskTimeline) {
   svg.replaceChildren(polyline);
   startLabel.textContent = "0s";
   endLabel.textContent = `${maxTime.toFixed(0)}s`;
-  maxLabel.textContent = `risk_score cao nhất: ${maxScore.toFixed(1)}`;
+  maxLabel.textContent = `Điểm rủi ro cao nhất: ${maxScore.toFixed(1)}`;
 }
 
 function renderUnifiedTimeline() {
@@ -131,7 +146,7 @@ function renderUnifiedTimeline() {
   tbody.replaceChildren(...items.map((item) => {
     const row = document.createElement("tr");
     [numeric(item.time).toFixed(1), item.source].forEach((value) => { const cell = document.createElement("td"); cell.textContent = value; row.appendChild(cell); });
-    const severityCell = document.createElement("td"); const badge = document.createElement("span"); badge.className = `badge ${SEVERITY_BADGE_CLASS[item.severity] || "badge-low"}`; badge.textContent = item.severity; severityCell.appendChild(badge); row.appendChild(severityCell);
+    const severityCell = document.createElement("td"); const badge = document.createElement("span"); badge.className = `badge ${SEVERITY_BADGE_CLASS[item.severity] || "badge-low"}`; badge.textContent = SEVERITY_LABELS[item.severity] || item.severity; severityCell.appendChild(badge); row.appendChild(severityCell);
     [item.type, item.detail || "-"].forEach((value) => { const cell = document.createElement("td"); cell.textContent = value; row.appendChild(cell); });
     return row;
   }));
@@ -169,11 +184,11 @@ function appendViolationRow(tbody, violation) {
   const badge = document.createElement("span");
   const severity = String(violation.severity || "LOW");
   badge.className = `badge ${SEVERITY_BADGE_CLASS[severity] || "badge-low"}`;
-  badge.textContent = severity;
+  badge.textContent = SEVERITY_LABELS[severity] || severity;
   severityCell.appendChild(badge);
 
   const typeCell = document.createElement("td");
-  typeCell.textContent = String(violation.primary_violation || "-");
+  typeCell.textContent = VIOLATION_LABELS[violation.primary_violation] || String(violation.primary_violation || "-");
   const snapshotCell = document.createElement("td");
 
   if (violation.snapshot_path) {
@@ -199,7 +214,7 @@ function appendViolationRow(tbody, violation) {
     const reviewStatus = document.createElement("select");
     reviewStatus.replaceChildren(...[
       ["new", "Mới"],
-      ["in_review", "Đang duyệt"],
+      ["in_review", "Đang xem xét"],
       ["confirmed", "Xác nhận"],
       ["dismissed", "Bỏ qua"],
     ].map(([value, label]) => {
@@ -242,12 +257,12 @@ async function loadDetail() {
   const durationLabel = meta.duration_sec != null ? `${numeric(meta.duration_sec).toFixed(1)}s` : "đang diễn ra";
   const violations = Array.isArray(detail.violations) ? detail.violations : [];
   document.getElementById("session-summary").textContent =
-    `Trạng thái: ${detail.status} · Xác thực: ${detail.authentication_method} · Client: ${detail.client_type}`
-    + ` · Thời lượng: ${durationLabel} · Vi phạm CV: ${violations.length}`
+    `Trạng thái: ${SESSION_STATUS_LABELS[detail.status] || detail.status} · Xác thực: ${AUTHENTICATION_LABELS[detail.authentication_method] || detail.authentication_method} · Thiết bị: ${CLIENT_LABELS[detail.client_type] || detail.client_type}`
+    + ` · Thời lượng: ${durationLabel} · Vi phạm hình ảnh: ${violations.length}`
     + ` · Sự kiện trình duyệt: ${detail.browser_event_count}`
-    + ` · Thiết bị: Cam ${detail.camera_status}, Mic ${detail.microphone_status}, Màn ${detail.screen_share_status}`
+    + ` · Trạng thái thiết bị: Camera ${DEVICE_STATUS_LABELS[detail.camera_status] || detail.camera_status}, micrô ${DEVICE_STATUS_LABELS[detail.microphone_status] || detail.microphone_status}, màn hình ${DEVICE_STATUS_LABELS[detail.screen_share_status] || detail.screen_share_status}`
     + `${detail.disconnect_reason ? ` · Ngắt: ${detail.disconnect_reason}` : ""}`
-    + `${detail.reset_count ? ` · Đã reset ${detail.reset_count} lần` : ""}`;
+    + `${detail.reset_count ? ` · Đã cấp lại ${detail.reset_count} lần` : ""}`;
 
   renderRiskChart(detail.risk_timeline);
   const tbody = document.querySelector("#violations-table tbody");
@@ -260,7 +275,7 @@ async function loadDetail() {
 
   const browserEvents = Array.isArray(detail.browser_events) ? detail.browser_events : [];
   unifiedTimeline = [
-    ...violations.map((item) => ({ time: item.video_time_sec, source: "CV", severity: String(item.severity || "LOW"), type: String(item.primary_violation || "-"), detail: item.risk_score != null ? `Risk ${numeric(item.risk_score).toFixed(1)}` : "" })),
+    ...violations.map((item) => ({ time: item.video_time_sec, source: "Phân tích hình ảnh", severity: String(item.severity || "LOW"), type: VIOLATION_LABELS[item.primary_violation] || String(item.primary_violation || "-"), detail: item.risk_score != null ? `Điểm rủi ro ${numeric(item.risk_score).toFixed(1)}` : "" })),
     ...browserEvents.map((item) => ({ time: item.video_time_sec, source: "Trình duyệt", severity: String(item.severity || "LOW"), type: BROWSER_EVENT_LABELS[item.event_type] || String(item.event_type || "-"), detail: item.observed_origin || (item.server_duration_ms != null ? `${(numeric(item.server_duration_ms) / 1000).toFixed(1)}s` : "") })),
   ].sort((left, right) => left.time - right.time);
   renderUnifiedTimeline();

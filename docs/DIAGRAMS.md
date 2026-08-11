@@ -336,10 +336,10 @@ flowchart TB
     STATE --> DECISION{"Cho phép?"}
     DECISION -->|Có| ACTION["Thực hiện transaction"]
     DECISION -->|Không| DENY["404 ngoài scope<br/>403 thiếu capability"]
-    ACTION --> AUDIT["Append AuditLog<br/>actor + scope + action + outcome"]
+    ACTION --> AUDIT["Ghi AuditLog bất biến<br/>actor + scope + action + outcome"]
     DENY --> AUDIT
 
-    SYS["System Admin<br/>platform capability<br/>evidence cần break-glass"] -.-> CAP
+    SYS["System Admin<br/>platform capability<br/>evidence cần quyền truy cập ngoại lệ"] -.-> CAP
     ORG["Organization Admin<br/>membership theo org"] -.-> TENANT
     EXAM["Exam Manager/Giáo viên<br/>owner/manager/proctor"] -.-> RESOURCE
 ```
