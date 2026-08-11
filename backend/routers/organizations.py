@@ -5,6 +5,7 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Literal
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -33,6 +34,11 @@ class OrganizationResponse(BaseModel):
 
     id: str
     name: str
+    logo_url: str | None
+    address: str | None
+    email: str | None
+    phone: str | None
+    website: str | None
     slug: str | None
     status: str
     quota_concurrent_sessions: int | None
@@ -43,6 +49,11 @@ class OrganizationResponse(BaseModel):
 
 class UpdateOrganizationRequest(BaseModel):
     name: str = Field(min_length=1, max_length=200)
+    logo_url: str | None = Field(default=None, max_length=2048)
+    address: str | None = Field(default=None, max_length=500)
+    email: str | None = Field(default=None, max_length=255)
+    phone: str | None = Field(default=None, max_length=32)
+    website: str | None = Field(default=None, max_length=2048)
 
     @field_validator("name")
     @classmethod
@@ -50,6 +61,82 @@ class UpdateOrganizationRequest(BaseModel):
         normalized = " ".join(value.strip().split())
         if not normalized or any(ord(char) < 32 for char in normalized):
             raise ValueError("Ten to chuc khong hop le")
+        return normalized
+
+    @field_validator("address")
+    @classmethod
+    def normalize_address(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        normalized = " ".join(value.strip().split())
+        if any(ord(char) < 32 for char in normalized):
+            raise ValueError("Dia chi khong hop le")
+        return normalized
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        normalized = value.strip().casefold()
+        local_part, separator, domain = normalized.rpartition("@")
+        if (
+            not separator
+            or not local_part
+            or not domain
+            or "@" in local_part
+            or any(char.isspace() for char in normalized)
+            or domain.startswith(".")
+            or domain.endswith(".")
+        ):
+            raise ValueError("Email to chuc khong hop le")
+        return normalized
+
+    @field_validator("phone")
+    @classmethod
+    def normalize_phone(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        normalized = " ".join(value.strip().split())
+        if (
+            len(normalized) < 7
+            or not all(char.isdigit() or char in "+-(). " for char in normalized)
+        ):
+            raise ValueError("So dien thoai khong hop le")
+        return normalized
+
+    @field_validator("logo_url")
+    @classmethod
+    def normalize_logo_url(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        normalized = value.strip()
+        parsed = urlsplit(normalized)
+        if (
+            parsed.scheme != "https"
+            or not parsed.netloc
+            or parsed.username is not None
+            or parsed.password is not None
+            or any(ord(char) < 32 for char in normalized)
+        ):
+            raise ValueError("URL logo phai la URL HTTPS hop le")
+        return normalized
+
+    @field_validator("website")
+    @classmethod
+    def normalize_website(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        normalized = value.strip()
+        parsed = urlsplit(normalized)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or parsed.username is not None
+            or parsed.password is not None
+            or any(ord(char) < 32 for char in normalized)
+        ):
+            raise ValueError("Website khong hop le")
         return normalized
 
 
@@ -322,9 +409,29 @@ def update_current_organization(
     user: models.User = Depends(require_permission(Permission.ORG_POLICY_MANAGE)),
 ) -> models.Organization:
     organization = _current_org(db, user)
-    before = {"name": organization.name}
+    before = {
+        "name": organization.name,
+        "logo_url": organization.logo_url,
+        "address": organization.address,
+        "email": organization.email,
+        "phone": organization.phone,
+        "website": organization.website,
+    }
     organization.name = payload.name
+    organization.logo_url = payload.logo_url
+    organization.address = payload.address
+    organization.email = payload.email
+    organization.phone = payload.phone
+    organization.website = payload.website
     organization.updated_at = _now()
+    after = {
+        "name": organization.name,
+        "logo_url": organization.logo_url,
+        "address": organization.address,
+        "email": organization.email,
+        "phone": organization.phone,
+        "website": organization.website,
+    }
     record_audit(
         db,
         actor=user,
@@ -334,7 +441,7 @@ def update_current_organization(
         org_id=organization.id,
         request=request,
         before=before,
-        after={"name": organization.name},
+        after=after,
     )
     db.commit()
     db.refresh(organization)

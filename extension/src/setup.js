@@ -46,7 +46,10 @@ async function send(message) {
 function renderPolicy(policy) {
   currentPolicy = policy;
   element("policy-card").classList.remove("hidden");
-  element("exam-name").textContent = `2. ${policy.exam_name}`;
+  element("candidate-heading").textContent = policy.candidate_auth_mode === "google"
+    ? "2. Đăng nhập Google"
+    : "2. Nhập thông tin thí sinh";
+  element("exam-name").textContent = `3. ${policy.exam_name}`;
   element("manual-fields").classList.toggle("hidden", policy.candidate_auth_mode !== "manual");
   element("google-fields").classList.toggle("hidden", policy.candidate_auth_mode !== "google");
   const labels = [
@@ -73,6 +76,17 @@ function renderPolicy(policy) {
   if (driftSeconds > 120) {
     setStatus("join-status", "Đồng hồ máy lệch backend quá 2 phút; hãy đồng bộ thời gian trước khi thi.", "error");
   }
+}
+
+function showJoinCodeStep(statusText = "") {
+  currentPolicy = null;
+  googleProfile = null;
+  preflight.clear();
+  element("policy-card").classList.add("hidden");
+  element("join-card").classList.remove("hidden");
+  element("consent").checked = false;
+  setStatus("join-status", "");
+  setStatus("setup-status", statusText, statusText ? "success" : "");
 }
 
 function renderGoogleProfile(profile) {
@@ -116,12 +130,19 @@ element("check-code").addEventListener("click", async () => {
       const { profile } = await send({ type: "DATT_GET_CANDIDATE", baseUrl: BACKEND_URL });
       renderGoogleProfile(profile);
     }
-    setStatus("setup-status", "Mã hợp lệ.", "success");
+    element("join-card").classList.add("hidden");
+    setStatus("setup-status", "");
   } catch (error) {
     currentPolicy = null;
     element("policy-card").classList.add("hidden");
     setStatus("setup-status", error.message, "error");
   }
+});
+
+element("change-code").addEventListener("click", () => {
+  showJoinCodeStep();
+  element("join-code").focus();
+  element("join-code").select();
 });
 
 element("google-login").addEventListener("click", async () => {
@@ -222,7 +243,7 @@ element("open-monitor").addEventListener("click", async () => {
 });
 element("end-active").addEventListener("click", async () => {
   if (!confirm("Bạn chắc chắn muốn kết thúc phiên? Hãy bảo đảm các sự kiện đã đồng bộ.")) return;
-  try { await send({ type: "DATT_END_SESSION", reason: "completed" }); element("active-card").classList.add("hidden"); element("join-card").classList.remove("hidden"); setStatus("setup-status", "Phiên đã kết thúc.", "success"); } catch (error) { setStatus("setup-status", error.message, "error"); }
+  try { await send({ type: "DATT_END_SESSION", reason: "completed" }); element("active-card").classList.add("hidden"); showJoinCodeStep("Phiên đã kết thúc."); } catch (error) { setStatus("setup-status", error.message, "error"); }
 });
 
 initialize().catch((error) => setStatus("setup-status", error.message, "error"));

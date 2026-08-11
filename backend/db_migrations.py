@@ -321,6 +321,11 @@ def apply_additive_migrations(engine: Engine) -> None:
             engine,
             "organizations",
             {
+                "logo_url": "VARCHAR(2048)",
+                "address": "VARCHAR(500)",
+                "email": "VARCHAR(255)",
+                "phone": "VARCHAR(32)",
+                "website": "VARCHAR(2048)",
                 "slug": "VARCHAR(255)",
                 "status": "VARCHAR(20)",
                 "settings_json": "TEXT",
@@ -342,6 +347,9 @@ def apply_additive_migrations(engine: Engine) -> None:
             engine,
             "users",
             {
+                "display_name": "VARCHAR(200)",
+                "phone": "VARCHAR(32)",
+                "avatar_url": "VARCHAR(2048)",
                 "status": "VARCHAR(20)",
                 "session_version": "INTEGER",
                 "locked_at": "TIMESTAMP",

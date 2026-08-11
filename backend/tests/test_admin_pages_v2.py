@@ -12,10 +12,12 @@ def test_new_admin_page_shells_and_scripts_are_served(client):
         "/ui/system/audit": "/static/system-audit.js",
         "/ui/organization/overview": "/static/organization-overview.js",
         "/ui/organization": "/static/organization.js",
+        "/ui/organization/settings": "/static/organization-settings.js",
         "/ui/organization/policy": "/static/organization.js",
         "/ui/organization/break-glass": "/static/organization.js",
         "/ui/organization/audit": "/static/organization.js",
         "/ui/exams/overview": "/static/exam-overview.js",
+        "/ui/settings": "/static/account-settings.js",
         "/ui/mfa": "/static/mfa.js",
         "/ui/mfa/verify": "/static/mfa-verify.js",
         "/ui/register/organization": "/static/register-organization.js",
@@ -56,6 +58,9 @@ def test_system_admin_sidebar_has_control_panel_navigation_and_account(client):
     assert 'id="system-scope"' in response.text
     assert 'id="sidebar-account"' in response.text
     assert 'id="account-email"' in response.text
+    assert 'id="account-settings-button"' in response.text
+    assert response.text.index('id="account-settings-button"') < response.text.index('id="logout-btn"')
+    assert 'class="page-footer"' in response.text
 
     api_script = client.get("/static/api.js").text
     assert 'document.body.classList.toggle("has-system-sidebar", isSystemAdmin)' in api_script
@@ -151,6 +156,31 @@ def test_organization_sidebar_uses_real_paths_and_each_route_renders_one_panel(c
     assert 'else if (section === "audit")' in script
     assert "loadMembers(), loadOrganizationOverview(), loadPolicy()" not in script
     assert "function redirectLegacyOrganizationHash()" in script
+
+
+def test_account_and_organization_settings_shells_expose_expected_fields(client):
+    account = client.get("/ui/settings")
+    organization = client.get("/ui/organization/settings")
+    assert account.status_code == 200
+    assert 'id="account-profile-form"' in account.text
+    assert 'id="account-password-form"' in account.text
+    assert 'id="settings-avatar-url"' in account.text
+    assert 'id="account-profile-form" class="settings-form" aria-busy="true"' in account.text
+    assert organization.status_code == 200
+    assert 'id="organization-profile-form"' in organization.text
+    assert 'id="settings-organization-address"' in organization.text
+    assert 'id="settings-organization-website"' in organization.text
+    assert 'id="organization-profile-form" class="settings-form" aria-busy="true"' in organization.text
+
+    api_script = client.get("/static/api.js").text
+    account_script = client.get("/static/account-settings.js").text
+    organization_script = client.get("/static/organization-settings.js").text
+    assert "function apiErrorMessage(payload, fallback)" in api_script
+    assert 'accountAvatar.classList.add("has-image")' in api_script
+    assert 'displayNameInput.addEventListener("input", refreshPreview)' in account_script
+    assert 'nameInput.addEventListener("input", refreshPreview)' in organization_script
+    assert "preview.contains(image)" in account_script
+    assert "preview.contains(image)" in organization_script
 
 
 def test_current_user_exposes_server_resolved_capabilities(client):

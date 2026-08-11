@@ -171,6 +171,9 @@ class UserResponse(BaseModel):
     id: str
     org_id: str
     email: str
+    display_name: str | None
+    phone: str | None
+    avatar_url: str | None
     role: str
 
 
@@ -179,6 +182,67 @@ class CurrentUserResponse(UserResponse):
     active_org_id: str
     is_system_admin: bool
     capabilities: list[str]
+
+
+class UpdateAccountRequest(BaseModel):
+    display_name: str = Field(min_length=1, max_length=200)
+    email: str = Field(min_length=3, max_length=255)
+    phone: str | None = Field(default=None, max_length=32)
+    avatar_url: str | None = Field(default=None, max_length=2048)
+
+    @field_validator("display_name")
+    @classmethod
+    def normalize_display_name(cls, value: str) -> str:
+        normalized = " ".join(value.strip().split())
+        if not normalized or any(ord(char) < 32 for char in normalized):
+            raise ValueError("Ho ten khong hop le")
+        return normalized
+
+    @field_validator("email")
+    @classmethod
+    def normalize_account_email(cls, value: str) -> str:
+        normalized = value.strip().casefold()
+        local_part, separator, domain = normalized.rpartition("@")
+        if (
+            not separator
+            or not local_part
+            or not domain
+            or "@" in local_part
+            or any(char.isspace() for char in normalized)
+            or domain.startswith(".")
+            or domain.endswith(".")
+        ):
+            raise ValueError("Email khong hop le")
+        return normalized
+
+    @field_validator("phone")
+    @classmethod
+    def normalize_phone(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        normalized = " ".join(value.strip().split())
+        if not all(char.isdigit() or char in "+-(). " for char in normalized):
+            raise ValueError("So dien thoai khong hop le")
+        if len(normalized) < 7:
+            raise ValueError("So dien thoai qua ngan")
+        return normalized
+
+    @field_validator("avatar_url")
+    @classmethod
+    def normalize_avatar_url(cls, value: str | None) -> str | None:
+        return _normalize_https_image_url(value, "URL anh dai dien")
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=72)
+    new_password: str = Field(min_length=8, max_length=72)
+
+    @field_validator("current_password", "new_password")
+    @classmethod
+    def password_size(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("Mat khau vuot qua gioi han 72 byte")
+        return value
 
 
 class AcceptInvitationRequest(BaseModel):
@@ -214,6 +278,54 @@ class MfaConfirmRequest(BaseModel):
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _normalize_https_image_url(value: str | None, label: str) -> str | None:
+    if value is None or not value.strip():
+        return None
+    normalized = value.strip()
+    parsed = urlsplit(normalized)
+    if (
+        parsed.scheme != "https"
+        or not parsed.netloc
+        or parsed.username is not None
+        or parsed.password is not None
+        or any(ord(char) < 32 for char in normalized)
+    ):
+        raise ValueError(f"{label} phai la URL HTTPS hop le")
+    return normalized
+
+
+def _current_user_response(db: Session, user: models.User) -> CurrentUserResponse:
+    system_role = active_system_role(db, user)
+    common = {
+        "id": user.id,
+        "email": user.email,
+        "display_name": user.display_name,
+        "phone": user.phone,
+        "avatar_url": user.avatar_url,
+    }
+    if system_role is not None:
+        return CurrentUserResponse(
+            **common,
+            org_id=user.org_id,
+            role=user.role,
+            effective_role=system_role.role,
+            active_org_id=user.org_id,
+            is_system_admin=True,
+            capabilities=capabilities_for_user(db, user),
+        )
+    membership = active_membership(db, user)
+    legacy_role = "admin" if membership.role == "org_admin" else "proctor"
+    return CurrentUserResponse(
+        **common,
+        org_id=membership.org_id,
+        role=legacy_role,
+        effective_role=membership.role,
+        active_org_id=membership.org_id,
+        is_system_admin=False,
+        capabilities=capabilities_for_user(db, user),
+    )
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -449,6 +561,7 @@ def register(
     admin = models.User(
         org_id=org.id,
         email=payload.admin_email,
+        display_name=payload.admin_email.split("@", 1)[0],
         password_hash=hash_password(payload.admin_password),
         role="admin",
     )
@@ -822,6 +935,10 @@ def web_google_callback(
         db.commit()
         return _google_error_redirect(flow, "google_identity_conflict")
     user.google_subject = subject
+    if not user.display_name:
+        user.display_name = display_name
+    if not user.avatar_url:
+        user.avatar_url = avatar_url
     user.updated_at = now
     try:
         _validate_login_identity(db, user)
@@ -904,6 +1021,8 @@ def complete_google_registration(
     admin = models.User(
         org_id=org.id,
         email=challenge.google_email,
+        display_name=challenge.google_display_name or challenge.google_email.split("@", 1)[0],
+        avatar_url=challenge.google_avatar_url,
         password_hash=hash_password(secrets.token_urlsafe(48)),
         google_subject=challenge.google_subject,
         role="admin",
@@ -932,30 +1051,93 @@ def me(
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
 ) -> CurrentUserResponse:
-    system_role = active_system_role(db, user)
-    if system_role is not None:
-        return CurrentUserResponse(
-            id=user.id,
-            org_id=user.org_id,
-            email=user.email,
-            role=user.role,
-            effective_role=system_role.role,
-            active_org_id=user.org_id,
-            is_system_admin=True,
-            capabilities=capabilities_for_user(db, user),
+    return _current_user_response(db, user)
+
+
+@router.patch("/me", response_model=CurrentUserResponse)
+def update_me(
+    payload: UpdateAccountRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> CurrentUserResponse:
+    duplicate = db.query(models.User).filter(
+        models.User.email == payload.email,
+        models.User.id != user.id,
+    ).first()
+    if duplicate is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email da duoc su dung boi tai khoan khac",
         )
-    membership = active_membership(db, user)
-    legacy_role = "admin" if membership.role == "org_admin" else "proctor"
-    return CurrentUserResponse(
-        id=user.id,
-        org_id=membership.org_id,
-        email=user.email,
-        role=legacy_role,
-        effective_role=system_role.role if system_role else membership.role,
-        active_org_id=membership.org_id,
-        is_system_admin=system_role is not None,
-        capabilities=capabilities_for_user(db, user),
+    before = {
+        "display_name": user.display_name,
+        "email": user.email,
+        "phone": user.phone,
+        "avatar_url": user.avatar_url,
+    }
+    user.display_name = payload.display_name
+    user.email = payload.email
+    user.phone = payload.phone
+    user.avatar_url = payload.avatar_url
+    user.updated_at = _now()
+    after = {
+        "display_name": user.display_name,
+        "email": user.email,
+        "phone": user.phone,
+        "avatar_url": user.avatar_url,
+    }
+    record_audit(
+        db,
+        actor=user,
+        action="account.profile.update",
+        resource_type="user_account",
+        resource_id=user.id,
+        org_id=getattr(user, "_authorization_org_id", user.org_id),
+        request=request,
+        before=before,
+        after=after,
     )
+    db.commit()
+    db.refresh(user)
+    return _current_user_response(db, user)
+
+
+@router.put("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_my_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+) -> Response:
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mat khau hien tai khong dung",
+        )
+    if verify_password(payload.new_password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Mat khau moi phai khac mat khau hien tai",
+        )
+    user.password_hash = hash_password(payload.new_password)
+    user.session_version += 1
+    user.updated_at = _now()
+    record_audit(
+        db,
+        actor=user,
+        action="account.password.change",
+        resource_type="user_account",
+        resource_id=user.id,
+        org_id=getattr(user, "_authorization_org_id", user.org_id),
+        request=request,
+        after={"sessions_revoked": True},
+    )
+    db.commit()
+    clear_auth_cookie(response)
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -1115,6 +1297,7 @@ def accept_invitation(
         user = models.User(
             org_id=invitation.org_id,
             email=invitation.email,
+            display_name=invitation.email.split("@", 1)[0],
             password_hash=hash_password(payload.password),
             role=legacy_role,
             status="active",
@@ -1190,6 +1373,7 @@ def create_proctor(
     proctor = models.User(
         org_id=admin_membership.org_id,
         email=payload.email,
+        display_name=payload.email.split("@", 1)[0],
         password_hash=hash_password(payload.password),
         role="proctor",
     )

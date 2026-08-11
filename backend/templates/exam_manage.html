@@ -2,11 +2,25 @@
 {% block title %}Quản lý kỳ thi · Giám Thị Số{% endblock %}
 {% block content %}
 <script>const MANAGE_EXAM_ID = {{ exam_id | tojson }};</script>
-<section class="card">
-  <p class="muted"><a href="/ui/exams">Kỳ thi</a> → Quản lý</p>
-  <h1 id="manage-exam-title">Đang tải...</h1>
+<section class="card exam-detail-header">
+  <p><a href="/ui/exams">&larr; Danh sách kỳ thi</a></p>
+  <div class="exam-detail-heading">
+    <div><span class="eyebrow">Chi tiết kỳ thi</span><h1 id="manage-exam-title">Đang tải...</h1></div>
+    <div class="exam-code-summary">
+      <span class="muted">Mã tham gia</span>
+      <strong id="manage-join-code">–</strong>
+      <small id="manage-code-expiry" class="muted"></small>
+    </div>
+  </div>
   <p id="manage-exam-state" class="muted"></p>
-  <div id="lifecycle-actions" class="button-row"></div>
+  <div class="exam-manage-actions">
+    <div id="lifecycle-actions" class="button-row"></div>
+    <button type="button" id="manage-rotate-code" class="secondary-button hidden">Đổi mã tham gia</button>
+  </div>
+  <nav class="exam-detail-tabs" aria-label="Nội dung chi tiết kỳ thi">
+    <a href="/ui/exams/{{ exam_id }}/detail" class="exam-detail-tab">Dashboard</a>
+    <a href="/ui/exams/{{ exam_id }}/detail?tab=manage" class="exam-detail-tab active" aria-current="page">Quản lý</a>
+  </nav>
 </section>
 
 <section class="card" id="readiness-card">
@@ -15,7 +29,7 @@
 </section>
 
 <section class="card" id="exam-config-card">
-  <h2>Cấu hình bản nháp</h2>
+  <h2>Chỉnh sửa thông tin kỳ thi</h2>
   <form id="exam-config-form" class="form-grid">
     <label>Tên kỳ thi<input id="manage-exam-name" required></label>
     <label>URL bài thi<input id="manage-exam-url" type="url"></label>

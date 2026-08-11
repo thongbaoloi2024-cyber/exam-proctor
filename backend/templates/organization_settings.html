@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Cài đặt tổ chức · Giám Thị Số{% endblock %}
+{% block body_class %}settings-page organization-settings-page{% endblock %}
+{% block content %}
+<header class="settings-header">
+  <div>
+    <div class="breadcrumb"><span>Organization Admin</span><span aria-hidden="true">/</span><strong>Cài đặt tổ chức</strong></div>
+    <h1>Cài đặt tổ chức</h1>
+    <p class="muted">Quản lý hồ sơ và thông tin liên hệ dùng chung trong tổ chức.</p>
+  </div>
+</header>
+
+<section class="card settings-card organization-profile-card">
+  <div class="settings-card-heading">
+    <div><h2>Thông tin tổ chức</h2><p class="muted">Chỉ Organization Admin mới có quyền thay đổi các thông tin này.</p></div>
+    <div class="organization-logo-preview" id="organization-logo-preview" aria-label="Logo tổ chức xem trước"><span id="organization-logo-fallback">TC</span></div>
+  </div>
+  <form id="organization-profile-form" class="settings-form" aria-busy="true">
+    <div class="form-grid">
+      <label>Tên tổ chức<input id="settings-organization-name" type="text" maxlength="200" autocomplete="organization" required disabled></label>
+      <label>URL logo (HTTPS)<input id="settings-organization-logo" type="url" maxlength="2048" inputmode="url" placeholder="https://example.edu/logo.png" disabled></label>
+      <label>Email liên hệ<input id="settings-organization-email" type="email" maxlength="255" autocomplete="email" placeholder="contact@example.edu" disabled></label>
+      <label>Số điện thoại<input id="settings-organization-phone" type="tel" maxlength="32" autocomplete="tel" placeholder="Ví dụ: +84 28 1234 5678" disabled></label>
+      <label class="form-grid-full">Địa chỉ<textarea id="settings-organization-address" maxlength="500" rows="3" autocomplete="street-address" placeholder="Địa chỉ trụ sở hoặc cơ sở đào tạo" disabled></textarea></label>
+      <label class="form-grid-full">Website<input id="settings-organization-website" type="url" maxlength="2048" inputmode="url" autocomplete="url" placeholder="https://example.edu" disabled></label>
+    </div>
+    <div class="form-actions"><button type="submit" id="save-organization-profile" disabled>Lưu thay đổi</button></div>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/organization-settings.js?v=20260811-settings-2"></script>{% endblock %}

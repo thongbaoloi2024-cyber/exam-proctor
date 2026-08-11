@@ -76,6 +76,64 @@ def test_legacy_auth_and_exam_writes_new_scope_tables(client):
         assert assignment.status == "active"
 
 
+def test_account_profile_update_and_password_rotation(client):
+    token = _register(client, email="profile-foundation@test.local")
+    headers = {"Authorization": f"Bearer {token}"}
+    updated = client.patch(
+        "/auth/me",
+        headers=headers,
+        json={
+            "display_name": "Nguyen Van Quan Tri",
+            "email": "profile-updated@test.local",
+            "phone": "+84 912 345 678",
+            "avatar_url": "https://images.example.test/avatar.png",
+        },
+    )
+    assert updated.status_code == 200
+    assert updated.json()["display_name"] == "Nguyen Van Quan Tri"
+    assert updated.json()["phone"] == "+84 912 345 678"
+
+    insecure_avatar = client.patch(
+        "/auth/me",
+        headers=headers,
+        json={
+            "display_name": "Nguyen Van Quan Tri",
+            "email": "profile-updated@test.local",
+            "phone": "+84 912 345 678",
+            "avatar_url": "http://images.example.test/avatar.png",
+        },
+    )
+    assert insecure_avatar.status_code == 422
+
+    changed = client.put(
+        "/auth/me/password",
+        headers=headers,
+        json={"current_password": "matkhau123", "new_password": "matkhau456"},
+    )
+    assert changed.status_code == 204
+    assert client.get("/auth/me", headers=headers).status_code == 401
+    assert client.post(
+        "/auth/login",
+        json={"email": "profile-updated@test.local", "password": "matkhau456"},
+    ).status_code == 200
+
+
+def test_account_profile_rejects_an_email_owned_by_another_user(client):
+    first_token = _register(client, email="profile-first@test.local", organization="First Org")
+    _register(client, email="profile-second@test.local", organization="Second Org")
+    response = client.patch(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {first_token}"},
+        json={
+            "display_name": "First Admin",
+            "email": "profile-second@test.local",
+            "phone": None,
+            "avatar_url": None,
+        },
+    )
+    assert response.status_code == 409
+
+
 def test_rbac_migration_backfills_legacy_database_idempotently(tmp_path):
     database_path = (tmp_path / "legacy-rbac.db").as_posix()
     legacy_engine = create_engine(f"sqlite:///{database_path}")
@@ -133,10 +191,14 @@ def test_rbac_migration_backfills_legacy_database_idempotently(tmp_path):
     apply_additive_migrations(legacy_engine)
 
     inspector = inspect(legacy_engine)
-    assert {"slug", "status", "retention_days"}.issubset(
+    assert {
+        "slug", "status", "retention_days", "logo_url", "address", "email", "phone", "website",
+    }.issubset(
         {column["name"] for column in inspector.get_columns("organizations")}
     )
-    assert {"status", "session_version", "google_subject"}.issubset(
+    assert {
+        "status", "session_version", "google_subject", "display_name", "phone", "avatar_url",
+    }.issubset(
         {column["name"] for column in inspector.get_columns("users")}
     )
     assert {"web_auth_challenges", "web_oauth_transactions"}.issubset(

@@ -78,6 +78,11 @@ def exam_overview_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "exam_overview.html")
 
 
+@router.get("/ui/settings", response_class=HTMLResponse)
+def account_settings_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "account_settings.html")
+
+
 @router.get("/ui/organization", response_class=HTMLResponse)
 def organization_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -85,6 +90,11 @@ def organization_page(request: Request) -> HTMLResponse:
         "organization.html",
         {"organization_section": "organization"},
     )
+
+
+@router.get("/ui/organization/settings", response_class=HTMLResponse)
+def organization_settings_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "organization_settings.html")
 
 
 @router.get("/ui/organization/policy", response_class=HTMLResponse)
@@ -165,6 +175,12 @@ def system_audit_page(request: Request) -> HTMLResponse:
 @router.get("/ui/exams/{exam_id}/dashboard", response_class=HTMLResponse)
 def dashboard_page(request: Request, exam_id: str) -> HTMLResponse:
     return templates.TemplateResponse(request, "dashboard.html", {"exam_id": exam_id})
+
+
+@router.get("/ui/exams/{exam_id}/detail", response_class=HTMLResponse)
+def exam_detail_page(request: Request, exam_id: str, tab: str = "dashboard") -> HTMLResponse:
+    template_name = "exam_manage.html" if tab == "manage" else "dashboard.html"
+    return templates.TemplateResponse(request, template_name, {"exam_id": exam_id})
 
 
 @router.get("/ui/exams/{exam_id}/manage", response_class=HTMLResponse)

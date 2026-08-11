@@ -103,7 +103,7 @@ async def security_headers(request: Request, call_next):
     websocket_sources = f"ws://{host} wss://{host}" if re.fullmatch(r"[A-Za-z0-9.:\[\]-]+", host) else ""
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-        f"img-src 'self' data: blob:; connect-src 'self' {websocket_sources}; object-src 'none'; "
+        f"img-src 'self' data: blob: https:; connect-src 'self' {websocket_sources}; object-src 'none'; "
         "base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
     )
     if request.url.scheme == "https":

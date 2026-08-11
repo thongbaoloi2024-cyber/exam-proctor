@@ -66,20 +66,48 @@ const API = {
     const sidebarAccount = document.getElementById("sidebar-account");
     sidebarAccount?.classList.toggle("hidden", !this.currentUser);
     const accountEmail = document.getElementById("account-email");
-    if (accountEmail) accountEmail.textContent = this.currentUser?.email || "";
+    if (accountEmail) {
+      accountEmail.textContent = this.currentUser?.display_name || this.currentUser?.email || "";
+      accountEmail.title = this.currentUser?.email || "";
+    }
     const accountAvatar = document.getElementById("account-avatar");
     if (accountAvatar) {
-      const accountName = (this.currentUser?.email || "user").split("@")[0];
-      accountAvatar.textContent = accountName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "SA";
+      const accountName = this.currentUser?.display_name
+        || (this.currentUser?.email || "user").split("@")[0];
+      accountAvatar.textContent = accountName.replace(/[^a-zA-Z0-9À-ỹ]/g, "").slice(0, 2).toUpperCase() || "SA";
+      const avatarUrl = this.currentUser?.avatar_url || "";
+      const imageRequest = String(Number(accountAvatar.dataset.imageRequest || "0") + 1);
+      accountAvatar.dataset.imageRequest = imageRequest;
+      accountAvatar.style.backgroundImage = "";
+      accountAvatar.classList.remove("has-image");
+      if (avatarUrl) {
+        const image = new Image();
+        image.addEventListener("load", () => {
+          if (accountAvatar.dataset.imageRequest !== imageRequest) return;
+          accountAvatar.style.backgroundImage = `url(${JSON.stringify(avatarUrl)})`;
+          accountAvatar.classList.add("has-image");
+        });
+        image.addEventListener("error", () => {
+          if (accountAvatar.dataset.imageRequest !== imageRequest) return;
+          accountAvatar.style.backgroundImage = "";
+          accountAvatar.classList.remove("has-image");
+        });
+        image.src = avatarUrl;
+      }
     }
     const logoutBtn = document.getElementById("logout-btn");
     if (logoutBtn) logoutBtn.style.display = this.currentUser ? "" : "none";
     const navOrganization = document.getElementById("nav-organization");
+    const navOrganizationSettings = document.getElementById("nav-organization-settings");
     const organizationNavSection = document.getElementById("organization-nav-section");
     const canReadOrganization = !isSystemAdmin && this.hasCapability("org.members.read");
     if (navOrganization) {
       navOrganization.classList.toggle("hidden", !canReadOrganization);
     }
+    navOrganizationSettings?.classList.toggle(
+      "hidden",
+      !this.hasCapability("org.policy.manage"),
+    );
     organizationNavSection?.classList.toggle("hidden", !canReadOrganization);
     document.getElementById("tenant-nav-group")?.classList.toggle(
       "hidden",
@@ -113,6 +141,10 @@ const API = {
     );
     document.getElementById("system-scope")?.classList.toggle("hidden", !isSystemAdmin);
     this.updateActiveNavigation();
+    document.getElementById("account-settings-button")?.classList.toggle(
+      "active",
+      window.location.pathname.replace(/\/$/, "") === "/ui/settings",
+    );
   },
 
   updateActiveNavigation() {
@@ -221,7 +253,7 @@ const API = {
     const item = document.createElement("div");
     item.className = "pinned-exam-item";
     const link = document.createElement("a");
-    link.href = `/ui/exams/${encodeURIComponent(exam.id)}/dashboard`;
+    link.href = `/ui/exams/${encodeURIComponent(exam.id)}/detail`;
     link.className = "pinned-exam-link";
     link.title = exam.name;
     const marker = document.createElement("span");
@@ -338,6 +370,21 @@ const ROLE_LABEL_VI = {
   exam_manager: "Quản lý kỳ thi",
 };
 
+function apiErrorMessage(payload, fallback) {
+  const detail = payload?.detail;
+  if (typeof detail === "string" && detail.trim()) return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => (typeof item === "string" ? item : item?.msg))
+      .filter((item) => typeof item === "string" && item.trim());
+    if (messages.length) return messages.join(" · ");
+  }
+  if (detail && typeof detail === "object" && typeof detail.message === "string") {
+    return detail.message;
+  }
+  return fallback;
+}
+
 function showToast(message, type = "info") {
   const region = document.getElementById("toast-region");
   if (!region) {
@@ -352,6 +399,8 @@ function showToast(message, type = "info") {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const footerYear = document.getElementById("page-footer-year");
+  if (footerYear) footerYear.textContent = String(new Date().getFullYear());
   API.updateAuthUi();
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) logoutBtn.addEventListener("click", () => API.logout());

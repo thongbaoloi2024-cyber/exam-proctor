@@ -3,10 +3,21 @@
 {% block body_class %}{{ 'system-admin-page' if system_evidence else '' }}{% endblock %}
 {% block container_class %}{{ 'system-container' if system_evidence else '' }}{% endblock %}
 {% block content %}
-<section class="card" id="create-exam-card">
-  <h1 id="exams-page-title">{{ 'Dữ liệu break-glass' if system_evidence else 'Kỳ thi của tôi' }}</h1>
-  <p id="exams-page-description" class="muted{% if not system_evidence %} hidden{% endif %}">Chỉ hiển thị kỳ thi thuộc các yêu cầu đang hiệu lực. Quyền truy cập hoàn toàn chỉ đọc.</p>
-  <form id="create-exam-form" class="policy-form{% if system_evidence %} hidden{% endif %}">
+<section class="card exams-page-card" id="create-exam-card">
+  <div class="exams-page-heading">
+    <div>
+      <h1 id="exams-page-title">{{ 'Dữ liệu break-glass' if system_evidence else 'Kỳ thi của tôi' }}</h1>
+      <p id="exams-page-description" class="muted{% if not system_evidence %} hidden{% endif %}">Chỉ hiển thị kỳ thi thuộc các yêu cầu đang hiệu lực. Quyền truy cập hoàn toàn chỉ đọc.</p>
+    </div>
+    <button type="button" id="create-exam-toggle" class="create-exam-toggle hidden" aria-expanded="false" aria-controls="create-exam-form" aria-label="Thêm kỳ thi" title="Thêm kỳ thi">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <form id="create-exam-form" class="policy-form create-exam-panel hidden">
+    <div class="create-exam-panel-heading">
+      <div><h2>Thêm kỳ thi</h2><p class="muted">Nhập thông tin và kiểm tra chính sách trước khi tạo.</p></div>
+      <button type="button" id="create-exam-close" class="icon-button" aria-label="Đóng biểu mẫu tạo kỳ thi" title="Đóng">×</button>
+    </div>
     <div class="wizard-progress" aria-label="Tiến trình tạo kỳ thi">
       <span data-wizard-indicator="0" class="active">1. Thông tin</span>
       <span data-wizard-indicator="1">2. Xác thực</span>
@@ -79,19 +90,22 @@
       <dl id="create-exam-review" class="description-list"></dl>
     </fieldset>
     <div class="wizard-actions">
+      <button type="button" id="create-exam-cancel" class="secondary-button">Hủy</button>
       <button type="button" id="wizard-previous" class="secondary-button hidden">Quay lại</button>
       <button type="button" id="wizard-next">Tiếp tục</button>
       <button type="submit" id="create-exam-submit" class="hidden">Tạo kỳ thi</button>
     </div>
   </form>
-  <table id="exams-table" class="data-table">
-    <thead>
-      <tr><th>Tên kỳ thi</th><th>Xác thực</th><th id="exam-code-heading">Mã tham gia</th><th>Trạng thái</th><th>Hết hạn</th><th></th></tr>
-    </thead>
-    <tbody>
-      <tr class="loading-row"><td colspan="6">Đang tải...</td></tr>
-    </tbody>
-  </table>
+  <div class="table-scroll exams-table-wrap">
+    <table id="exams-table" class="data-table exams-table">
+      <thead>
+        <tr><th>Tên kỳ thi</th><th>Ngày tạo</th><th>Thời gian cập nhật</th><th>Xác thực</th><th>Trạng thái</th><th id="exam-code-heading">Mã tham gia</th><th>Hành động</th></tr>
+      </thead>
+      <tbody>
+        <tr class="loading-row"><td colspan="7">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
   <p class="muted">Phát mã cho thí sinh. Extension sẽ đọc chính sách của kỳ thi và chỉ hiển thị đúng chế độ xác thực đã chọn ở đây.</p>
 </section>
 

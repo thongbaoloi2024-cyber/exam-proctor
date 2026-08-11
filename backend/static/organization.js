@@ -67,7 +67,8 @@ async function loadOrganization() {
   const response = await API.request("/organizations/current");
   if (!response.ok) throw new Error("Không tải được tổ chức.");
   const organization = await response.json();
-  document.getElementById("organization-name").value = organization.name;
+  const organizationName = document.getElementById("organization-name");
+  if (organizationName) organizationName.value = organization.name;
   const title = document.getElementById("sidebar-brand-title");
   const meta = document.getElementById("sidebar-brand-context");
   const metaText = `${organization.status} · retention ${organization.retention_days} ngày`;
@@ -306,16 +307,6 @@ function bindOrganizationPage() {
     result.textContent = `Token lời mời (chỉ hiển thị lần này): ${body.invitation_token}`;
     document.getElementById("invitation-email").value = "";
     await Promise.all([loadInvitations(), loadOrganizationOverview()]);
-  });
-  document.getElementById("organization-settings-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const response = await API.request("/organizations/current", {
-      method: "PATCH",
-      body: JSON.stringify({ name: document.getElementById("organization-name").value }),
-    });
-    if (!response.ok) return showToast("Không lưu được cài đặt tổ chức.", "error");
-    showToast("Đã cập nhật tổ chức.", "success");
-    await loadOrganization();
   });
 }
 

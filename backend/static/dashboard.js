@@ -179,6 +179,18 @@ async function loadExamPermissions() {
   const exam = await response.json();
   canEndSessions = (exam.allowed_actions || []).includes("exam.sessions.end");
   canResetSessions = (exam.allowed_actions || []).includes("exam.manage");
+  document.getElementById("detail-exam-title").textContent = exam.name;
+  document.getElementById("detail-exam-state").textContent = ({
+    draft: "Bản nháp",
+    scheduled: "Đã lên lịch",
+    open: "Đang mở",
+    closed: "Đã đóng",
+    archived: "Đã lưu trữ",
+  })[exam.status] || exam.status;
+  document.getElementById("detail-manage-tab").classList.toggle(
+    "hidden",
+    !(exam.allowed_actions || []).includes("exam.manage"),
+  );
 }
 
 async function resetSession(id, studentName) {

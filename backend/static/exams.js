@@ -18,6 +18,34 @@ function appendTextCell(row, text) {
   return cell;
 }
 
+function formatExamDate(value, dateOnly = false) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "–";
+  return new Intl.DateTimeFormat("vi-VN", dateOnly
+    ? { dateStyle: "short" }
+    : { dateStyle: "short", timeStyle: "short" }).format(date);
+}
+
+function setCreateExamPanelOpen(open) {
+  const form = document.getElementById("create-exam-form");
+  const toggle = document.getElementById("create-exam-toggle");
+  form.classList.toggle("hidden", !open);
+  toggle.setAttribute("aria-expanded", String(open));
+  toggle.classList.toggle("active", open);
+  if (open) {
+    setWizardStep(0);
+    document.getElementById("exam-name").focus();
+  }
+}
+
+async function resetAndCloseCreateExam() {
+  const form = document.getElementById("create-exam-form");
+  form.reset();
+  if (API.hasCapability("exam.create")) await loadDefaultExamPolicy();
+  setWizardStep(0);
+  setCreateExamPanelOpen(false);
+}
+
 function examPinButton(exam) {
   const button = document.createElement("button");
   button.type = "button";
@@ -46,7 +74,7 @@ function examPinButton(exam) {
 function showTableMessage(tbody, message) {
   const row = document.createElement("tr");
   const cell = document.createElement("td");
-  cell.colSpan = 6;
+  cell.colSpan = 7;
   cell.className = "muted";
   cell.textContent = message;
   row.appendChild(cell);
@@ -76,37 +104,35 @@ async function setExamStatus(examId, status, expectedVersion) {
   await loadExams();
 }
 
-async function rotateJoinCode(examId, expectedVersion) {
-  const requestedHours = window.prompt("Thời hạn mã mới (giờ, từ 0.1 đến 168):", "24");
-  if (requestedHours == null) return;
-  const ttlMinutes = Math.round(Number(requestedHours) * 60);
-  if (!Number.isFinite(ttlMinutes) || ttlMinutes < 5 || ttlMinutes > 10080) {
-    showToast("Thời hạn mã phải từ 5 phút đến 7 ngày.", "error");
-    return;
-  }
-  const response = await API.request(`/exams/${encodeURIComponent(examId)}/rotate-code`, {
-    method: "POST",
-    body: JSON.stringify({ expected_version: expectedVersion, ttl_minutes: ttlMinutes }),
-  });
-  if (!response.ok) {
-    showToast("Không tạo lại được mã tham gia.", "error");
-    return;
-  }
-  showToast("Đã tạo mã tham gia mới; mã cũ không còn hiệu lực.", "success");
-  await loadExams();
-}
-
 function buildExamRow(exam) {
   const breakGlassView = Boolean(currentUser?.is_system_admin);
   const row = document.createElement("tr");
   const nameCell = document.createElement("td");
   nameCell.className = "exam-name-cell";
   if (!breakGlassView) nameCell.appendChild(examPinButton(exam));
-  const examName = document.createElement("span");
+  const examName = document.createElement("a");
+  examName.href = `/ui/exams/${encodeURIComponent(exam.id)}/detail`;
+  examName.className = "exam-name-link";
   examName.textContent = exam.name;
   nameCell.appendChild(examName);
   row.appendChild(nameCell);
+  appendTextCell(row, formatExamDate(exam.created_at, true));
+  appendTextCell(row, formatExamDate(exam.updated_at));
   appendTextCell(row, exam.candidate_auth_mode === "google" ? "Google" : "Họ tên + mã thí sinh");
+
+  const statusLabels = {
+    draft: "Bản nháp",
+    scheduled: "Đã lên lịch",
+    open: "Đang mở",
+    closed: "Đã đóng",
+    archived: "Đã lưu trữ",
+  };
+  const statusCell = document.createElement("td");
+  const statusBadge = document.createElement("span");
+  statusBadge.className = `exam-status-badge status-${exam.status}`;
+  statusBadge.textContent = statusLabels[exam.status] || exam.status;
+  statusCell.appendChild(statusBadge);
+  row.appendChild(statusCell);
 
   const codeCell = document.createElement("td");
   if (breakGlassView || !exam.join_code) {
@@ -121,32 +147,19 @@ function buildExamRow(exam) {
     copyButton.textContent = "Chép";
     copyButton.addEventListener("click", () => copyJoinCode(exam.join_code));
     codeCell.append(code, document.createTextNode(" "), copyButton);
+    const expiry = document.createElement("small");
+    expiry.className = "exam-code-expiry muted";
+    expiry.textContent = formatExpiry(exam.join_code_expires_at);
+    codeCell.appendChild(expiry);
   }
   row.appendChild(codeCell);
 
-  const statusLabels = {
-    draft: "Bản nháp",
-    scheduled: "Đã lên lịch",
-    open: "Đang mở",
-    closed: "Đã đóng",
-    archived: "Đã lưu trữ",
-  };
-  appendTextCell(row, statusLabels[exam.status] || exam.status);
-  appendTextCell(row, formatExpiry(exam.join_code_expires_at));
-
   const actions = document.createElement("td");
-  const dashboardLink = document.createElement("a");
-  dashboardLink.href = `/ui/exams/${encodeURIComponent(exam.id)}/dashboard`;
-  dashboardLink.textContent = "Dashboard";
-  actions.appendChild(dashboardLink);
+  actions.className = "exam-row-actions";
 
   const allowedActions = new Set(exam.allowed_actions || []);
   const allowedTransitions = new Set(exam.allowed_transitions || []);
   if (allowedActions.has("exam.manage")) {
-    const manageLink = document.createElement("a");
-    manageLink.href = `/ui/exams/${encodeURIComponent(exam.id)}/manage`;
-    manageLink.textContent = "Quản lý";
-    actions.append(document.createTextNode(" · "), manageLink);
     const quickStatus = exam.status === "open"
       ? (allowedTransitions.has("closed") ? "closed" : null)
       : (allowedTransitions.has("open") ? "open" : null);
@@ -160,17 +173,13 @@ function buildExamRow(exam) {
         quickStatus,
         exam.version,
       ));
-      actions.append(document.createTextNode(" · "), statusButton);
-    }
-    if (exam.status !== "archived") {
-      const rotateButton = document.createElement("button");
-      rotateButton.type = "button";
-      rotateButton.className = "link-button";
-      rotateButton.textContent = "Đổi mã";
-      rotateButton.addEventListener("click", () => rotateJoinCode(exam.id, exam.version));
-      actions.append(document.createTextNode(" · "), rotateButton);
+      actions.appendChild(statusButton);
     }
   }
+  const detailLink = document.createElement("a");
+  detailLink.href = `/ui/exams/${encodeURIComponent(exam.id)}/detail`;
+  detailLink.textContent = "Chi tiết";
+  actions.appendChild(detailLink);
   row.appendChild(actions);
   return row;
 }
@@ -186,7 +195,7 @@ async function loadExams() {
       tbody,
       currentUser?.is_system_admin
         ? "Không có kỳ thi thuộc quyền break-glass đang hiệu lực."
-        : "Chưa có kỳ thi nào - tạo kỳ thi đầu tiên ở trên.",
+        : "Chưa có kỳ thi nào. Nhấn nút + để tạo kỳ thi đầu tiên.",
     );
     return;
   }
@@ -319,9 +328,7 @@ document.getElementById("create-exam-form").addEventListener("submit", async (ev
   });
   if (response.ok) {
     showToast(`Đã tạo kỳ thi "${nameInput.value}"`, "success");
-    event.target.reset();
-    await loadDefaultExamPolicy();
-    setWizardStep(0);
+    await resetAndCloseCreateExam();
     await loadExams();
     await API.loadPinnedExams({ forceOpen: true });
   } else {
@@ -344,7 +351,9 @@ async function initializeExams() {
     document.getElementById("exam-code-heading").textContent = "Mã tham gia (đã ẩn)";
   }
   const createExamForm = document.getElementById("create-exam-form");
-  createExamForm.classList.toggle("hidden", !API.hasCapability("exam.create"));
+  const canCreateExam = API.hasCapability("exam.create");
+  createExamForm.classList.add("hidden");
+  document.getElementById("create-exam-toggle").classList.toggle("hidden", !canCreateExam);
   document.getElementById("organization-admin-hint").classList.toggle(
     "hidden",
     !API.hasCapability("org.members.manage"),
@@ -380,4 +389,15 @@ document.getElementById("wizard-next").addEventListener("click", () => {
   if (currentWizardStepIsValid()) setWizardStep(wizardStep + 1);
 });
 document.getElementById("wizard-previous").addEventListener("click", () => setWizardStep(wizardStep - 1));
+document.getElementById("create-exam-toggle").addEventListener("click", () => {
+  const expanded = document.getElementById("create-exam-toggle").getAttribute("aria-expanded") === "true";
+  if (expanded) resetAndCloseCreateExam().catch((error) => showToast(error.message, "error"));
+  else setCreateExamPanelOpen(true);
+});
+document.getElementById("create-exam-close").addEventListener("click", () => {
+  resetAndCloseCreateExam().catch((error) => showToast(error.message, "error"));
+});
+document.getElementById("create-exam-cancel").addEventListener("click", () => {
+  resetAndCloseCreateExam().catch((error) => showToast(error.message, "error"));
+});
 setWizardStep(0);

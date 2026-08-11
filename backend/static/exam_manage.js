@@ -16,6 +16,12 @@ function localInputValue(value) {
   return local.toISOString().slice(0, 16);
 }
 
+function manageExpiryText(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `Hết hạn ${date.toLocaleString("vi-VN")}`;
+}
+
 async function setLifecycle(status) {
   const response = await API.request(`/exams/${encodeURIComponent(MANAGE_EXAM_ID)}/status`, {
     method: "PATCH",
@@ -76,6 +82,8 @@ function renderManagedExam() {
   document.getElementById("manage-exam-title").textContent = managedExam.name;
   const assignmentLabel = managedExam.assignment_role ? ` · vai trò ${managedExam.assignment_role}` : "";
   document.getElementById("manage-exam-state").textContent = `Trạng thái: ${managedExam.status} · phiên bản ${managedExam.version}${assignmentLabel}`;
+  document.getElementById("manage-join-code").textContent = managedExam.join_code || "Đã ẩn";
+  document.getElementById("manage-code-expiry").textContent = manageExpiryText(managedExam.join_code_expires_at);
   document.getElementById("manage-exam-name").value = managedExam.name;
   document.getElementById("manage-exam-url").value = managedExam.exam_url || "";
   document.getElementById("manage-auth-mode").value = managedExam.candidate_auth_mode;
@@ -103,6 +111,32 @@ function renderManagedExam() {
     return button;
   });
   document.getElementById("lifecycle-actions").replaceChildren(...buttons);
+  document.getElementById("manage-rotate-code").classList.toggle(
+    "hidden",
+    !canManage || managedExam.status === "archived",
+  );
+}
+
+async function rotateManagedJoinCode() {
+  const requestedHours = window.prompt("Thời hạn mã mới (giờ, từ 0.1 đến 168):", "24");
+  if (requestedHours == null) return;
+  const ttlMinutes = Math.round(Number(requestedHours) * 60);
+  if (!Number.isFinite(ttlMinutes) || ttlMinutes < 5 || ttlMinutes > 10080) {
+    showToast("Thời hạn mã phải từ 5 phút đến 7 ngày.", "error");
+    return;
+  }
+  const response = await API.request(`/exams/${encodeURIComponent(MANAGE_EXAM_ID)}/rotate-code`, {
+    method: "POST",
+    body: JSON.stringify({ expected_version: managedExam.version, ttl_minutes: ttlMinutes }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    showToast(typeof body.detail === "string" ? body.detail : "Không tạo lại được mã tham gia.", "error");
+    return;
+  }
+  managedExam = body;
+  renderManagedExam();
+  showToast("Đã tạo mã tham gia mới; mã cũ không còn hiệu lực.", "success");
 }
 
 async function loadManagePolicyFloor() {
@@ -238,10 +272,18 @@ document.getElementById("assignment-form").addEventListener("submit", async (eve
 async function initializeExamManage() {
   if (!await API.requireAuth()) return;
   await loadManagePolicyFloor();
-  await Promise.all([loadManagedExam(), loadEligibleMembers(), loadReadiness()]);
+  await loadManagedExam();
+  if (!(managedExam.allowed_actions || []).includes("exam.manage")) {
+    window.location.replace(`/ui/exams/${encodeURIComponent(MANAGE_EXAM_ID)}/detail`);
+    return;
+  }
+  await Promise.all([loadEligibleMembers(), loadReadiness()]);
   await loadAssignments();
 }
 
 initializeExamManage().catch((error) => showToast(error.message, "error"));
 document.getElementById("manage-auth-mode").addEventListener("change", syncManageAuthMode);
 document.getElementById("manage-require-extension").addEventListener("change", syncManageAuthMode);
+document.getElementById("manage-rotate-code").addEventListener("click", () => {
+  rotateManagedJoinCode().catch((error) => showToast(error.message, "error"));
+});

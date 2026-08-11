@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Cài đặt tài khoản · Giám Thị Số{% endblock %}
+{% block body_class %}settings-page{% endblock %}
+{% block content %}
+<header class="settings-header">
+  <div>
+    <div class="breadcrumb"><span>Tài khoản</span><span aria-hidden="true">/</span><strong>Cài đặt</strong></div>
+    <h1>Cài đặt tài khoản</h1>
+    <p class="muted">Cập nhật hồ sơ cá nhân và thông tin đăng nhập của bạn.</p>
+  </div>
+</header>
+
+<div class="settings-layout">
+  <section class="card settings-card">
+    <div class="settings-card-heading">
+      <div><h2>Hồ sơ cá nhân</h2><p class="muted">Thông tin này được áp dụng riêng cho tài khoản đang đăng nhập.</p></div>
+      <div class="settings-avatar-preview" id="account-avatar-preview" aria-label="Ảnh đại diện xem trước"><span id="account-avatar-fallback">GT</span></div>
+    </div>
+    <form id="account-profile-form" class="settings-form" aria-busy="true">
+      <div class="form-grid">
+        <label>Họ và tên<input id="settings-display-name" type="text" maxlength="200" autocomplete="name" required disabled></label>
+        <label>Email<input id="settings-email" type="email" maxlength="255" autocomplete="email" required disabled></label>
+        <label>Số điện thoại<input id="settings-phone" type="tel" maxlength="32" autocomplete="tel" placeholder="Ví dụ: +84 912 345 678" disabled></label>
+        <label>URL ảnh đại diện (HTTPS)<input id="settings-avatar-url" type="url" maxlength="2048" inputmode="url" placeholder="https://example.com/avatar.jpg" disabled></label>
+      </div>
+      <div class="form-actions"><button type="submit" id="save-account-profile" disabled>Lưu hồ sơ</button></div>
+    </form>
+  </section>
+
+  <section class="card settings-card">
+    <div class="settings-card-heading">
+      <div><h2>Đổi mật khẩu</h2><p class="muted">Sau khi đổi mật khẩu, tất cả phiên đăng nhập hiện tại sẽ được thu hồi.</p></div>
+      <span class="security-mark" aria-hidden="true">✓</span>
+    </div>
+    <form id="account-password-form" class="settings-form password-form" aria-busy="true">
+      <label>Mật khẩu hiện tại<input id="settings-current-password" type="password" maxlength="72" autocomplete="current-password" required disabled></label>
+      <div class="form-grid">
+        <label>Mật khẩu mới<input id="settings-new-password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required disabled></label>
+        <label>Xác nhận mật khẩu mới<input id="settings-confirm-password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required disabled></label>
+      </div>
+      <p class="form-help">Tài khoản đăng nhập hoàn toàn bằng Google không cần đổi mật khẩu tại đây.</p>
+      <div class="form-actions"><button type="submit" id="change-account-password" disabled>Đổi mật khẩu</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/account-settings.js?v=20260811-settings-2"></script>{% endblock %}

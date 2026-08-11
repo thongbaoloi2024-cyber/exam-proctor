@@ -1,9 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Dashboard giám thị · Giám Thị Số{% endblock %}
 {% block content %}
-<section class="card" id="dashboard-root" data-exam-id="{{ exam_id }}">
+<section class="card exam-detail-header" id="exam-detail-header">
   <p><a href="/ui/exams" id="dashboard-back-link">&larr; Danh sách kỳ thi</a></p>
-  <h1>Dashboard giám thị</h1>
+  <div class="exam-detail-heading">
+    <div><span class="eyebrow">Chi tiết kỳ thi</span><h1 id="detail-exam-title">Đang tải...</h1><p id="detail-exam-state" class="muted"></p></div>
+  </div>
+  <nav class="exam-detail-tabs" aria-label="Nội dung chi tiết kỳ thi">
+    <a href="/ui/exams/{{ exam_id }}/detail" class="exam-detail-tab active" aria-current="page">Dashboard</a>
+    <a href="/ui/exams/{{ exam_id }}/detail?tab=manage" class="exam-detail-tab hidden" id="detail-manage-tab">Quản lý</a>
+  </nav>
+</section>
+
+<section class="card" id="dashboard-root" data-exam-id="{{ exam_id }}">
+  <h2>Dashboard giám thị</h2>
   <p class="muted">Risk CV và cảnh báo toàn vẹn trình duyệt được hiển thị riêng; sự kiện trình duyệt là dấu hiệu cần giám thị xem xét, không phải kết luận gian lận tự động.</p>
   <p id="ws-status" class="muted"></p>
 

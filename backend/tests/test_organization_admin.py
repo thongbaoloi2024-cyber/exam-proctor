@@ -104,6 +104,63 @@ def test_organization_overview_aggregates_exam_and_session_status(client):
     assert "quota_usage_percent" in body
 
 
+def test_org_admin_updates_organization_profile_and_manager_is_forbidden(client):
+    admin_token, _ = _register(
+        client,
+        "settings-admin@test.local",
+        "Settings Organization",
+    )
+    payload = {
+        "name": "Updated Settings Organization",
+        "logo_url": "https://assets.example.test/logo.png",
+        "address": "123 Duong Nguyen Van Linh, Da Nang",
+        "email": "contact@example.test",
+        "phone": "+84 236 123 4567",
+        "website": "https://example.test",
+    }
+    updated = client.patch(
+        "/organizations/current",
+        json=payload,
+        headers=_headers(admin_token),
+    )
+    assert updated.status_code == 200
+    assert {key: updated.json()[key] for key in payload} == payload
+
+    loaded = client.get(
+        "/organizations/current",
+        headers=_headers(admin_token),
+    )
+    assert loaded.status_code == 200
+    assert loaded.json()["address"] == payload["address"]
+
+    insecure_logo = client.patch(
+        "/organizations/current",
+        json={**payload, "logo_url": "http://assets.example.test/logo.png"},
+        headers=_headers(admin_token),
+    )
+    assert insecure_logo.status_code == 422
+
+    http_website = client.patch(
+        "/organizations/current",
+        json={**payload, "website": "http://example.test"},
+        headers=_headers(admin_token),
+    )
+    assert http_website.status_code == 200
+    assert http_website.json()["website"] == "http://example.test"
+
+    manager_token = create_exam_manager(
+        client,
+        admin_token,
+        email="settings-manager@test.local",
+    )
+    forbidden = client.patch(
+        "/organizations/current",
+        json={**payload, "name": "Unauthorized Update"},
+        headers=_headers(manager_token),
+    )
+    assert forbidden.status_code == 403
+
+
 def test_existing_user_can_join_and_switch_between_organizations(client):
     first_admin_token, first_org_id = _register(
         client,

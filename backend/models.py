@@ -47,6 +47,11 @@ class Organization(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid_str)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    logo_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    website: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     slug: Mapped[Optional[str]] = mapped_column(String(255), unique=True, nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
     settings_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
@@ -86,6 +91,9 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid_str)
     org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    display_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     google_subject: Mapped[Optional[str]] = mapped_column(
         String(255), unique=True, nullable=True, index=True,

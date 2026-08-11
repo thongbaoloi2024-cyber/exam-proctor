@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" class="setup-page">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -58,10 +58,7 @@
       </section>
 
       <section id="policy-card" class="card hidden">
-        <h2 id="exam-name">2. Xác thực thí sinh</h2>
-        <ul id="policy-list" class="policy-list"></ul>
-        <h2 class="preflight-heading">3. Kiểm tra trước khi thi</h2>
-        <ul id="preflight-list" class="preflight-list"></ul>
+        <h2 id="candidate-heading">2. Nhập thông tin thí sinh</h2>
 
         <div id="manual-fields" class="grid hidden">
           <label
@@ -104,6 +101,13 @@
           </p>
         </div>
 
+        <div class="exam-information">
+          <h2 id="exam-name">3. Thông tin kỳ thi</h2>
+          <ul id="policy-list" class="policy-list"></ul>
+          <h2 class="preflight-heading">4. Kiểm tra trước khi thi</h2>
+          <ul id="preflight-list" class="preflight-list"></ul>
+        </div>
+
         <label class="consent">
           <input id="consent" type="checkbox" />
           <span
@@ -114,6 +118,9 @@
         </label>
         <div class="actions">
           <button id="join-exam" type="button">Tham gia kỳ thi</button>
+          <button id="change-code" type="button" class="secondary">
+            Đổi mã
+          </button>
         </div>
         <p id="join-status" class="status" role="status" aria-live="polite"></p>
       </section>

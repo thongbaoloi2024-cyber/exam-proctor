@@ -5,13 +5,12 @@
 {% if organization_section == "organization" %}
 <section class="card organization-panel" data-organization-panel="organization">
   <div id="organization-kpis" class="kpi-row"></div>
-  <form id="organization-settings-form" class="inline-settings-form">
-    <label>Tên tổ chức<input id="organization-name" maxlength="200" required></label>
-    <button type="submit">Lưu cài đặt</button>
-  </form>
   <div class="organization-card-header">
     <h2>Thành viên</h2>
-    <button type="button" id="open-invitation-dialog" class="primary-action"><span aria-hidden="true">＋</span>Mời thành viên</button>
+    <div class="header-actions">
+      <a href="/ui/organization/settings" class="secondary-button button-link">Cài đặt tổ chức</a>
+      <button type="button" id="open-invitation-dialog" class="primary-action"><span aria-hidden="true">＋</span>Mời thành viên</button>
+    </div>
   </div>
   <div class="table-scroll">
     <table class="data-table" id="members-table">
