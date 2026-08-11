@@ -46,6 +46,11 @@ def test_new_admin_page_shells_and_scripts_are_served(client):
     assert '<svg width="20" height="20" viewBox="0 0 24 24"' in login_page
     assert '<svg width="20" height="20" viewBox="0 0 24 24"' in register_page
 
+    stylesheet = client.get("/static/style.css").text
+    assert ".auth-page .page" in stylesheet
+    assert "min-height: 100dvh" in stylesheet
+    assert "@media (min-width: 781px) and (max-height: 820px)" in stylesheet
+
 
 def test_system_admin_sidebar_has_control_panel_navigation_and_account(client):
     response = client.get("/ui/system")
