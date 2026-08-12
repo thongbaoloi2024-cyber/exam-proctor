@@ -1,10 +1,10 @@
-# Chương 4. Các giải pháp và đóng góp nổi bật
+# Chương 4. Thiết kế giải pháp và các đóng góp
 
-## 4.0. Mở đầu
+## Mở đầu chương
 
 Các chương trước đã trình bày cơ sở lý thuyết của MTCNN, MediaPipe Face Landmarker, YOLOv8, FaceNet, bài toán ước lượng góc quay đầu và nguyên lý kết hợp đa tín hiệu; đồng thời xác định các yêu cầu `FR-*` và `NFR-*` của hệ thống. Vì vậy, chương này không lặp lại cách hoạt động của từng mô hình, mà tập trung vào các vấn đề kỹ thuật đã xuất hiện khi xây dựng một hệ thống giám sát thi hoàn chỉnh và những giải pháp đã được thiết kế, cài đặt để giải quyết các vấn đề đó.
 
-Đóng góp của đồ án không nằm ở việc huấn luyện một mô hình thị giác máy tính mới. Điểm nổi bật là việc tổ chức các mô hình có sẵn thành một pipeline có trạng thái, kết hợp kết quả thị giác máy tính với dữ liệu toàn vẹn trình duyệt, xây dựng lớp nền tảng nhiều tổ chức, truyền trạng thái theo thời gian thực, quản lý bằng chứng và tạo báo cáo có thể truy vết. Mỗi giải pháp trong chương được trình bày theo ba nội dung: bài toán đặt ra, giải pháp thực hiện và kết quả đạt được. Quan hệ giữa giải pháp và yêu cầu được tóm tắt tại mục 4.8.
+Đóng góp của đồ án không nằm ở việc huấn luyện một mô hình thị giác máy tính mới, mà ở cách tổ chức các mô hình có sẵn thành chuỗi xử lý có trạng thái; kết hợp kết quả thị giác máy tính với dữ liệu toàn vẹn trình duyệt; và xây dựng lớp nền tảng nhiều tổ chức để truyền trạng thái, quản lý bằng chứng và tạo báo cáo có thể truy vết. Mỗi giải pháp trong chương được trình bày theo ba nội dung: bài toán đặt ra, giải pháp thực hiện và kết quả đã được kiểm chứng. Quan hệ giữa giải pháp và yêu cầu được tóm tắt tại mục 4.8.
 
 ## 4.1. Giải pháp kiến trúc tổng thể cho hệ thống giám sát thi
 
@@ -14,31 +14,31 @@ Một chương trình chỉ đọc webcam và hiển thị nhãn bất thường
 
 Nhóm vấn đề này tương ứng với các yêu cầu `FR-SESSION-*`, `FR-RT-*`, `FR-EVID-*`, `FR-REPORT-*`, `NFR-PRIV-*` và `NFR-PORT-01` tại Chương 3.
 
-Nếu ghép toàn bộ trách nhiệm vào một chương trình đơn khối, ba vấn đề xuất hiện. Thứ nhất, các mô hình thị giác máy tính có chi phí tính toán lớn và không phù hợp để chạy đồng bộ trong backend phục vụ nhiều người dùng. Thứ hai, truyền video liên tục làm tăng băng thông, chi phí lưu trữ và mức độ nhạy cảm của dữ liệu. Thứ ba, giao diện quản trị, dữ liệu phiên và thuật toán nhận diện bị phụ thuộc chặt vào nhau, gây khó kiểm thử và mở rộng.
+Nếu ghép toàn bộ trách nhiệm vào một chương trình đơn khối, ba vấn đề sẽ xuất hiện. Thứ nhất, các mô hình thị giác máy tính có chi phí tính toán lớn và không phù hợp để chạy đồng bộ trong dịch vụ phía máy chủ phục vụ nhiều người dùng. Thứ hai, truyền video liên tục làm tăng băng thông, chi phí lưu trữ và phạm vi xử lý dữ liệu nhạy cảm. Thứ ba, giao diện quản trị, dữ liệu phiên và thuật toán nhận diện bị phụ thuộc chặt vào nhau, gây khó khăn cho kiểm thử và mở rộng.
 
 ### 4.1.2. Giải pháp
 
 Đồ án tách hệ thống thành ba thành phần triển khai chính:
 
-- **Client desktop Python** thực hiện pipeline thị giác máy tính trên webcam, đăng ký khuôn mặt, kiểm tra liveness cơ bản, tính bảy tín hiệu và tổng hợp điểm rủi ro ngay tại máy thí sinh.
-- **Browser Extension** quản lý luồng tham gia kỳ thi trong trình duyệt, kiểm tra chính sách thiết bị và ghi nhận các sự kiện như rời toàn màn hình, chuyển tab, mất focus, thao tác clipboard, camera hoặc chia sẻ màn hình bị dừng.
-- **Backend FastAPI và dashboard** quản lý tổ chức, tài khoản, kỳ thi, phiên thi, phân quyền, kết nối WebSocket, lưu bằng chứng, hỗ trợ giám thị xem lại sự cố và sinh báo cáo.
+- **Ứng dụng máy tính để bàn bằng Python** thực hiện chuỗi xử lý thị giác máy tính trên webcam, đăng ký khuôn mặt, kiểm tra sự hiện diện sống cơ bản, tính bảy tín hiệu và tổng hợp điểm rủi ro ngay tại máy thí sinh.
+- **Tiện ích mở rộng trình duyệt** quản lý luồng tham gia kỳ thi, kiểm tra chính sách thiết bị và ghi nhận các sự kiện như rời chế độ toàn màn hình, chuyển thẻ, mất trạng thái tập trung, thao tác với bảng tạm, hoặc dừng camera/chia sẻ màn hình.
+- **Dịch vụ FastAPI và bảng điều khiển** quản lý tổ chức, tài khoản, kỳ thi, phiên thi, phân quyền, kết nối WebSocket, lưu bằng chứng, hỗ trợ giám thị hậu kiểm sự cố và tạo báo cáo.
 
-Kiến trúc tổng thể được minh họa ở Hình 4.1. Sơ đồ phân biệt bốn vùng trách nhiệm: thu thập và xử lý tại máy thí sinh; tiếp nhận, kiểm chứng và điều phối tại nền tảng; lưu trữ dữ liệu; và khai thác dữ liệu qua các giao diện vận hành. Các đường kết nối cũng cho thấy REST được dùng cho nghiệp vụ có trạng thái, còn WebSocket phục vụ telemetry, heartbeat và cập nhật dashboard theo thời gian thực.
+Kiến trúc tổng thể được minh họa ở Hình 4.1. Sơ đồ phân biệt bốn vùng trách nhiệm: thu thập và xử lý tại máy thí sinh; tiếp nhận, kiểm chứng và điều phối tại nền tảng; lưu trữ dữ liệu; và khai thác dữ liệu qua các giao diện vận hành. Các đường kết nối cũng cho thấy REST được dùng cho nghiệp vụ có trạng thái, còn WebSocket phục vụ dữ liệu giám sát, nhịp kết nối và cập nhật bảng điều khiển theo thời gian thực.
 
 ![Kiến trúc tổng thể hệ thống giám sát thi](image/kien_truc_tong_the_he_thong.svg)
 
 **Hình 4.1. Kiến trúc tổng thể của hệ thống**
 
-Quyết định quan trọng của kiến trúc là không truyền luồng video liên tục lên server. Client chỉ gửi telemetry đã gom theo chu kỳ, mặc định một giây, và ảnh chụp tại thời điểm có sự kiện cần làm bằng chứng. Backend không chạy mô hình CV, nhưng cũng không tin hoàn toàn dữ liệu client: message phải đúng schema, chứa đủ bảy tín hiệu; điểm rủi ro, trạng thái, mức nghiêm trọng và tín hiệu đóng góp được server tính hoặc đối chiếu lại trước khi lưu và chuyển tiếp.
+Quyết định quan trọng của kiến trúc là không truyền luồng video liên tục đến máy chủ. Ứng dụng phía thí sinh chỉ gửi dữ liệu giám sát đã gom theo chu kỳ, mặc định một giây, cùng ảnh chụp tại thời điểm có sự kiện cần làm bằng chứng. Máy chủ không chạy mô hình CV nhưng cũng không tin hoàn toàn dữ liệu từ máy khách: thông điệp phải đúng lược đồ và chứa đủ bảy tín hiệu; điểm rủi ro, trạng thái, mức nghiêm trọng và tín hiệu đóng góp được tính lại hoặc đối chiếu trước khi lưu và chuyển tiếp.
 
 ### 4.1.3. Kết quả đạt được
 
-Kiến trúc trên tạo ra ranh giới rõ ràng giữa xử lý nhận diện, giám sát trình duyệt, vận hành nền tảng và lưu trữ. Pipeline CV vẫn có thể chạy cục bộ khi backend bị tắt; backend và dashboard không phụ thuộc vào thư viện học sâu; còn giao diện giám thị chỉ nhận dữ liệu cần thiết thay vì video liên tục. Cách tách này giúp giảm băng thông và giảm phạm vi dữ liệu hình ảnh phải truyền qua mạng.
+Kiến trúc trên tạo ranh giới rõ ràng giữa xử lý nhận diện, giám sát trình duyệt, vận hành nền tảng và lưu trữ. Chuỗi xử lý CV vẫn có thể chạy cục bộ khi máy chủ không khả dụng; dịch vụ phía máy chủ và bảng điều khiển không phụ thuộc vào thư viện học sâu; giao diện giám thị chỉ nhận dữ liệu cần thiết thay vì video liên tục. Cách phân tách này giúp giảm băng thông và thu hẹp phạm vi dữ liệu hình ảnh truyền qua mạng.
 
-Hệ thống hiện hỗ trợ hai nhánh client là desktop CV và browser extension. Tuy nhiên, hai nhánh chưa được hợp nhất hoàn toàn vào cùng một phiên bằng native-messaging bridge. Đây là giới hạn được công bố rõ: kiến trúc đã chuẩn bị các hợp đồng dữ liệu chung, nhưng việc tích hợp đồng thời webcam CV native và extension trong một phiên là hướng phát triển tiếp theo.
+Hệ thống hiện có hai nhánh phía máy khách: ứng dụng CV trên máy tính để bàn và tiện ích mở rộng trình duyệt. Tuy nhiên, hai nhánh chưa được hợp nhất hoàn toàn vào cùng một phiên bằng cầu nối native messaging. Kiến trúc đã có các hợp đồng dữ liệu chung, nhưng việc phối hợp đồng thời ứng dụng CV và tiện ích mở rộng trong một phiên vẫn là hướng phát triển tiếp theo.
 
-## 4.2. Giải pháp mô hình hóa tác nhân, use case và phân quyền
+## 4.2. Giải pháp mô hình hóa tác nhân, ca sử dụng và phân quyền
 
 ### 4.2.1. Bài toán quản lý nhiều phạm vi người dùng
 
@@ -50,11 +50,82 @@ Giải pháp tại mục này đáp ứng các nhóm `FR-AUTH-*`, `FR-ORG-*`, `F
 
 ### 4.2.2. Giải pháp
 
-Đồ án xây dựng kiểm soát truy cập theo ba bước: xác thực danh tính, xác định phạm vi và kiểm tra capability trên tài nguyên. Các vai trò và use case chính được thể hiện ở Hình 4.2. Ranh giới use case mô tả chức năng người dùng nhìn thấy; quyền thực thi cuối cùng vẫn do backend quyết định theo tổ chức, kỳ thi và tài nguyên cụ thể.
+Đồ án xây dựng kiểm soát truy cập theo ba bước: xác thực danh tính, xác định phạm vi và kiểm tra năng lực trên tài nguyên. Các vai trò và ca sử dụng chính được thể hiện ở Hình 4.2. Ranh giới ca sử dụng mô tả chức năng người dùng nhìn thấy; quyền thực thi cuối cùng vẫn do máy chủ quyết định theo tổ chức, kỳ thi và tài nguyên cụ thể.
 
-![Use case tổng quan theo vai trò](image/use_case_tong_quan_he_thong.svg)
+![Ca sử dụng tổng quan theo vai trò](image/use_case_tong_quan_he_thong.svg)
 
-**Hình 4.2. Use case theo các vai trò của hệ thống**
+**Hình 4.2. Các ca sử dụng theo vai trò của hệ thống**
+
+#### 4.2.2.1. Danh mục tác nhân và ca sử dụng
+
+Để tránh hiểu sơ đồ như một danh sách quyền toàn cục, các ca sử dụng được định danh và gắn với phạm vi tài nguyên cụ thể. Một người có thể đồng thời mang nhiều vai trò, nhưng mỗi thao tác chỉ hợp lệ khi vai trò đó còn hiệu lực trong đúng phạm vi tổ chức hoặc kỳ thi.
+
+| Mã | Ca sử dụng | Tác nhân chính | Phạm vi | Kết quả đầu ra |
+|---|---|---|---|---|
+| `UC-01` | Quản trị nền tảng | System Admin | Toàn hệ thống | Tổ chức, quota, system policy và audit được cập nhật |
+| `UC-02` | Quản trị tổ chức | Organization Admin | Một tổ chức | Thành viên, invitation, policy và access grant được quản lý |
+| `UC-03` | Tạo và cấu hình kỳ thi | Exam Manager/Owner | Một kỳ thi | Exam, join code, thời gian, policy và assignment hợp lệ |
+| `UC-04` | Kiểm tra readiness và mở kỳ thi | Exam Manager/Owner | Một kỳ thi | Danh sách điều kiện đạt/chưa đạt; trạng thái kỳ thi được chuyển hợp lệ |
+| `UC-05` | Tham gia và xác thực thí sinh | Candidate | Một kỳ thi/phiên | Candidate identity, session token và policy hiệu lực |
+| `UC-06` | Khởi tạo giám sát thiết bị | Candidate | Phiên của chính mình | Consent, preflight, enrollment/liveness và client connection |
+| `UC-07` | Theo dõi phiên thời gian thực | Proctor, Exam Manager | Kỳ thi được phân công | KPI, session state, risk, integrity và cảnh báo mới nhất |
+| `UC-08` | Xem evidence và review sự cố | Proctor có capability | Phiên được phân công | Verdict và ghi chú review, không sửa sự kiện gốc |
+| `UC-09` | Kết thúc phiên | Candidate hoặc nhân sự có quyền | Một phiên | Trạng thái kết thúc và lý do được ghi nhận |
+| `UC-10` | Sinh và tải báo cáo | Exam Manager/Proctor có capability | Một phiên/kỳ thi | Report job và tệp HTML/PDF có thể truy vết |
+
+Quan hệ tác nhân–ca sử dụng không thay thế kiểm tra capability. Ví dụ, `UC-08` chỉ khả dụng nếu Proctor có `exam.evidence.read` trên đúng kỳ thi; System Admin muốn đọc evidence phải có access grant còn hiệu lực thay vì dựa vào vai trò hệ thống.
+
+#### 4.2.2.2. Đặc tả các ca sử dụng cốt lõi
+
+**UC-03 – Tạo và cấu hình kỳ thi**
+
+| Thuộc tính | Nội dung |
+|---|---|
+| Tác nhân | Exam Owner hoặc Exam Manager có `exam.manage` |
+| Tiền điều kiện | Người dùng đã đăng nhập; tổ chức và membership đang hoạt động; quota cho phép |
+| Luồng chính | Mở Exam workspace → nhập metadata và thời gian → chọn phương thức xác thực → cấu hình policy → phân công nhân sự → lưu phiên bản cấu hình |
+| Luồng thay thế/ngoại lệ | Dữ liệu sai miền bị từ chối; policy yếu hơn sàn hệ thống/tổ chức không được lưu; xung đột phiên bản trả lỗi optimistic locking |
+| Hậu điều kiện | Kỳ thi ở trạng thái cấu hình, có policy hiệu lực và danh sách assignment có phạm vi rõ ràng |
+
+**UC-05/UC-06 – Tham gia và khởi tạo giám sát**
+
+| Thuộc tính | Nội dung |
+|---|---|
+| Tác nhân | Candidate |
+| Tiền điều kiện | Join code còn hạn; kỳ thi cho phép tham gia; thiết bị có trình duyệt/desktop client phù hợp |
+| Luồng chính | Nhập join code → nhận thông tin và policy → xác thực thủ công hoặc Google → xác nhận consent → chạy preflight → tạo phiên và nhận session token → thực hiện enrollment/liveness nếu dùng desktop CV → mở kênh WebSocket |
+| Luồng thay thế/ngoại lệ | Mã sai/hết hạn, kỳ thi chưa mở, consent thiếu, quyền camera/screen share bị từ chối hoặc liveness thất bại thì phiên không chuyển sang giám sát đầy đủ |
+| Hậu điều kiện | Phiên thuộc đúng candidate/exam; client chỉ gửi dữ liệu bằng token của phiên đó; trạng thái thiết bị được quan sát trên dashboard |
+
+**UC-07 – Theo dõi phiên thời gian thực**
+
+| Thuộc tính | Nội dung |
+|---|---|
+| Tác nhân | Proctor hoặc Exam Manager được phân công |
+| Tiền điều kiện | Người dùng đã đăng nhập và có `exam.monitor`; kỳ thi tồn tại trong tenant hiện hành |
+| Luồng chính | Mở dashboard → tải current state qua REST → lấy WebSocket ticket dùng một lần → nhận telemetry/browser event đã kiểm chứng → lọc và mở session detail |
+| Luồng thay thế/ngoại lệ | Ticket hết hạn hoặc đã dùng bị từ chối; khi socket mất kết nối, giao diện phải báo dữ liệu có thể cũ và thực hiện kết nối lại |
+| Hậu điều kiện | Người giám thị quan sát được risk, integrity, kết nối và cảnh báo mà không truy cập phiên ngoài assignment |
+
+**UC-08 – Review evidence**
+
+| Thuộc tính | Nội dung |
+|---|---|
+| Tác nhân | Proctor có quyền đọc evidence/review |
+| Tiền điều kiện | Phiên thuộc kỳ thi được phân công; snapshot và log đã qua kiểm tra đường dẫn/phạm vi |
+| Luồng chính | Mở session detail → chọn sự kiện trên timeline → xem contributing signals, browser event và snapshot → nhập verdict/ghi chú → xác nhận review |
+| Luồng thay thế/ngoại lệ | Evidence thiếu vẫn hiển thị metadata còn lại; truy cập chéo tenant hoặc đường dẫn ngoài thư mục phiên bị từ chối |
+| Hậu điều kiện | `IncidentReview` mới được tạo và audit; `ViolationEvent` nguyên bản không bị thay đổi |
+
+**UC-10 – Sinh báo cáo**
+
+| Thuộc tính | Nội dung |
+|---|---|
+| Tác nhân | Exam Manager hoặc Proctor có `exam.reports.export` |
+| Tiền điều kiện | Phiên tồn tại; người dùng có quyền trên kỳ thi; dữ liệu phiên đã được materialize |
+| Luồng chính | Yêu cầu báo cáo → tạo job `pending` → worker đọc SQL và evidence → tổng hợp/charts → xuất HTML/PDF → job chuyển `completed` |
+| Luồng thay thế/ngoại lệ | File evidence thiếu được đọc theo chế độ tolerant; lỗi dựng báo cáo chuyển job sang `failed` và lưu lỗi, không công bố output chưa hoàn chỉnh |
+| Hậu điều kiện | Báo cáo được gắn đúng session, có đường dẫn do server quản lý và có thể tải theo authorization |
 
 Ở tầng dữ liệu, quyền được biểu diễn bởi ba loại quan hệ:
 
@@ -66,9 +137,9 @@ Backend không phân quyền bằng các câu lệnh điều kiện rải rác t
 
 System Admin phải bật MFA mới có vai trò hệ thống hiệu lực. Vai trò này không có đường truy cập mặc định đến evidence của thí sinh. Khi cần hỗ trợ sự cố, người quản trị phải có `AccessGrant` chỉ đọc, thuộc đúng tổ chức, còn thời hạn và chưa bị thu hồi. Thao tác nhạy cảm được liên kết với `AuditLog` để lưu chủ thể, phạm vi, hành động, kết quả, lý do, request ID và trạng thái trước/sau.
 
-Thí sinh được tách khỏi bảng tài khoản nhân sự. Chế độ thủ công tạo phiên từ mã dự thi và thông tin thí sinh; chế độ Google lưu các claim OIDC tối thiểu trong `CandidateIdentity`, không lưu access token hoặc refresh token của Google. Token phiên thí sinh và token người dùng có loại riêng, không thể dùng thay thế cho nhau.
+Thí sinh được tách khỏi bảng tài khoản nhân sự. Chế độ thủ công tạo phiên từ mã dự thi và thông tin thí sinh; chế độ Google chỉ lưu các thuộc tính OIDC tối thiểu trong `CandidateIdentity`, không lưu mã truy cập hoặc mã làm mới của Google. Mã xác thực phiên thí sinh và mã xác thực người dùng có loại riêng, không thể dùng thay thế cho nhau.
 
-Luồng use case được triển khai theo nguyên tắc “quyền tối thiểu”: System Admin quản lý mặt bằng nền tảng nhưng không mặc nhiên đọc evidence; Organization Admin quản lý phạm vi tổ chức; Exam Manager chịu trách nhiệm cấu hình và vòng đời kỳ thi; Proctor tập trung vào giám sát, review và báo cáo; Candidate chỉ tham gia và gửi dữ liệu của phiên đã xác thực. Việc tách nhiệm vụ này giảm khả năng một vai trò vừa tạo chính sách, vừa vận hành, vừa tự xác nhận kết quả mà không có dấu vết audit.
+Các ca sử dụng được triển khai theo nguyên tắc “quyền tối thiểu”: System Admin quản lý mặt bằng nền tảng nhưng không mặc nhiên đọc evidence; Organization Admin quản lý phạm vi tổ chức; Exam Manager chịu trách nhiệm cấu hình và vòng đời kỳ thi; Proctor tập trung vào giám sát, review và báo cáo; Candidate chỉ tham gia và gửi dữ liệu của phiên đã xác thực. Việc tách nhiệm vụ này giảm khả năng một vai trò vừa tạo chính sách, vừa vận hành, vừa tự xác nhận kết quả mà không có dấu vết audit.
 
 ### 4.2.3. Kết quả đạt được
 
@@ -316,6 +387,39 @@ Luồng dữ liệu nội bộ của một phiên thi được thể hiện ở 
 
 Data flow trên cũng làm rõ ba thời điểm sử dụng dữ liệu. Trong khi thi, dashboard cần current state và alert có độ trễ thấp. Khi hậu kiểm, giám thị cần timeline, snapshot và sự kiện nguyên bản. Khi kết thúc, reporting worker tổng hợp cả metadata quan hệ lẫn evidence append-only để dựng HTML/PDF. Vì vậy, một biểu diễn dữ liệu duy nhất không phù hợp cho cả ba tải truy cập.
 
+#### 4.6.2.1. Sơ đồ luồng dữ liệu mức 1
+
+Hình 4.10 phân rã hệ thống thành năm tiến trình nghiệp vụ. `P1` xử lý tham gia, xác thực và chính sách; `P2` tạo ngữ cảnh phiên sau khi ghi nhận sự đồng ý và kiểm tra thiết bị; `P3` tiếp nhận, kiểm chứng dữ liệu giám sát tại biên tin cậy phía máy chủ; `P4` phục vụ bảng điều khiển, bằng chứng và hậu kiểm; `P5` tổng hợp dữ liệu để sinh báo cáo. Ba kho dữ liệu được tách theo tải truy cập: `DS1` lưu siêu dữ liệu và trạng thái hiện tại, `DS2` lưu chuỗi bằng chứng, `DS3` lưu đầu ra báo cáo.
+
+![Sơ đồ luồng dữ liệu mức 1](image/data_flow_level_1.svg)
+
+**Hình 4.10. Sơ đồ luồng dữ liệu mức 1 của hệ thống**
+
+#### 4.6.2.2. Từ điển luồng dữ liệu
+
+| Mã | Nguồn → đích | Nội dung chính | Kênh/tần suất | Kiểm tra và lưu trữ |
+|---|---|---|---|---|
+| `F01` | Candidate → P1 | Join code, thông tin hoặc kết quả xác thực | REST, khi tham gia | Trạng thái kỳ thi, thời hạn mã, phương thức auth |
+| `F02` | P1 → Candidate | Metadata kỳ thi, effective policy, kết quả auth | REST response | Chỉ trả trường cần cho setup; không trả secret |
+| `F03` | Admin/Manager → P1 | Organization, exam, policy, assignment | REST, theo thao tác | Cookie/user token, capability, tenant scope, optimistic lock |
+| `F04` | P1 → P2 | Candidate identity và policy đã giải quyết | Nội bộ server | Gắn đúng exam/version trước khi tạo session |
+| `F05` | Candidate → P2 | Consent, preflight và device identity | REST, một lần hoặc khi retry | Bắt buộc điều kiện theo policy; lưu session/device state |
+| `F06` | P2 → P3 | Session ID/token, client type và capability | WebSocket hello | Token đúng loại, session ownership, lease kết nối |
+| `F07` | Client → P3 | Telemetry, violation, snapshot, browser event, heartbeat | WebSocket; telemetry theo chu kỳ, event theo phát sinh | Pydantic strict schema, sequence/dedup, giới hạn payload |
+| `F08` | P3 → DS1 | Risk/integrity/session/device current state | Mỗi cập nhật hợp lệ | Dữ liệu dẫn xuất được tính/đối chiếu phía server |
+| `F09` | P3 → DS2 | Signals, transition, violation, browser event, snapshot | Append theo sự kiện/lô | Tên file cho phép, hash/magic bytes, đường dẫn trong session |
+| `F10` | P3 → P4 | Cập nhật phiên đã kiểm chứng | WebSocket realtime | Chỉ fan-out sau authz/validation; Redis pub/sub nếu đa process |
+| `F11` | Proctor → P4 | Truy vấn dashboard, filter, session detail, review | REST/WebSocket | User cookie, ticket dùng một lần, exam assignment |
+| `F12` | P4 → Proctor | KPI, risk, integrity, alert, timeline, evidence | REST ban đầu + WebSocket cập nhật | Lọc theo tenant/exam; escape dữ liệu trước khi đưa vào DOM |
+| `F13` | P4 → DS1 | Verdict, ghi chú review và audit metadata | REST theo thao tác | Capability review, reviewer ID, timestamp server |
+| `F14` | Manager/Proctor → P5 | Yêu cầu sinh báo cáo | REST, theo yêu cầu | Capability export; tạo `ReportJob` `pending` |
+| `F15` | DS1 → P5 | Metadata kỳ thi/phiên, current state, review | Truy vấn khi worker xử lý | Session/report job phải tồn tại và đúng trạng thái |
+| `F16` | DS2 → P5 | Timeline, violation, browser event và snapshot | Đọc tuần tự khi dựng report | Tolerant với file thiếu; snapshot phải nằm trong session root |
+| `F17` | P5 → DS3 | HTML/PDF, chart và trạng thái job | Sau khi tổng hợp | Chỉ `completed` khi output thành công; lỗi ghi `failed` |
+| `F18` | DS3/P5 → người dùng | Trạng thái job và tệp báo cáo | REST/download | Authorization được kiểm tra lại tại thời điểm tải |
+
+Từ điển trên phân biệt rõ dữ liệu điều khiển (`F01`–`F06`), dữ liệu giám sát realtime (`F07`–`F12`) và dữ liệu hậu kiểm/báo cáo (`F13`–`F18`). Việc phân nhóm hỗ trợ kiểm thử từng ranh giới: client không được tự quyết định dữ liệu dẫn xuất hoặc đường dẫn tệp; dashboard không nhận message chưa kiểm chứng; report không đọc tệp ngoài session root.
+
 Mỗi thư mục `sessions/<session_id>/` có cấu trúc thống nhất:
 
 ```text
@@ -379,30 +483,30 @@ Các đóng góp chính của đồ án có thể tổng quát hóa như sau:
 - **Kiến trúc phân rã theo trách nhiệm:** đưa xử lý CV về client, đưa quản trị và kiểm chứng dữ liệu về backend, tách browser integrity khỏi risk CV nhưng hợp nhất hai loại bằng chứng trên dashboard và báo cáo.
 - **Pipeline nhận thức dùng chung:** chạy detector nền tảng một lần cho mỗi frame, chia sẻ `PerceptionResult` cho bảy Signal Extractor và dùng interface thống nhất để kiểm thử độc lập.
 - **Mô hình quyết định hai cấp có trạng thái:** kết hợp cửa sổ thời gian, hysteresis trên từng tín hiệu, weighted fusion và hysteresis cấp phiên; chỉ sinh sự kiện ở cạnh lên để hạn chế log trùng.
-- **Dữ liệu có khả năng giải thích:** lưu tín hiệu đóng góp, transition, risk timeline, browser event và snapshot thay vì chỉ lưu một nhãn “gian lận”.
-- **Nền tảng nhiều tổ chức có phân quyền theo tài nguyên:** tách System Admin, Organization Admin, Exam Manager và assignment theo kỳ thi; cung cấp quyền truy cập ngoại lệ có phê duyệt đối với dữ liệu nhạy cảm.
-- **Phòng thủ phía server:** không tin điểm và đường dẫn do client khai báo; kiểm tra schema, dùng thời gian server, tính lại hoặc đối chiếu risk/integrity, kiểm tra ảnh và ghi audit.
-- **Chu trình sau phát hiện:** hỗ trợ giám thị xem timeline, thực hiện incident review và tạo report job HTML/PDF, giữ kết luận của con người tách khỏi sự kiện máy.
+- **Dữ liệu có khả năng giải thích:** lưu tín hiệu đóng góp, chuyển trạng thái, diễn biến điểm rủi ro, sự kiện trình duyệt và ảnh chụp thay vì chỉ lưu một nhãn “gian lận”.
+- **Nền tảng nhiều tổ chức có phân quyền theo tài nguyên:** tách System Admin, Organization Admin, Exam Manager và nhiệm vụ theo kỳ thi; cung cấp quyền truy cập ngoại lệ có phê duyệt đối với dữ liệu nhạy cảm.
+- **Phòng thủ phía máy chủ:** không tin điểm và đường dẫn do máy khách khai báo; kiểm tra lược đồ, dùng thời gian máy chủ, tính lại hoặc đối chiếu điểm rủi ro/toàn vẹn, kiểm tra ảnh và ghi nhật ký kiểm toán.
+- **Chu trình sau phát hiện:** hỗ trợ giám thị xem diễn biến, thực hiện hậu kiểm sự cố và tạo tác vụ báo cáo HTML/PDF, đồng thời giữ kết luận của con người tách khỏi sự kiện máy.
 
 Bảng 4.2 tổng hợp tuyến liên kết từ đóng góp đến nhóm yêu cầu chính.
 
 | Đóng góp | Nhóm yêu cầu chính |
 |---|---|
-| Kiến trúc client–extension–backend | `FR-SESSION-*`, `FR-RT-*`, `NFR-PRIV-*`, `NFR-PORT-01` |
-| Pipeline nhận thức và bảy signal | `FR-CV-01..03`, `NFR-PERF-01`, `NFR-REL-01` |
-| Risk Fusion Engine hai cấp | `FR-CV-04`, `NFR-MAIN-01`, `NFR-EXPL-01` |
-| RBAC và policy phân tầng | `FR-AUTH-*`, `FR-ORG-*`, `FR-EXAM-*`, `NFR-SEC-01` |
-| WebSocket và kiểm chứng telemetry | `FR-RT-*`, `FR-BROWSER-02`, `NFR-SEC-02..03`, `NFR-PERF-02` |
-| Evidence, review, report và retention | `FR-EVID-*`, `FR-REVIEW-01`, `FR-REPORT-*`, `FR-RET-01` |
+| Kiến trúc ứng dụng CV–tiện ích–máy chủ | `FR-SESSION-*`, `FR-RT-*`, `NFR-PRIV-*`, `NFR-PORT-01` |
+| Tầng nhận thức và bảy tín hiệu | `FR-CV-01..03`, `NFR-PERF-01`, `NFR-REL-01` |
+| Bộ tổng hợp rủi ro hai cấp | `FR-CV-04`, `NFR-MAIN-01`, `NFR-EXPL-01` |
+| RBAC và chính sách phân tầng | `FR-AUTH-*`, `FR-ORG-*`, `FR-EXAM-*`, `NFR-SEC-01` |
+| WebSocket và kiểm chứng dữ liệu giám sát | `FR-RT-*`, `FR-BROWSER-02`, `NFR-SEC-02..03`, `NFR-PERF-02` |
+| Bằng chứng, hậu kiểm, báo cáo và lưu trữ | `FR-EVID-*`, `FR-REVIEW-01`, `FR-REPORT-*`, `FR-RET-01` |
 
 ### 4.8.3. Kết quả đạt được và giới hạn đánh giá
 
-Tại thời điểm chốt báo cáo, bộ kiểm thử chạy thành công 309 ca Python và 8 ca extension, bao phủ từ công thức và state machine, pipeline CV, báo cáo, API, authentication, policy, tenant isolation đến WebSocket và giao diện quản trị. Ngoài unit test, dự án còn có smoke test với model thật, kiểm thử tích hợp video mẫu và luồng mô phỏng đầu-cuối tạo báo cáo thực. Kết quả này cho thấy kiến trúc và các hợp đồng dữ liệu có thể vận hành xuyên suốt các module.
+Trong lần rà soát ngày 12/08/2026, bộ kiểm thử tiện ích mở rộng đạt 8/8 ca. Bộ kiểm thử Python đạt 309/309 ca ở lần chạy toàn bộ thứ hai; lần chạy đầu đạt 308 ca và có một ca lỗi không tái hiện khi chạy riêng. Ngoài kiểm thử đơn vị, dự án có kiểm thử khởi tạo mô hình thật, kiểm thử tích hợp trên video mẫu và luồng mô phỏng đầu-cuối tạo báo cáo. Các kết quả cung cấp bằng chứng rằng kiến trúc và hợp đồng dữ liệu có thể vận hành xuyên suốt các mô-đun, đồng thời cho thấy cần tiếp tục theo dõi tính ổn định của ca kiểm thử sắp xếp nhật ký. Chi tiết được trình bày tại Chương 6.
 
-Tuy nhiên, số lượng test phần mềm không đồng nghĩa với độ chính xác nhận diện ngoài thực tế. Để kết luận precision, recall, F1-score hoặc tỉ lệ báo động giả của từng tín hiệu, hệ thống cần một bộ video thật đủ đa dạng về ánh sáng, thiết bị, góc mặt và đặc điểm người dùng, kèm ground truth độc lập. Vì vậy, chương này chỉ khẳng định các kết quả đã được kiểm chứng về chức năng, tính nhất quán, khả năng chịu lỗi và an toàn truy cập; không đưa ra số liệu độ chính xác chưa có cơ sở thực nghiệm.
+Tuy nhiên, số lượng ca kiểm thử phần mềm không đồng nghĩa với độ chính xác nhận diện trong thực tế. Để đánh giá Precision, Recall, F1-score hoặc tỉ lệ cảnh báo sai của từng tín hiệu, hệ thống cần video đủ đa dạng về ánh sáng, thiết bị, góc mặt và đặc điểm người dùng, kèm nhãn tham chiếu độc lập. Vì vậy, chương này chỉ kết luận về chức năng, tính nhất quán, khả năng chịu lỗi và an toàn truy cập trong phạm vi kiểm thử; số liệu nhận diện và giới hạn tái lập được phân tích riêng ở Chương 6.
 
 ## 4.9. Kết chương
 
-Chương 4 đã trình bày các giải pháp và đóng góp nổi bật của đồ án ở cấp hệ thống. Thay vì xử lý từng frame bằng các luật độc lập, đồ án xây dựng pipeline nhận thức dùng chung, bảy tín hiệu có hợp đồng thống nhất và cơ chế kết hợp hai cấp theo thời gian. Thay vì dừng ở một ứng dụng webcam, đồ án bổ sung extension giám sát trình duyệt, backend nhiều tổ chức, dashboard thời gian thực, mô hình phân quyền theo tài nguyên, kho bằng chứng và quy trình báo cáo.
+Chương 4 đã trình bày thiết kế giải pháp và các đóng góp của đồ án ở cấp hệ thống. Thay vì xử lý từng khung hình bằng các luật độc lập, đồ án xây dựng tầng nhận thức dùng chung, bảy tín hiệu có hợp đồng thống nhất và cơ chế kết hợp hai cấp theo thời gian. Hệ thống mở rộng ứng dụng webcam bằng tiện ích giám sát trình duyệt, dịch vụ nhiều tổ chức, bảng điều khiển thời gian thực, mô hình phân quyền theo tài nguyên, kho bằng chứng và quy trình báo cáo.
 
-Các kết quả cho thấy hệ thống đã hình thành một chuỗi xử lý có thể truy vết từ dữ liệu đầu vào, trạng thái tín hiệu, quyết định rủi ro, truyền nhận thời gian thực đến review và báo cáo. Đồng thời, chương cũng xác định rõ giới hạn của client chạy trên thiết bị người dùng, liveness cơ bản, phạm vi quan sát của extension và nhu cầu đánh giá trên bộ dữ liệu thật. Đây là cơ sở để chương tiếp theo trình bày chi tiết quá trình cài đặt, kiểm thử và đánh giá thực nghiệm của hệ thống.
+Hệ thống đã hình thành chuỗi xử lý có thể truy vết từ dữ liệu đầu vào, trạng thái tín hiệu, quyết định rủi ro, truyền nhận thời gian thực đến hậu kiểm và báo cáo. Chương cũng xác định rõ giới hạn của máy khách chạy trên thiết bị người dùng, kiểm tra sự hiện diện sống cơ bản, phạm vi quan sát của tiện ích mở rộng và nhu cầu đánh giá trên dữ liệu thực tế. Chương 5 tiếp theo trình bày cách các giải pháp này được cài đặt trong phiên bản bàn giao.
