@@ -1,140 +1,302 @@
-Chương 2 Cơ sở lý thuyết
-Tổng quan
-Chương 1 đã trình bày vấn đề cần giải quyết: xây dựng một hệ thống giám sát thi trực tuyến có độ tin cậy cao, khắc phục các hạn chế của các phương pháp hiện tại. Để triển khai được một hệ thống như vậy, cần nắm vững các kiến thức lý thuyết cơ bản về thị giác máy tính, xử lý ảnh, xử lý tín hiệu, và các phương pháp tổng hợp dữ liệu. Chương này sẽ trình bày các cơ sở lý thuyết cần thiết như một nền tảng để hiểu các kỹ thuật được sử dụng trong đồ án. Các nội dung chính bao gồm: (i) các khái niệm cơ bản về thị giác máy tính; (ii) các phương pháp phát hiện khuôn mặt; (iii) trích xuất các điểm mốc khuôn mặt (landmark detection); (iv) ước lượng góc đầu; (v) xác thực danh tính bằng face embedding; (vi) phát hiện các trạng thái của mắt và miệng; (vii) phát hiện vật thể; (viii) các kỹ thuật xử lý tín hiệu và state machine; và (ix) các phương pháp tổng hợp đa tín hiệu.
-2.1 Khái niệm cơ bản về Thị giác máy tính
-2.1.1 Định nghĩa và mục tiêu
-Thị giác máy tính (computer vision) là một lĩnh vực của trí tuệ nhân tạo tập trung vào việc cho phép máy tính "nhìn" và "hiểu" thế giới thực qua các hình ảnh hoặc video. Mục tiêu cơ bản của thị giác máy tính là trích xuất thông tin hữu ích từ các dữ liệu hình ảnh (pixel data) thô, rồi chuyển đổi nó thành dạng mà máy tính có thể xử lý, phân tích, và ra quyết định [5]. Quá trình này thường được gọi là "quá trình hiểu ảnh" (image understanding), trong đó dữ liệu pixel một chiều được chuyển đổi thành các khái niệm ngữ nghĩa cao hơn mà con người có thể hiểu.
-Quá trình xử lý hình ảnh trong thị giác máy tính thường bao gồm ba bước chính:
-Bước 1: thu nhập dữ liệu (image acquisition). Bước này liên quan đến việc thu thập hình ảnh hoặc video từ các nguồn khác nhau như camera, webcam, hoặc ảnh tĩnh được lưu trữ. Chất lượng của dữ liệu thu nhập trực tiếp ảnh hưởng đến kết quả của các bước tiếp theo, vì vậy việc lựa chọn độ phân giải thích hợp, điều chỉnh các thông số camera, và đảm bảo điều kiện ánh sáng tốt là rất quan trọng.
-Bước 2: xử lý và phân tích hình ảnh (image processing and analysis). Bước này áp dụng các kỹ thuật xử lý để trích xuất các đặc trưng quan trọng từ hình ảnh thô. Các kỹ thuật này có thể là đơn giản, như điều chỉnh độ sáng (brightness), tương phản (contrast), hoặc lọc nhiễu, hoặc phức tạp hơn, như phát hiện cạnh (edge detection), phân khúc ảnh (image segmentation), hoặc trích xuất các điểm đặc biệt (keypoint detection).
-Bước 3: hiểu biết về nội dung (semantic understanding). Bước cuối cùng chuyển đổi các đặc trưng trích xuất thành các khái niệm có ý nghĩa mà con người có thể hiểu. Ví dụ, thay vì chỉ có một tập hợp các giá trị pixel, hệ thống sẽ xác định được "có một khuôn mặt ở vị trí (x, y)", "khuôn mặt này thuộc người A", hoặc "người này đang nhắm mắt". Đây là phần khó nhất của thị giác máy tính vì yêu cầu sự kết hợp giữa các kỹ thuật học máy, toán học, và kiến thức miền (domain knowledge).
-2.1.2 Biểu diễn dữ liệu hình ảnh trong máy tính
-Một hình ảnh hay khung hình từ video có thể được biểu diễn dưới dạng một ma trận các số. Trong trường hợp đơn giản nhất, một ảnh đen trắng (grayscale image) có thể được biểu diễn dưới dạng một ma trận hai chiều, trong đó mỗi phần tử (pixel) chứa một giá trị từ 0 đến 255, đại diện cho mức độ sáng từ đen (0) đến trắng (255).
-Tuy nhiên, hầu hết các ứng dụng thực tế làm việc với ảnh màu (color image), trong đó mỗi pixel được biểu diễn bằng ba giá trị số, tương ứng với ba kênh màu RGB (Red, Green, Blue). Do đó, một ảnh màu có thể được biểu diễn dưới dạng một ma trận ba chiều với kích thước chiều rộng × chiều cao × 3. Mỗi kênh màu có giá trị từ 0 đến 255, nên tổng cộng có 256³ ≈ 16.7 triệu màu có thể được biểu diễn.
-Ví dụ cụ thể: một hình ảnh có độ phân giải 640×480 pixel (chiều rộng × chiều cao) sẽ là một ma trận kích thước 640×480×3. Tổng cộng, ma trận này chứa 640×480×3 = 921,600 giá trị số. Khi xử lý ảnh hay video real-time (30 khung hình/giây), máy tính phải xử lý 640×480×3×30 ≈ 27.6 triệu giá trị mỗi giây, đó là lý do tại sao các kỹ thuật tối ưu hóa và sử dụng GPU (Graphics Processing Unit) là cần thiết.
-2.1.3 Các phương pháp trong thị giác máy tính
-Thị giác máy tính sử dụng nhiều phương pháp toán học và mô hình để trích xuất các đặc trưng có ý nghĩa từ ma trận pixel. Những phương pháp này có thể được phân thành ba nhóm lớn:
-Phương pháp cổ điển (classical methods):
-Những phương pháp này đã được phát triển từ thập niên 1970-2000 và dựa trên các nguyên lý toán học rõ ràng. Chúng bao gồm:
-•	Xử lý ảnh cơ bản: Gaussian blur (làm mờ hình ảnh), edge detection (phát hiện cạnh) sử dụng toán tử Canny hoặc Sobel, corner detection (phát hiện góc) sử dụng toán tử Harris.
-•	Trích xuất đặc trưng: HOG (Histogram of Oriented Gradients) tính toán histogram các hướng của gradient tại các vị trí khác nhau trong ảnh; SIFT (Scale-Invariant Feature Transform) [6] phát hiện các điểm đặc trưng bất biến với tỷ lệ và góc quay; SURF (Speeded Up Robust Features) là một phiên bản nhanh hơn của SIFT.
-•	Phương pháp phát hiện: Haar Cascade [1] sử dụng cascade của các bộ phân loại Haar được huấn luyện bằng Adaboost; Deformable Part Models (DPM) mô hình vật thể thành các bộ phận có thể biến dạng.
-Ưu điểm của các phương pháp cổ điển là chúng nhanh, tiết kiệm tài nguyên tính toán, và có thể hiểu được tại sao chúng hoạt động như vậy. Nhược điểm là chúng kém chính xác hơn các phương pháp hiện đại, đặc biệt là trong các tình huống phức tạp hoặc có nhiều biến thể.
-Phương pháp học máy (machine learning methods):
-Những phương pháp này sử dụng các mô hình học máy để học các mẫu từ dữ liệu huấn luyện. Chúng bao gồm:
-•	Support Vector Machines (SVM): Một mô hình phân loại tìm siêu phẳng tối ưu để tách các lớp dữ liệu.
-•	Random Forests: Một tập hợp các cây quyết định được kết hợp để đưa ra quyết định chung.
-•	Boosting methods: Các phương pháp như Adaboost kết hợp nhiều bộ phân loại yếu để tạo một bộ phân loại mạnh.
-Các phương pháp học máy này cải thiện so với các phương pháp cổ điển nhưng vẫn kém so với các phương pháp học sâu hiện đại.
-Phương pháp học sâu (deep learning methods):
-Những phương pháp này sử dụng các mạng neural sâu và là những phương pháp tiên tiến nhất hiện nay. Chúng bao gồm:
-•	Convolutional Neural Networks: Được phát triển từ lần đầu bởi LeCun et al. (1989), sau đó được cải tiến thông qua nhiều kiến trúc khác nhau. VGGNet [8] sử dụng các khối convolutional với kích thước filter nhỏ (3×3) nhưng nhiều lớp. ResNet giới thiệu các kết nối tắt (skip connections) để cho phép huấn luyện các mạng rất sâu. Inception sử dụng các khối convolutional song song với kích thước filter khác nhau.
-•	Region-based CNN: R-CNN [10] đề xuất các vùng (region proposal) và sau đó phân loại từng vùng. Fast R-CNN cải tiến việc tính toán bằng cách tính feature map một lần rồi trích xuất các tính năng cho mỗi vùng đề xuất. Faster R-CNN [11] thêm Region Proposal Network (RPN) để tạo ra các đề xuất một cách hiệu quả hơn.
-•	Single Shot Detection (SSD): YOLO (You Only Look Once) [3] phát hiện tất cả các vật thể trong ảnh bằng một lần forward pass duy nhất. SSD tương tự nhưng sử dụng các feature map ở nhiều tỷ lệ khác nhau. RetinaNet giới thiệu focal loss để xử lý sự mất cân bằng lớp (class imbalance) giữa các bộ phân loại dương tính (background) và âm tính (objects).
-•	Các mô hình khác: U-Net được sử dụng cho semantic segmentation (phân khúc ngữ nghĩa). Vision Transformer (ViT) áp dụng kiến trúc transformer, được phát triển thành công trong xử lý ngôn ngữ tự nhiên, vào thị giác máy tính.
-Trong đồ án này, chúng ta sẽ sử dụng chủ yếu các phương pháp học sâu (deep learning) kết hợp với một số phương pháp cổ điển (như ước lượng góc đầu bằng solvePnP).
-2.2 Phát hiện khuôn mặt
-2.2.1 Tầm quan trọng và định nghĩa
-Phát hiện khuôn mặt (face detection) là bước đầu tiên và rất quan trọng trong mọi hệ thống xử lý khuôn mặt [7]. Mục tiêu chính của phát hiện khuôn mặt là xác định xem trong một bức ảnh hay khung hình video có chứa một hoặc nhiều khuôn mặt hay không, và nếu có, hãy xác định vị trí cụ thể (bounding box) của chúng. Bounding box thường được biểu diễn dưới dạng (x, y, w, h), trong đó (x, y) là tọa độ góc trái trên của hộp, w là chiều rộng, và h là chiều cao.
-Tại sao phát hiện khuôn mặt lại quan trọng? Vì các bước tiếp theo trong pipeline xử lý khuôn mặt (như landmark detection, face recognition, emotion detection) đều phụ thuộc vào việc đã phát hiện được khuôn mặt chính xác hay chưa. Nếu phát hiện sai lầm (bỏ sót khuôn mặt hoặc phát hiện nhầm vật thể khác là khuôn mặt), các bước tiếp theo sẽ cho kết quả sai. Hơn nữa, trong bối cảnh giám sát thi trực tuyến của đồ án, phát hiện khuôn mặt chính xác là tiền đề để có thể phát hiện được các hành vi gian lận như vắng mặt, nhiều người, hoặc đổi người.
-2.2.2 Lịch sử phát triển
-Phát hiện khuôn mặt là một bài toán được nghiên cứu từ thập niên 1990. Có nhiều phương pháp được phát triển qua các năm, từ những phương pháp cổ điển đến các phương pháp học sâu hiện đại [7]:
-Giai đoạn 1: Phương pháp cổ điển (1990s-2000s)
-•	Haar Cascade Classifiers: được đề xuất bởi Viola và Jones [1] vào năm 2001, phương pháp này sử dụng cascade của các bộ phân loại Haar (Haar-like features) được huấn luyện bằng Adaboost. Đây là một phương pháp đột phá lúc bấy giờ và được sử dụng rộng rãi trong OpenCV đến ngày nay. Ưu điểm: nhanh, tài nguyên ít, phù hợp cho các ứng dụng real-time. Nhược điểm: độ chính xác kém hơn các phương pháp hiện đại, khó xử lý các tình huống khó như khuôn mặt bị quay với góc lớn, che khuất một phần, hoặc chiếu sáng không tốt.
-•	HOG: Một phương pháp trích xuất đặc trưng được sử dụng kết hợp với SVM để phát hiện người (thư viện dlib) [9]. Phương pháp này cũng có thể được sử dụng cho phát hiện khuôn mặt. Ưu điểm: tương đối chính xác. Nhược điểm: chậm hơn Haar Cascade, vẫn kém so với các phương pháp học sâu.
-Giai đoạn 2: Phương pháp học sâu (2010s)
-•	Region-based CNN: R-CNN [10] được đề xuất bởi Girshick et al. (2014) là phương pháp đột phá đầu tiên sử dụng deep learning cho phát hiện vật thể. Phương pháp này sau đó được áp dụng cho phát hiện khuôn mặt. R-CNN sử dụng region proposal (đề xuất vùng) để tìm các vùng có khả năng chứa vật thể, rồi phân loại từng vùng bằng CNN. Ưu điểm: chính xác cao. Nhược điểm: chậm (phải chạy CNN cho mỗi region proposal).
-•	Fast R-CNN: Cải tiến của R-CNN bằng cách tính feature map một lần rồi trích xuất các tính năng cho mỗi region proposal, nhanh hơn nhiều so với R-CNN gốc.
-•	Faster R-CNN [11]: Thêm Region Proposal Network (RPN) để tạo ra các region proposal một cách hiệu quả hơn. Phương pháp này trở thành một trong những phương pháp phát hiện vật thể tốt nhất và được sử dụng rộng rãi.
-•	YOLO [3]: Được đề xuất bởi Redmon et al. (2016), YOLO là một phương pháp single-shot detection cho phép phát hiện nhanh tất cả các vật thể trong ảnh bằng một lần forward pass duy nhất. Mặc dù YOLO được thiết kế cho phát hiện vật thể chung (chó, mèo, xe, v.v.), nó cũng có thể được huấn luyện cho phát hiện khuôn mặt bằng fine-tuning trên dataset khuôn mặt. Ưu điểm: rất nhanh, phù hợp cho real-time. Nhược điểm: độ chính xác kém hơn Faster R-CNN, đặc biệt là với các khuôn mặt nhỏ.
-•	SSD: Tương tự như YOLO, là một phương pháp single-shot, nhưng sử dụng các feature map ở nhiều tỷ lệ khác nhau để phát hiện các vật thể có kích thước đa dạng.
-•	MTCNN Được thiết kế đặc biệt cho phát hiện khuôn mặt, được giới thiệu bởi Zhang et al. [2] vào năm 2016. Phương pháp này sẽ được trình bày chi tiết ở mục 2.2.3.
-•	RetinaFace: Một phương pháp phát hiện khuôn mặt hiện đại [4] được đề xuất bởi Deng et al. (2020), kết hợp các ý tưởng từ Faster R-CNN với FPN (Feature Pyramid Network) để xử lý khuôn mặt có kích thước đa dạng.
-2.2.3 Multi-task Cascaded Convolutional Networks
-Multi-task Cascaded Convolutional Networks (MTCNN) [2] là một trong những phương pháp phát hiện khuôn mặt tốt nhất và được sử dụng rộng rãi. Nó được thiết kế để hoạt động tốt trong các tình huống khó như khuôn mặt bị che khuất một phần, góc quay lớn, hoặc chiếu sáng không tốt. MTCNN được phát triển với hai đặc điểm chính: (i) sử dụng cascade (tầng xếp tầng) của nhiều mạng CNN, và (ii) mỗi mạng giải quyết nhiều nhiệm vụ (multi-task) cùng lúc.
-Kiến trúc của MTCNN:
-MTCNN bao gồm ba giai đoạn (stage), mỗi giai đoạn là một mạng CNN riêng biệt. Ba giai đoạn này được thiết kế để dần dần tinh chỉnh các kết quả:
-Giai đoạn 1: Proposal Network (P-Net)
-Mục tiêu: Tạo ra các hộp đề xuất ban đầu (region proposal) có thể chứa khuôn mặt.
-Quá trình hoạt động:
-•	Đầu vào: Hình ảnh gốc với các kích thước khác nhau (image pyramid). Tại mỗi kích thước, P-Net quét qua toàn bộ hình ảnh với sliding window kích thước 12×12.
-•	Tính toán: Tại mỗi vị trị sliding window, mạng P-Net tính toán ba đầu ra: (i) xác suất có khuôn mặt tại vị trí này (face probability); (ii) tọa độ điều chỉnh bounding box (bounding box regression); (iii) tọa độ của 5 điểm mốc khuôn mặt sơ bộ (landmark regression).
-•	Loại bỏ: Các hộp có xác suất < ngưỡng (thường 0.5) được loại bỏ. Các hộp còn lại được hợp nhất (NMS - Non-Maximum Suppression) để loại bỏ các hộp trùng lặp.
-•	Đầu ra: Một danh sách các hộp đề xuất có xác suất cao và các điểm mốc sơ bộ.
-Giai đoạn 2: Refine Network (R-Net)
-Mục tiêu: Loại bỏ các hộp đề xuất sai lầm (false positives) và tinh chỉnh vị trí cũng như các điểm mốc của các hộp còn lại.
-Quá trình hoạt động:
-•	Đầu vào: Các hộp đề xuất từ P-Net. Các hộp này được cắt từ hình ảnh gốc và resize về kích thước chuẩn 24×24.
-•	Tính toán: R-Net là một mạng CNN lớn hơn P-Net, có kiến trúc tương tự nhưng với nhiều lớp hơn. Nó tính toán ba đầu ra: face probability, bounding box regression, và landmark regression.
-•	Loại bỏ: Các hộp có xác suất < ngưỡng được loại bỏ. Các hộp còn lại được hợp nhất bằng NMS.
-•	Tinh chỉnh: Bounding box và các điểm mốc được tinh chỉnh dựa trên đầu ra của R-Net.
-•	Đầu ra: Một danh sách nhỏ hơn các hộp có chất lượng cao.
-Giai đoạn 3: Output Network (O-Net)
-Mục tiêu: Tạo ra kết quả cuối cùng với độ chính xác cao nhất và trích xuất chính xác 5 điểm mốc khuôn mặt.
-Quá trình hoạt động:
-•	Đầu vào: Các hộp đề xuất từ R-Net, được resize về kích thước chuẩn 48×48 (kích thước cao nhất trong ba giai đoạn, cho phép phát hiện chi tiết hơn).
-•	Tính toán: O-Net là mạng lớn nhất trong ba giai đoạn. Nó tính toán bốn đầu ra:
-o	Face probability: xác suất có khuôn mặt
-o	Bounding box regression: điều chỉnh vị trí bounding box
-o	Face landmarks: 5 điểm mốc trên khuôn mặt (cụ thể là: hai mắt, mũi, hai khoá miệng)
-o	Face pose (tùy chọn): góc quay đầu
-•	Đầu ra: Danh sách final các khuôn mặt được phát hiện với: vị trí bounding box, xác suất, 5 điểm mốc, và các thông tin khác.
-Ưu điểm của MTCNN:
-1.	Độ chính xác cao: MTCNN đạt tỷ lệ phát hiện rất cao trên nhiều benchmark, bao gồm WIDER Face dataset [18], một trong những dataset lớn nhất cho phát hiện khuôn mặt với hơn 393,703 khuôn mặt được gán nhãn.
-2.	Xử lý tốt các tình huống khó: Mặc dù có cascade của ba giai đoạn, MTCNN vẫn có thể xử lý tốt các khuôn mặt bị quay với góc lớn, che khuất một phần bởi các vật khác (kính, khẩu trang), hoặc chiếu sáng không tốt (thiếu sáng hoặc quá sáng).
-3.	Trích xuất landmark sơ bộ: Mỗi giai đoạn P-Net, R-Net, O-Net đều trích xuất 5 điểm mốc, và điểm mốc từ O-Net được sử dụng cho các bước xử lý tiếp theo (như ước lượng góc đầu, xác thực danh tính).
-4.	Tốc độ xử lý chấp nhận được: Nhờ cascade design (loại bỏ các false positive từ sớm ở P-Net), MTCNN đạt tốc độ xử lý tương đối nhanh so với các phương pháp khác như RetinaFace, mặc dù chậm hơn YOLO.
-Nhược điểm của MTCNN:
-1.	Cần ba lần forward pass: Phải chạy ba mạng CNN riêng biệt (P-Net, R-Net, O-Net), tổng cộng chậm hơn single-stage methods như YOLO.
-2.	Phụ thuộc vào chất lượng detection của P-Net: Nếu P-Net bỏ sót một khuôn mặt (đặc biệt là khuôn mặt nhỏ hoặc bị quay với góc rất lớn), các giai đoạn R-Net và O-Net không thể phục hồi (vì chúng chỉ làm việc trên các proposal từ P-Net).
-3.	Nhạy cảm với kích thước khuôn mặt rất nhỏ: Khó phát hiện các khuôn mặt rất nhỏ trong ảnh (ví dụ khuôn mặt ở xa trong một ảnh phòng học toàn cảnh).
-4.	Cần điều chỉnh các ngưỡng: Các ngưỡng xác suất (thường 0.5) được sử dụng trong P-Net, R-Net, O-Net có thể cần điều chỉnh tùy theo bài toán cụ thể (ví dụ có thể giảm ngưỡng để phát hiện khuôn mặt nhỏ hơn, nhưng điều này có thể tăng false positive).
-2.2.4 So sánh các phương pháp phát hiện khuôn mặt
-Bảng dưới đây tóm tắt so sánh các phương pháp phát hiện khuôn mặt chính:
-Bảng 1 So sánh các phương pháp phát hiện khuôn mặt chính
-Phương pháp	Loại	Độ chính xác	Tốc độ	Xử lý tình huống khó	Trích xuất landmark
-Haar Cascade [1]	Cổ điển	Thấp	Rất nhanh	Kém	Không
-HOG + SVM [9]	Cổ điển	Trung bình	Chậm	Kém	Không
-R-CNN [10]	Deep learning	Cao	Rất chậm	Tốt	Có thể
-Faster R-CNN [11]	Deep learning	Rất cao	Chậm	Rất tốt	Có thể
-YOLO [3]	Deep learning	Cao	Rất nhanh	Trung bình	Không
-MTCNN [2]	Deep learning	Rất cao	Chậm	Rất tốt	Có (5 điểm)
-RetinaFace [4]	Deep learning	Rất cao	Chậm	Rất tốt	Có (5 điểm)
-2.2.5 Lựa chọn phương pháp cho đồ án
-Trong đồ án này, chúng tôi sử dụng MTCNN làm phương pháp chính để phát hiện khuôn mặt. Quyết định này dựa trên những lý do sau:
-1.	Độ chính xác cao và xử lý tốt tình huống khó: MTCNN đã được chứng minh hiệu quả trong các ứng dụng thực tế của face detection, đặc biệt là khi khuôn mặt có góc quay lớn hoặc bị che khuất một phần, đây là những tình huống phổ biến trong giám sát thi trực tuyến (ví dụ thí sinh quay đầu nhìn sang bên, hoặc đeo kính).
-2.	Có sẵn các thư viện Python: có các triển khai sẵn của MTCNN trong Python (thư viện mtcnn, facenet-pytorch) với giao diện dễ sử dụng, tiết kiệm thời gian phát triển.
-3.	Tốc độ xử lý chấp nhận được: mặc dù chậm hơn YOLO, MTCNN vẫn có thể xử lý ở tốc độ gần real-time (15-25 khung hình/giây trên CPU thông thường, hoặc 30+ FPS trên GPU), đủ cho ứng dụng giám sát thi.
-4.	Trích xuất sẵn 5 điểm landmark: MTCNN đã trích xuất 5 điểm mốc khuôn mặt chính xác, những điểm này được sử dụng trực tiếp cho các bước tiếp theo như ước lượng góc đầu (solvePnP) hoặc phát hiện trạng thái mắt (EAR).
-5.	Tương thích tốt với các thư viện khác: MTCNN tương thích tốt với MediaPipe FaceMesh (sẽ được trình bày ở mục 2.3) và các thư viện khác mà đồ án sử dụng, cho phép tích hợp dễ dàng.
-Nếu trong tương lai có nhu cầu tăng độ chính xác (ưu tiên hơn tốc độ), có thể xem xét RetinaFace [4]. Nếu cần tốc độ rất cao (ưu tiên hơn độ chính xác), có thể sử dụng YOLOv8 [21] với fine-tuning trên dataset khuôn mặt.
-2.3 Landmark detection và mediapipe facemesh
-Sau khi phát hiện được khuôn mặt, bước tiếp theo là xác định các điểm mốc (landmark) trên khuôn mặt. Các điểm mốc này là những vị trí đặc biệt như hai mắt, mũi, miệng, cằm, v.v. Landmark detection cho phép hệ thống hiểu được hình dạng, kích thước, và hướng của khuôn mặt, từ đó có thể phát hiện các hành động như nhắm mắt, mở miệng, hoặc quay đầu.
-MediaPipe FaceMesh là một mô hình học sâu tiên tiến được phát triển bởi Google [13], có khả năng phát hiện 468 điểm mốc 3D trên khuôn mặt với độ chính xác cao. Thay vì chỉ phát hiện một số điểm mốc chính (như các phương pháp cổ điển có 5 hoặc 68 điểm), MediaPipe FaceMesh cung cấp một lưới 3D chi tiết của toàn bộ khuôn mặt, bao gồm các điểm trên mắt, miệng, mũi, cằm, và toàn bộ bề mặt khuôn mặt. Điều này cho phép phát hiện các biểu cảm mặt và hành động tinh vi với độ chính xác cao. Mô hình này được huấn luyện trên một tập dữ liệu lớn với các đặc điểm đa dạng (nhiều loại khuôn mặt, góc quay, điều kiện ánh sáng), giúp nó hoạt động tốt trên nhiều loại khuôn mặt khác nhau.
-Trong đồ án, MediaPipe FaceMesh được sử dụng kết hợp với các phương pháp khác (như EAR cho phát hiện mắt nhắm) để tăng tính chính xác của các tín hiệu phát hiện hành vi.
-2.4 Ước lượng góc đầu
-Ước lượng góc đầu (head pose estimation) là khả năng xác định hướng mà đầu người đang quay, thường được biểu diễn bằng ba góc: yaw (quay trái-phải), pitch (quay lên-xuống), và roll (quay cân bằng). Phát hiện các thay đổi lớn trong góc đầu có thể chỉ ra rằng thí sinh đang nhìn sang nơi khác, có thể là nhìn ra ngoài khung hình hoặc nhìn sang một thiết bị khác.
-Phương pháp Perspective-n-Point (solvePnP) là một kỹ thuật cổ điển trong thị giác máy tính để ước lượng góc đầu dựa trên tương ứng giữa các điểm 2D trên ảnh và các điểm 3D của một mô hình khuôn mặt chuẩn. Cụ thể, phương pháp này sử dụng sáu điểm landmark chính (hai mắt, mũi, hai khoé miệng, cằm) từ ảnh 2D và so khớp chúng với một mô hình khuôn mặt 3D đã được biết trước. Bằng cách giải bài toán hình học này, phương pháp solvePnP có thể tính toán chính xác các ma trận quay (rotation matrix) và vectơ chuyển dịch (translation vector), từ đó suy ra góc yaw, pitch, roll.
-Ưu điểm của solvePnP so với các phương pháp khác (như chỉ dựa trên sự lệch vị trí pixel) là nó tận dụng thông tin về hình học 3D của khuôn mặt, cho phép ước lượng chính xác ngay cả khi khuôn mặt có góc quay lớn. Tuy nhiên, độ chính xác của phương pháp này phụ thuộc vào chất lượng của mô hình khuôn mặt 3D chuẩn và độ chính xác của camera intrinsic parameters (focal length, principal point, v.v.).
-2.5 Xác thực danh tính bằng face embedding
-Xác thực danh tính (identity verification) là khả năng xác định xem một khuôn mặt trong ảnh hiện tại có phải là cùng một người như trong ảnh tham chiếu hay không. Trong bối cảnh giám sát thi, điều này rất quan trọng để phát hiện những trường hợp đổi người thi hộ giữa chừng kỳ thi.
-Face embedding là một phương pháp biểu diễn khuôn mặt dưới dạng một vector số (thường có kích thước từ 128 đến 512 chiều), trong đó những khuôn mặt của cùng một người sẽ có vector gần nhau, còn khuôn mặt của những người khác sẽ có vector cách xa nhau trong không gian embedding này. FaceNet [12] là một mô hình deep learning nổi tiếng cho việc tạo face embedding, sử dụng mạng Inception và hàm mất triplet loss để huấn luyện. Khi có hai embedding của hai khuôn mặt, có thể tính độ similarity giữa chúng bằng cosine similarity, một phép đo về góc giữa hai vector. Nếu độ similarity cao hơn một ngưỡng được đặt trước (thường 0.6), hai khuôn mặt được coi là của cùng một người.
-Trong đồ án này, phương pháp facenet-pytorch được sử dụng để trích xuất face embedding. Lúc bắt đầu kỳ thi (enrollment), embedding của khuôn mặt thí sinh được tính toán và lưu trữ. Trong suốt quá trình thi, mỗi khung hình, embedding hiện tại được so sánh với embedding lúc enrollment. Nếu độ similarity rơi xuống dưới ngưỡng, có thể cảnh báo rằng danh tính có thể đã thay đổi.
-2.6 Phát hiện trạng thái mắt
-Phát hiện trạng thái mắt (eye state detection) là khả năng xác định xem mắt đang mở hay đang nhắm. Trong giám sát thi, nếu thí sinh nhắm mắt quá lâu hoặc quá thường xuyên, có thể chỉ ra rằng họ không tập trung vào bài thi.
-Eye Aspect Ratio (EAR) [14] là một phương pháp đơn giản nhưng hiệu quả để phát hiện trạng thái mắt. EAR được tính toán bằng cách sử dụng sáu điểm landmark quanh mỗi mắt (từ MediaPipe hoặc các mô hình landmark detection khác). Công thức EAR là: EAR = (khoảng cách giữa hai điểm trên + khoảng cách giữa hai điểm dưới) / (2 × khoảng cách giữa hai điểm trái và phải). Khi mắt mở, EAR sẽ cao (thường > 0.2); khi mắt nhắm, EAR sẽ thấp (< 0.1). Bằng cách đặt một ngưỡng EAR, có thể xác định được thời điểm mắt nhắm. Tuy nhiên, EAR có thể bị ảnh hưởng bởi góc khuôn mặt và điều kiện ánh sáng, vì vậy thường cần phối hợp với các kỹ thuật khác để tăng độ tin cậy.
-2.7 Phát hiện trạng thái miệng
-Phát hiện trạng thái mắt (eye state detection) là khả năng xác định xem mắt đang mở hay đang nhắm. Trong giám sát thi, nếu thí sinh nhắm mắt quá lâu hoặc quá thường xuyên, có thể chỉ ra rằng họ không tập trung vào bài thi.
-Eye Aspect Ratio (EAR) [14] là một phương pháp đơn giản nhưng hiệu quả để phát hiện trạng thái mắt. EAR được tính toán bằng cách sử dụng sáu điểm landmark quanh mỗi mắt (từ MediaPipe hoặc các mô hình landmark detection khác). Công thức EAR là: EAR = (khoảng cách giữa hai điểm trên + khoảng cách giữa hai điểm dưới) / (2 × khoảng cách giữa hai điểm trái và phải). Khi mắt mở, EAR sẽ cao (thường > 0.2); khi mắt nhắm, EAR sẽ thấp (< 0.1). Bằng cách đặt một ngưỡng EAR, có thể xác định được thời điểm mắt nhắm. Tuy nhiên, EAR có thể bị ảnh hưởng bởi góc khuôn mặt và điều kiện ánh sáng, vì vậy thường cần phối hợp với các kỹ thuật khác để tăng độ tin cậy.
-2.8 Phát hiện vật thể
-Phát hiện vật thể (object detection) là khả năng xác định các vật thể cụ thể trong một ảnh và xác định loại cũng như vị trí của chúng. Trong bối cảnh giám sát thi, các vật thể quan trọng cần phát hiện là các vật thể cấm hoặc đáng ngờ như điện thoại di động, sách, máy tính bảng, v.v.
-YOLOv8 [21] là một mô hình phát hiện vật thể hiện đại, nổi tiếng vì khả năng phát hiện nhanh và chính xác. YOLO sử dụng một mạng CNN duy nhất để phát hiện tất cả các vật thể trong một ảnh cùng một lúc, thay vì các phương pháp cũ dựa trên region proposal. YOLOv8 được huấn luyện trên dataset COCO [17] lớn chứa hơn 80 loại vật thể khác nhau, bao gồm các vật thể như điện thoại, sách, laptop, v.v. Ngoài ra, YOLOv8 có thể được fine-tune trên dataset riêng để phát hiện các loại vật thể cụ thể (như điện thoại bất kỳ loại nào) với độ chính xác cao hơn.
-2.9 Máy trạng thái và xử lý tín hiệu
-Một máy trạng thái (state machine) là một mô hình toán học được sử dụng để mô tả hệ thống có các trạng thái rõ ràng và các chuyển đổi giữa các trạng thái. Trong bối cảnh của đồ án, state machine được sử dụng để theo dõi trạng thái của mỗi tín hiệu theo thời gian. Ví dụ, thay vì coi một khung hình duy nhất có EAR thấp là "mắt nhắm", state machine có thể theo dõi liệu mắt đã nhắm trong bao lâu rồi, và chỉ cảnh báo khi mắt nhắm liên tục trong một khoảng thời gian nhất định.
-Cửa sổ thời gian trượt (sliding time window) là một kỹ thuật xử lý tín hiệu trong đó chỉ xem xét dữ liệu trong một cửa sổ thời gian cố định (ví dụ 3-5 giây gần đây nhất) thay vì toàn bộ dữ liệu từ đầu. Điều này giúp hệ thống có thể phản ứng nhanh với những thay đổi gần đây nhất mà không bị ảnh hưởng quá lâu bởi những sự kiện cũ.
-2.10 Đánh giá tín hiệu
-Khi có nhiều tín hiệu từ các nguồn khác nhau (mắt nhắm, miệng mở, đầu quay, vô danh tính, v.v.), cần một cách để tổng hợp chúng thành một quyết định duy nhất. Weighted scoring là một phương pháp trong đó mỗi tín hiệu được gán một trọng số (weight) thể hiện mức độ quan trọng hoặc mức độ tin cậy của tín hiệu đó. Tổng điểm cuối cùng được tính bằng tổng có trọng số của tất cả các tín hiệu.
-Ví dụ, nếu phát hiện được danh tính không khớp (đổi người), trọng số của tín hiệu này có thể rất cao (ví dụ 0.9 trên tổng điểm 1.0), vì đây là hình thức gian lận rất nghiêm trọng. Ngược lại, nếu phát hiện được mắt nhắm chỉ trong 1-2 giây, trọng số có thể thấp hơn (ví dụ 0.1), vì thí sinh có thể chỉ nhắm mắt ngắn.
-Hysteresis (chống dao động) là một cơ chế để tránh các quyết định thay đổi quá nhanh chóng khi điểm số gần một ngưỡng cụ thể. Thay vì sử dụng một ngưỡng duy nhất, hysteresis sử dụng hai ngưỡng: một ngưỡng "lên" (ví dụ 0.7) để chuyển từ trạng thái "bình thường" sang "cảnh báo", và một ngưỡng "xuống" (ví dụ 0.5) để chuyển ngược lại. Điều này giúp tránh tình trạng báo động giả khi điểm số dao động quanh một ngưỡng duy nhất.
-Kết chương
-Chương 2 đã trình bày các cơ sở lý thuyết cần thiết để hiểu các kỹ thuật được sử dụng trong đồ án. Từ các phương pháp phát hiện khuôn mặt như MTCNN, đến các kỹ thuật trích xuất landmark như MediaPipe FaceMesh, đến các phương pháp ước lượng góc đầu bằng solvePnP và xác thực danh tính bằng face embedding, các công nghệ này cung cấp nền tảng để xây dựng một hệ thống phát hiện hành vi toàn diện. Ngoài ra, các kỹ thuật xử lý tín hiệu như state machine, sliding time window, weighted scoring, và hysteresis cung cấp các công cụ để tổng hợp nhiều tín hiệu lại thành những quyết định đáng tin cậy. Những kiến thức này sẽ được áp dụng trong Chương 3 và Chương 4 để thiết kế và triển khai hệ thống giám sát thi.
+# Chương 2. Cơ sở lý thuyết
+
+## 2.1. Tổng quan
+
+Hệ thống giám sát thi trong đồ án là sự kết hợp của thị giác máy tính, xử lý tín hiệu theo thời gian và một nền tảng phần mềm thời gian thực. Dữ liệu đầu vào không được chuyển trực tiếp thành kết luận gian lận. Thay vào đó, ảnh webcam được biến đổi thành đặc trưng; đặc trưng được biến đổi thành các tín hiệu; tín hiệu được ổn định theo thời gian; cuối cùng nhiều trạng thái được kết hợp thành điểm rủi ro và bằng chứng để giám thị xem xét.
+
+Chương này trình bày nền tảng cần thiết để hiểu các lựa chọn kỹ thuật đó. Các chi tiết về giải pháp do đồ án thiết kế được dành cho Chương 4, còn cách cài đặt cụ thể nằm ở Chương 5.
+
+## 2.2. Thị giác máy tính và xử lý video
+
+Thị giác máy tính nghiên cứu phương pháp trích xuất thông tin có ý nghĩa từ ảnh hoặc video. Một ảnh màu có thể biểu diễn bằng tensor $I \in \mathbb{R}^{H\times W\times C}$, trong đó $H$, $W$ và $C$ lần lượt là chiều cao, chiều rộng và số kênh màu. Video là chuỗi các ảnh $I_t$ được lấy tại những thời điểm khác nhau.
+
+Trong bài toán giám sát, mỗi frame chỉ là một quan sát có nhiễu. Điều kiện ánh sáng, motion blur, tự động lấy nét và che khuất có thể làm đầu ra model thay đổi dù hành vi thực tế không đổi. Vì vậy cần phân biệt:
+
+- **Đặc trưng tức thời:** bounding box, landmark, độ tin cậy và lớp vật thể tại thời điểm $t$.
+- **Tín hiệu:** đại lượng có ý nghĩa nghiệp vụ được suy ra từ đặc trưng, ví dụ có khuôn mặt, mắt nhắm hoặc góc yaw vượt ngưỡng.
+- **Sự kiện:** kết luận rằng tín hiệu bất thường đã đủ mạnh hoặc đủ lâu để cần ghi nhận.
+
+Việc resize frame giúp giới hạn chi phí tính toán nhưng phải giữ tỉ lệ khung hình để không làm biến dạng hình học khuôn mặt. Chuyển đổi BGR–RGB cũng cần được thực hiện đúng vì OpenCV và nhiều model học sâu sử dụng thứ tự kênh khác nhau.
+
+## 2.3. Phát hiện khuôn mặt bằng MTCNN
+
+### 2.3.1. Bài toán phát hiện khuôn mặt
+
+Face detection xác định số lượng và vị trí khuôn mặt trong ảnh. Đầu ra phổ biến là bounding box $b=(x_1,y_1,x_2,y_2)$, độ tin cậy $c$ và một số điểm mốc cơ bản. Khác với face recognition, bước này không xác định người trong ảnh là ai.
+
+Các phương pháp cổ điển như Viola–Jones sử dụng Haar-like feature và cascade classifier. Các phương pháp học sâu hiện đại học trực tiếp đặc trưng từ dữ liệu, xử lý tốt hơn biến thiên về tư thế và ánh sáng nhưng có chi phí tính toán lớn hơn.
+
+### 2.3.2. Kiến trúc MTCNN
+
+MTCNN (Zhang và cộng sự, 2016) sử dụng chuỗi ba mạng tích chập:
+
+1. **P-Net** tạo nhanh các vùng có khả năng chứa khuôn mặt ở nhiều tỉ lệ.
+2. **R-Net** loại bỏ vùng sai và hiệu chỉnh bounding box.
+3. **O-Net** tinh chỉnh lần cuối và dự đoán năm landmark cơ bản.
+
+Ở mỗi tầng, Non-Maximum Suppression loại các bounding box trùng lặp. Cấu trúc cascade giúp giảm số vùng cần xử lý ở tầng sau. Trong đồ án, bounding box MTCNN phục vụ Face Presence và Multi-face. Một MTCNN riêng trong `facenet-pytorch` còn được dùng để crop và align khuôn mặt trước khi tạo embedding; hai vai trò này không nên nhầm lẫn.
+
+MTCNN vẫn có thể bỏ sót khi khuôn mặt quá nhỏ, quay góc lớn, bị che hoặc ánh sáng yếu. Vì vậy, “không phát hiện” là thiếu quan sát của model và chỉ trở thành tín hiệu bất thường sau khi được kiểm tra theo thời gian.
+
+## 2.4. Landmark khuôn mặt với MediaPipe Face Landmarker
+
+Landmark khuôn mặt là tập các điểm đặc trưng mô tả đường viền mắt, môi, mũi, cằm và bề mặt khuôn mặt. MediaPipe Face Mesh/Face Landmarker dự đoán 468 điểm bề mặt từ ảnh camera đơn và có thể chạy gần thời gian thực (Kartynnik và cộng sự, 2019).
+
+Tọa độ MediaPipe thường được chuẩn hóa theo kích thước ảnh. Với landmark $p_i=(x_i,y_i)$ chuẩn hóa và frame có kích thước $(W,H)$, tọa độ pixel là:
+
+$$
+p_i^{pixel}=(x_iW,\ y_iH)
+$$
+
+Quy đổi này quan trọng khi tính khoảng cách Euclidean. Nếu lấy trực tiếp $x$ đã chia cho $W$ và $y$ đã chia cho $H$ trên ảnh không vuông, hai trục có tỉ lệ khác nhau và đại lượng hình học sẽ bị méo. Đồ án sử dụng tọa độ pixel cho EAR, tỉ lệ mở miệng và PnP.
+
+Không phải mọi tín hiệu đều cần nhiều khuôn mặt có landmark chi tiết. Face Landmarker chỉ theo dõi khuôn mặt chính để phục vụ mắt, miệng và head pose; MTCNN chịu trách nhiệm đếm nhiều khuôn mặt. Sự tách này giảm chi phí và làm rõ trách nhiệm của từng model.
+
+## 2.5. Phát hiện trạng thái mắt bằng EAR
+
+Eye Aspect Ratio (EAR) là tỉ lệ hình học được Soukupová và Čech (2016) đề xuất để biểu diễn độ mở mắt. Với sáu điểm $P_1,...,P_6$ quanh một mắt:
+
+$$
+EAR=\frac{\lVert P_2-P_6\rVert_2+\lVert P_3-P_5\rVert_2}
+{2\lVert P_1-P_4\rVert_2}
+$$
+
+Tử số đo hai khoảng mở theo chiều dọc, mẫu số đo chiều rộng mắt. Vì là một tỉ lệ, EAR ít phụ thuộc hơn vào kích thước khuôn mặt trên ảnh. Khi mắt khép, khoảng cách dọc giảm và EAR giảm.
+
+EAR không đo hướng nhìn. Một người quay đầu có thể làm một mắt bị nén phối cảnh và tạo EAR thấp giả. Do nhắm mắt tự nhiên thường ảnh hưởng cả hai mắt, đồ án chỉ coi trạng thái nhắm khi EAR của cả hai mắt cùng dưới ngưỡng. Head Pose Signal đảm nhận việc nhận biết quay đầu.
+
+Ngưỡng EAR không phải hằng số cho mọi người và mọi camera. Nó cần được kết hợp với thời lượng nhắm và được hiệu chỉnh trên dữ liệu thực nghiệm. Một frame có EAR thấp không đủ để tạo cảnh báo.
+
+## 2.6. Phát hiện hoạt động miệng
+
+Miệng mở có thể đo bằng tỉ lệ giữa khoảng cách dọc của môi trong và khoảng cách hai khóe miệng:
+
+$$
+MOR=\frac{\lVert P_{upper}-P_{lower}\rVert_2}
+{\lVert P_{left}-P_{right}\rVert_2}
+$$
+
+Trong đó $MOR$ là Mouth Open Ratio. Việc chia cho chiều rộng miệng giúp đại lượng ít phụ thuộc vào khoảng cách giữa thí sinh và camera.
+
+Khác với ngáp, nói chuyện làm miệng mở và đóng xen kẽ. Nếu thuật toán yêu cầu miệng mở liên tục trong nhiều giây, hành vi nói có thể không bao giờ vượt ngưỡng. Vì vậy cần theo dõi tỉ lệ quan sát miệng mở trong cửa sổ thời gian:
+
+$$
+a_{mouth}(t)=\frac{N_{open}(t-W,t)}{N_{valid}(t-W,t)}
+$$
+
+Khi $a_{mouth}$ vượt ngưỡng và cửa sổ đã có đủ độ phủ, tín hiệu mới được coi là bất thường. Cách này không phụ thuộc trực tiếp vào số FPS và phản ánh đúng hơn mẫu mở–đóng lặp lại.
+
+Tuy nhiên, chuyển động miệng không chứng minh thí sinh trao đổi nội dung. Tín hiệu này chỉ đóng vai trò phụ và cần được giám thị đối chiếu với tín hiệu khác.
+
+## 2.7. Phát hiện vật thể bằng YOLO
+
+YOLO là họ mô hình object detection một giai đoạn, dự đoán bounding box và lớp vật thể trong một lần forward pass. So với các phương pháp hai giai đoạn, YOLO thường phù hợp hơn cho xử lý thời gian thực. Đồ án sử dụng YOLOv8n pretrained trên COCO thông qua thư viện Ultralytics.
+
+Đầu ra của một object detector gồm lớp $k$, bounding box $b$ và confidence $c$. Chỉ các dự đoán có $c$ lớn hơn ngưỡng và thuộc lớp quan tâm mới được giữ lại. Model hiện tại lọc hai lớp COCO là `cell phone` và `book`; laptop không nằm trong tập lớp được code chấp nhận.
+
+YOLO có chi phí lớn hơn phát hiện landmark. Một chiến lược thường dùng là chạy model theo chu kỳ thay vì mọi frame, sau đó giữ kết quả gần nhất trong khoảng giữa hai lần suy luận. Để một false detection thoáng qua không trở thành vi phạm, tín hiệu vật thể còn cần debounce theo thời lượng.
+
+Model pretrained chịu ảnh hưởng của miền dữ liệu huấn luyện. Điện thoại nhỏ, bị che, ở rìa ảnh hoặc quay mặt lưng có thể bị bỏ sót. Fine-tuning có thể cải thiện một miền cụ thể nhưng đòi hỏi dataset, cách chia train/validation/test và artifact model được quản lý rõ ràng.
+
+## 2.8. Ước lượng góc quay đầu bằng Perspective-n-Point
+
+### 2.8.1. Mô hình hình học
+
+Head pose thường được biểu diễn bởi ba góc Euler:
+
+- **Yaw:** quay trái–phải quanh trục dọc.
+- **Pitch:** cúi–ngẩng quanh trục ngang.
+- **Roll:** nghiêng đầu quanh trục hướng nhìn.
+
+Bài toán Perspective-n-Point tìm tư thế camera hoặc vật thể từ các cặp điểm 3D–2D. Với điểm khuôn mặt 3D $P_i=(X_i,Y_i,Z_i)$, điểm ảnh $p_i=(u_i,v_i)$, ma trận nội tại camera $K$, ma trận quay $R$ và vector tịnh tiến $t$:
+
+$$
+s\begin{bmatrix}u_i\\v_i\\1\end{bmatrix}
+=K\left[R\mid t\right]
+\begin{bmatrix}X_i\\Y_i\\Z_i\\1\end{bmatrix}
+$$
+
+`solvePnP` ước lượng $R$ và $t$ sao cho sai số chiếu của các điểm 3D lên ảnh 2D là nhỏ. Từ rotation vector có thể tạo rotation matrix bằng Rodrigues, sau đó phân rã thành yaw, pitch và roll.
+
+### 2.8.2. Mô hình camera xấp xỉ
+
+Khi không hiệu chuẩn camera riêng cho từng thiết bị, có thể xấp xỉ:
+
+$$
+K=\begin{bmatrix}
+f&0&W/2\\
+0&f&H/2\\
+0&0&1
+\end{bmatrix}
+$$
+
+với $f$ xấp xỉ theo chiều rộng ảnh và distortion coefficient đặt bằng 0. Đây là giả định thực dụng, không cho độ chính xác như camera calibration nhưng cho góc có ý nghĩa hình học hơn độ lệch pixel thuần túy.
+
+Độ chính xác của PnP phụ thuộc vào landmark 2D, mô hình mặt 3D, camera intrinsic và quy ước trục. Góc lớn hoặc che khuất làm landmark sai, kéo theo sai số head pose. Do đó cần ngưỡng thời lượng và không nên coi góc tức thời là kết luận.
+
+## 2.9. Xác thực danh tính bằng face embedding
+
+### 2.9.1. Biểu diễn embedding
+
+Face verification trả lời câu hỏi hai ảnh có thuộc cùng một người hay không. FaceNet học ánh xạ $f(x)\in\mathbb{R}^d$ từ ảnh mặt sang vector embedding bằng triplet loss (Schroff, Kalenichenko và Philbin, 2015). Với anchor $a$, positive $p$ và negative $n$:
+
+$$
+L=\max\left(0,\lVert f(a)-f(p)\rVert_2^2
+-\lVert f(a)-f(n)\rVert_2^2+\alpha\right)
+$$
+
+Mục tiêu là đưa embedding của cùng người lại gần và đẩy embedding của người khác ra xa ít nhất một margin $\alpha$.
+
+Đồ án sử dụng InceptionResnetV1 pretrained trên VGGFace2 qua `facenet-pytorch`, tạo vector 512 chiều. Trong enrollment, embedding tham chiếu là trung bình của nhiều frame hợp lệ để giảm ảnh hưởng của một quan sát riêng lẻ.
+
+### 2.9.2. Cosine similarity và quyết định có biên
+
+Độ tương tự cosine giữa hai vector $x$ và $y$ là:
+
+$$
+sim(x,y)=\frac{x\cdot y}{\lVert x\rVert_2\lVert y\rVert_2}
+$$
+
+Giá trị cao cho biết hai hướng vector gần nhau. Ngưỡng xác thực phụ thuộc model và miền dữ liệu, không có một giá trị phổ quát. Một thiết kế an toàn nên có vùng cảnh báo và vùng mismatch thay vì một ngưỡng duy nhất. Đồ án còn yêu cầu nhiều lần mismatch liên tiếp và chỉ re-verify theo chu kỳ để tránh chi phí embedding ở mọi frame.
+
+Nếu không tìm thấy khuôn mặt tại thời điểm re-verification, hệ thống không được đồng nhất tình huống này với “không đúng người”. Face Presence chịu trách nhiệm cho sự vắng mặt; Identity chỉ kết luận khi có embedding hợp lệ để so sánh.
+
+### 2.9.3. Liveness cơ bản
+
+Face verification có thể bị đánh lừa bởi ảnh tĩnh nếu không kiểm tra liveness. Thử thách chớp mắt `mở → nhắm → mở` xác nhận có chuyển động sinh học đơn giản trước enrollment. Giải pháp này chặn một số trường hợp sử dụng ảnh in hoặc ảnh trên màn hình, nhưng không chống được video replay, mặt nạ hoặc deepfake tinh vi. Vì vậy nó được gọi là liveness cơ bản, không phải anti-spoofing hoàn chỉnh.
+
+## 2.10. Xử lý tín hiệu theo thời gian
+
+### 2.10.1. Debounce dựa trên thời lượng
+
+Debounce chỉ chấp nhận một điều kiện khi nó duy trì đủ lâu. Nếu $q(t)\in\{0,1\}$ biểu diễn điều kiện thô và $D$ là thời lượng tối thiểu, tín hiệu chỉ vượt ngưỡng khi $q(t)=1$ liên tục trong khoảng $D$. Cách đo bằng giây ổn định hơn đếm số frame vì FPS có thể thay đổi theo thiết bị và tải xử lý.
+
+### 2.10.2. Cửa sổ thời gian trượt
+
+Với cửa sổ độ dài $W$, tỉ lệ bất thường của tín hiệu $i$ tại thời điểm $t$ là:
+
+$$
+r_i(t)=\frac{\sum_{\tau\in(t-W,t]}\mathbb{1}[q_i(\tau)=1]}
+{\sum_{\tau\in(t-W,t]}\mathbb{1}[q_i(\tau)\text{ hợp lệ}]}
+$$
+
+Cửa sổ trượt giữ lại lịch sử gần nhất, loại bỏ ảnh hưởng lâu dài của sự kiện cũ và hỗ trợ các mẫu không liên tục như hoạt động miệng.
+
+### 2.10.3. Máy trạng thái hữu hạn
+
+Finite State Machine biểu diễn hệ thống bằng tập trạng thái và điều kiện chuyển. Ba trạng thái `NORMAL`, `SUSPICIOUS`, `ALERT` cho phép phân biệt quan sát ban đầu với bằng chứng kéo dài. Máy trạng thái của mỗi tín hiệu độc lập để nhiều hành vi có thể tồn tại đồng thời.
+
+## 2.11. Kết hợp đa tín hiệu và hysteresis
+
+### 2.11.1. Weighted scoring
+
+Sau khi ổn định từng tín hiệu, trạng thái có thể ánh xạ thành giá trị $s_i$ và kết hợp bằng tổng có trọng số:
+
+$$
+R(t)=\sum_{i=1}^{n}w_is_i(t)
+$$
+
+Trọng số $w_i$ biểu diễn mức đóng góp tương đối. Weighted scoring có ưu điểm dễ giải thích, dễ cấu hình và không đòi hỏi tập huấn luyện lớn. Hạn chế là quan hệ tuyến tính không tự học được các tương tác phức tạp giữa tín hiệu.
+
+### 2.11.2. Hysteresis
+
+Nếu chỉ dùng một ngưỡng $T$, nhiễu quanh $T$ làm trạng thái bật/tắt liên tục. Hysteresis sử dụng hai ngưỡng:
+
+$$
+state(t)=
+\begin{cases}
+ALERT,&state(t-1)=NORMAL\land R(t)\ge T_{enter}\\
+NORMAL,&state(t-1)=ALERT\land R(t)\le T_{exit}\\
+state(t-1),&\text{các trường hợp còn lại}
+\end{cases}
+$$
+
+với $T_{exit}<T_{enter}$. Khoảng $(T_{exit},T_{enter})$ là vùng đệm giữ nguyên trạng thái cũ. Hysteresis có thể được áp dụng ở cả cấp tín hiệu và cấp phiên.
+
+### 2.11.3. Cạnh chuyển trạng thái và sự kiện
+
+Một cảnh báo kéo dài không nên tạo một event ở mọi frame. Sự kiện chỉ cần sinh ở cạnh chuyển từ `NORMAL` sang `ALERT`; thời gian kéo dài có thể suy ra từ transition trở về bình thường. Cách này giảm kích thước log và tránh hiển thị nhiều bản ghi cho cùng một hành vi.
+
+## 2.12. Giao tiếp thời gian thực và hợp đồng dữ liệu
+
+REST phù hợp với thao tác request–response như đăng nhập, tạo kỳ thi và lấy danh sách phiên. WebSocket theo RFC 6455 duy trì kênh song công để client gửi heartbeat/telemetry và backend đẩy cập nhật đến dashboard mà không cần polling liên tục.
+
+Kênh thời gian thực không loại bỏ nhu cầu xác thực và kiểm tra dữ liệu. Một message từ client cần:
+
+- Có type và schema xác định.
+- Giới hạn kích thước, tần suất và số phần tử.
+- Phân biệt timestamp client với thời gian server nhận.
+- Gắn với đúng loại token và đúng phiên.
+- Có cơ chế heartbeat, idle timeout và trạng thái mất kết nối.
+
+Data contract giúp các thành phần thống nhất ý nghĩa trường dữ liệu. `SignalResult`, `ViolationEvent` và browser event phải dùng tên enum cố định, số hữu hạn và metadata có giới hạn. Backend có thể tính lại hoặc đối chiếu giá trị dẫn xuất thay vì tin trực tiếp điểm do client gửi.
+
+## 2.13. Phân quyền và cô lập nhiều tổ chức
+
+Role-Based Access Control gán quyền cho vai trò thay vì từng người dùng riêng lẻ. Trong nền tảng nhiều tổ chức, chỉ kiểm tra role là chưa đủ; quyết định còn phụ thuộc tenant và tài nguyên cụ thể. Có thể mô hình hóa quyền hiệu lực như:
+
+$$
+Allowed(u,a,r)=Authenticated(u)\land Active(u)\land
+TenantMatch(u,r)\land Capability(u,a)\land ResourceScope(u,r)
+$$
+
+Trong đó $u$ là người dùng, $a$ là hành động và $r$ là tài nguyên. Assignment trên kỳ thi là một dạng resource scope: người dùng có thể là manager ở kỳ thi A nhưng chỉ là proctor ở kỳ thi B.
+
+Nguyên tắc đặc quyền tối thiểu yêu cầu chỉ cấp quyền cần thiết. Quản trị nền tảng không nên mặc nhiên xem evidence của mọi tổ chức. Quyền ngoại lệ cần có lý do, phạm vi, phê duyệt, thời hạn và audit log. Khi tài nguyên nằm ngoài phạm vi, trả `404` có thể hạn chế tiết lộ sự tồn tại tốt hơn trả chi tiết quyền bị thiếu.
+
+## 2.14. Lưu trữ sự kiện và khả năng truy vết
+
+Cơ sở dữ liệu quan hệ phù hợp với entity có quan hệ và cần truy vấn như tổ chức, người dùng, kỳ thi, assignment và trạng thái phiên mới nhất. JSON Lines phù hợp với chuỗi sự kiện append-only vì mỗi dòng là một JSON độc lập, có thể ghi tuần tự và đọc từng phần.
+
+Mô hình lai cho phép:
+
+- SQL phục vụ dashboard và kiểm soát quyền.
+- JSONL lưu timeline chi tiết của tín hiệu, transition và sự kiện.
+- Snapshot cung cấp bằng chứng hình ảnh ở thời điểm cần thiết.
+- Báo cáo được tái tạo từ dữ liệu gốc thay vì chỉ lưu một kết luận tổng hợp.
+
+Audit log khác với evidence. Evidence mô tả điều xảy ra trong phiên thi; audit log mô tả ai đã thao tác lên hệ thống hoặc truy cập dữ liệu. Hai loại cần tách biệt để hỗ trợ truy vết và trách nhiệm giải trình.
+
+## 2.15. Các chỉ số đánh giá
+
+Với bài toán nhị phân, confusion matrix gồm:
+
+- **True Positive (TP):** vi phạm thật được phát hiện.
+- **False Positive (FP):** hệ thống cảnh báo nhưng ground truth là bình thường.
+- **False Negative (FN):** vi phạm thật không được phát hiện.
+- **True Negative (TN):** trạng thái bình thường được nhận biết đúng.
+
+Các chỉ số cơ bản:
+
+$$
+Precision=\frac{TP}{TP+FP}
+$$
+
+$$
+Recall=\frac{TP}{TP+FN}
+$$
+
+$$
+F1=2\cdot\frac{Precision\cdot Recall}{Precision+Recall}
+$$
+
+$$
+Specificity=\frac{TN}{TN+FP},\qquad
+FPR=\frac{FP}{TN+FP}
+$$
+
+Accuracy có thể gây hiểu nhầm khi dữ liệu mất cân bằng, vì hệ thống luôn dự đoán lớp phổ biến vẫn có accuracy cao. Precision, Recall, F1 và confusion matrix cần được báo cáo cùng nhau.
+
+Đơn vị đánh giá cũng phải được công bố. Đánh giá theo frame coi mỗi frame là một mẫu; đánh giá theo event so khớp sự kiện với khoảng ground truth. Hai cách trả lời câu hỏi khác nhau và cho kết quả khác nhau. Độ trễ phát hiện của một true positive được tính bằng:
+
+$$
+Latency=t_{detected}-t_{ground\ truth\ start}
+$$
+
+Đối với ROC-AUC hoặc PR-AUC, cần có score liên tục ở nhiều ngưỡng hoặc một quá trình quét ngưỡng. Một confusion matrix tại một ngưỡng duy nhất không đủ để suy ra hai diện tích này.
+
+## 2.16. Kết chương
+
+Chương 2 đã trình bày nền tảng của các thành phần chính: phát hiện khuôn mặt bằng MTCNN, landmark MediaPipe, EAR, tỉ lệ mở miệng, YOLO, PnP, face embedding, liveness cơ bản, xử lý theo thời gian, weighted fusion và hysteresis. Chương cũng bổ sung các khái niệm về WebSocket, data contract, RBAC, cô lập tenant, lưu trữ sự kiện và chỉ số đánh giá để phản ánh đầy đủ hệ thống đã triển khai.
+
+Chương 3 tiếp theo khảo sát các giải pháp liên quan và chuyển các vấn đề đã nhận diện thành yêu cầu chức năng, phi chức năng và tiêu chí nghiệm thu cụ thể.

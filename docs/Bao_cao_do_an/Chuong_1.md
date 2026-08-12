@@ -1,28 +1,160 @@
-Chương 1 Giới thiệu đề tài
-1.1 Đặt vấn đề
-Trong những năm gần đây, thi trực tuyến đã trở thành xu hướng toàn cầu, được áp dụng trong hai bối cảnh chính: thi online từ xa (thí sinh ở nhà hoặc bất kỳ nơi nào khác) và thi online tại các phòng thi của các trung tâm thi nội bộ hoặc các trường học (thí sinh được quản lý ở một địa điểm tập trung nhưng vẫn sử dụng máy tính cá nhân thay vì giấy bút). Sự chuyển đổi này được thúc đẩy bởi nhu cầu tăng lên từ các trường đại học, các trung tâm thi chuẩn hóa quốc tế, các công ty tuyển dụng, và các tổ chức cấp chứng chỉ. Mặc dù thi trực tuyến mang lại nhiều lợi ích về hiệu quả vận hành và tiếp cận rộng hơn, nhưng nó cũng tạo ra thách thức đặc trưng cho mỗi bối cảnh.
-Trong trường hợp thi online từ xa, thí sinh nằm ngoài sự kiểm soát trực tiếp của các giám thị, tạo ra rủi ro cao về gian lận. Thí sinh có thể sử dụng các tài liệu không được phép, tìm kiếm trên internet, liên lạc với người khác qua nhắn tin hoặc cuộc gọi, hoặc để người khác ngồi gần hỗ trợ. Trong các trường hợp nặng hơn, họ có thể để người khác thay mình làm bài thi hoàn toàn. Các báo cáo từ nhiều tổ chức giáo dục cho thấy tỷ lệ gian lận trong thi từ xa cao hơn đáng kể so với thi trực tiếp tại lớp học.
-Tuy nhiên, ngay cả trong bối cảnh thi tại phòng thi của các trung tâm thi nội bộ, nơi các giám thị có mặt để giám sát, vẫn tồn tại những hạn chế. Giám thị trực tiếp chỉ có thể quan sát được các hành động rõ ràng và không thể ghi lại toàn bộ chi tiết hành vi của từng thí sinh trong khoảng thời gian dài. Họ cũng có thể bỏ sót những hành vi tinh vi như nhìn nhanh sang một thiết bị khác, hoặc những dấu hiệu vi phạm mà không dễ nhận thấy. Ngoài ra, cần có bằng chứng khách quan để hỗ trợ các quyết định kỷ luật, và một hệ thống ghi lại video có thể cung cấp điều đó. Hệ thống giám sát tự động có thể giúp các giám thị tập trung vào quản lý tổng thể phòng thi thay vì phải theo dõi chi tiết từng thí sinh, đồng thời cung cấp bằng chứng khách quan.
-Nếu có thể phát triển một hệ thống giám sát trực tuyến thông minh, có khả năng hoạt động hiệu quả trong cả hai bối cảnh (từ xa và tại phòng thi tập trung), điều này sẽ mang lại lợi ích to lớn cho các bên liên quan. Đối với các tổ chức giáo dục, trung tâm thi và trường học, họ có thể bảo vệ tính liêm chính của các kỳ thi trong bất kỳ hình thức nào, cung cấp bằng chứng khách quan cho các quyết định kỷ luật, và nâng cao độ tin tưởng vào giá trị của bằng cấp được cấp. Đối với giáo viên và giám thị, thay vì phải giám sát thủ công từng thí sinh, họ có thể được hỗ trợ bởi các cảnh báo tự động về các hành vi nghi vấn, cho phép họ can thiệp kịp thời và hiệu quả. Đối với thí sinh, một hệ thống giám sát công bằng và nhất quán tạo ra môi trường thi lành mạnh, nơi không ai có thể lợi dụng gian lận để đạt kết quả cao hơn những người thi chân chính.
-Hơn nữa, một hệ thống giám sát như vậy có tiềm năng ứng dụng trong nhiều lĩnh vực khác ngoài giáo dục. Trong phỏng vấn trực tuyến cho tuyển dụng, các công ty có thể sử dụng để xác minh rằng ứng viên tự làm bài thử năng lực mà không nhận hỗ trợ hoặc tham khảo tài liệu trái phép. Trong các khoá học trực tuyến có bài kiểm tra hoặc các bài thi cấp chứng chỉ, các tổ chức cấp chứng chỉ có thể bảo vệ giá trị của chứng chỉ bằng cách giám sát điều kiện thi. Trong các công việc liên quan đến xác thực danh tính từ xa như mở tài khoản ngân hàng, giao dịch bảo hiểm, hoặc các giao dịch tài chính giá trị cao, các công ty có thể sử dụng công nghệ tương tự để xác minh rằng người giao dịch thực sự là người sở hữu tài khoản.
-Tuy nhiên, thách thức kỹ thuật để xây dựng một hệ thống giám sát trực tuyến đáng tin cậy và linh hoạt vẫn còn rất lớn. Làm sao để phát hiện chính xác các hành vi gian lận trong vô số trường hợp khác nhau và trong cả hai môi trường thi (từ xa và tại phòng thi), từ các hành vi rõ ràng như vắng mặt hay nhìn ra ngoài, đến các hành vi tinh vi hơn như thay đổi danh tính hoặc tương tác với người khác? Làm sao để giảm thiểu số lần báo động giả, tránh gây phiền hà cho những thí sinh thi chân chính? Làm sao để các kỹ thuật này hoạt động được trên nhiều loại thiết bị, điều kiện ánh sáng khác nhau (từ căn phòng ở nhà đến phòng thi được thiết kế), và đa dạng hình dáng khuôn mặt của con người? Đây chính là những vấn đề cần được giải quyết để xây dựng một hệ thống giám sát thi trực tuyến có độ tin cậy cao và có tính ứng dụng thực tiễn trong cả hai bối cảnh thi.
-1.2 Mục tiêu và phạm vi đề tài
-Các giải pháp hiện tại cho giám sát thi trực tuyến có thể được phân thành hai nhóm chính:
-•	Nhóm thứ nhất là các sản phẩm thương mại như Proctorio, Honorlock, ProctorU và Respondus Monitor, cung cấp các tính năng giám sát toàn diện bao gồm ghi hình người dùng, theo dõi chuyển động mắt, phát hiện nhiều cửa sổ trình duyệt, kiểm tra thiết bị, và thậm chí yêu cầu xác thực sinh trắc học. Tuy nhiên, các sản phẩm này thường không công bố chi tiết về các thuật toán được sử dụng, khiến khó đánh giá độ tin cậy và tính công bằng của chúng. Bên cạnh đó, chi phí triển khai thường rất cao, các tổ chức phải trả phí theo số thí sinh hoặc số kỳ thi, và khả năng tùy chỉnh theo nhu cầu riêng của từng tổ chức là hạn chế.
-•	Nhóm thứ hai là các dự án mã nguồn mở và nghiên cứu học thuật, ví dụ như exam-cheating-detection, một dự án Python sử dụng OpenCV, MediaPipe, MTCNN (Multi-task Cascaded Convolutional Networks) để phát hiện khuôn mặt, và YOLOv8 (You Only Look Once v8) để phát hiện vật thể. Dự án này phát hiện các tín hiệu như vắng mặt khuôn mặt, nhiều khuôn mặt, vật thể cấm (điện thoại, sách), chuyển động mắt (bằng Eye Aspect Ratio), và chuyển động miệng. Các dự án nghiên cứu khác tập trung vào các khía cạnh riêng lẻ như ước lượng góc đầu bằng các phương pháp khác nhau, xác thực khuôn mặt bằng deep learning, hoặc phát hiện các hành vi cụ thể. Một số công trình cũng khám phá các phương pháp fusion dữ liệu để kết hợp nhiều tín hiệu từ các cảm biến hoặc mô hình khác nhau.
-Dù các sản phẩm và dự án này có những điểm mạnh riêng, chúng vẫn gặp phải những hạn chế đáng kể. Các sản phẩm thương mại vì lý do bảo mật và bí mật thương mại không công bố cách thức hoạt động chi tiết, khiến khó đánh giá tính công bằng, độ tin cậy, tỷ lệ báo động giả, và khó điều chỉnh ngưỡng cảnh báo phù hợp với nhu cầu riêng của từng tổ chức. Các dự án mã nguồn mở như exam-cheating-detection sử dụng logic phát hiện quá đơn giản, chỉ dựa trên các ngưỡng cứng và quy tắc if-elif: khi phát hiện được một hành vi vi phạm nào đó, chúng chỉ ghi lại loại vi phạm đó mà bỏ sót các vi phạm khác xảy ra đồng thời trong cùng một khung hình. Ước lượng góc đầu của chúng chỉ dựa trên sự lệch vị trí pixel giữa các điểm khuôn mặt mà không có thông tin về chiều sâu, dẫn đến độ chính xác thấp khi đầu người thí sinh nghiêng. Quan trọng hơn, các dự án hiện tại hoàn toàn thiếu khả năng xác thực danh tính xuyên suốt kỳ thi để phát hiện những trường hợp đổi người thi hộ giữa chừng, đây là một hình thức gian lận nghiêm trọng nhưng thường bị bỏ sót. Bên cạnh đó, phần lớn các dự án không có đánh giá định lượng trên bộ dữ liệu test có ground truth được gán nhãn thủ công, khiến khó so sánh hiệu năng thực tế giữa các phương pháp khác nhau hoặc đánh giá mức độ cải tiến.
-Trên cơ sở phân tích này, đồ án này hướng tới phát triển một hệ thống giám sát thi trực tuyến có độ tin cậy cao, được thiết kế lại từ đầu với kiến trúc rõ ràng và các thuật toán tự thiết kế. Cụ thể, đồ án sẽ khắc phục các hạn chế trên bằng những cách sau. Thứ nhất, tôi sẽ thiết kế lại toàn bộ pipeline nhận diện hành vi từ đầu bằng kiến trúc phân tầng rõ ràng (Perception Layer, Signal Extractors, Risk Fusion Engine), cho phép dễ hiểu, bảo trì, và mở rộng trong tương lai. Thứ hai, tôi sẽ triển khai các kỹ thuật thị giác máy tính nâng cao mà các dự án tham khảo chưa có, đặc biệt là ước lượng góc đầu chính xác bằng phương pháp solvePnP (Perspective-n-Point) sử dụng mô hình khuôn mặt 3D chuẩn thay cho cách pixel-based đơn giản, và khả năng xác thực danh tính xuyên suốt kỳ thi bằng face embedding (FaceNet) để phát hiện đổi người. Thứ ba, tôi sẽ thiết kế một Risk Fusion Engine tự động tổng hợp đa tín hiệu bằng state machine theo cửa sổ thời gian trượt và weighted scoring thay cho if-elif, kèm theo cơ chế hysteresis để giảm báo động giả. Cuối cùng, tôi sẽ tiến hành đánh giá định lượng đầy đủ trên một bộ test tự quay (~20-30 clip ngắn có ground truth được gán nhãn thủ công), tính các chỉ số Precision, Recall, F1 score và so sánh chi tiết với một baseline đơn giản mô phỏng logic if-elif của các dự án tham khảo.
-Hệ thống được phát triển sẽ hoạt động trên máy tính cục bộ, có thể được cài đặt trên các máy tính của thí sinh khi thi từ xa hoặc trên các máy tính tại phòng thi của các trung tâm thi nội bộ. Phần mềm sẽ cung cấp ba chức năng chính: (i) ghi lại các telemetry về bảy tín hiệu CV (face presence, multi-face, eye state, mouth state, object presence, head pose, identity) và các sự kiện hành vi; (ii) tính toán điểm rủi ro liên tục theo thời gian bằng Risk Fusion Engine; và (iii) sinh báo cáo chi tiết (PDF/HTML) sau kỳ thi ghi lại timeline các vi phạm, ảnh chứng minh, và các thống kê về hành vi của thí sinh. Phần mềm sẽ được thiết kế để hoạt động cả offline (khi không có kết nối internet tại phòng thi), đồng thời có khả năng kết nối tới backend nếu cần quản lý tập trung hoặc giám sát real-time từ các giám thị.
-1.3 Định hướng giải pháp
-Để giải quyết những vấn đề nêu trên, đồ án này lựa chọn định hướng xây dựng một ứng dụng giám sát thi bằng thị giác máy tính chạy trên một máy tính cục bộ, tập trung vào chất lượng cao của pipeline computer vision thay vì mở rộng thành nền tảng đa người dùng phức tạp ở giai đoạn đầu. Lựa chọn này cho phép tập trung tài nguyên và thời gian vào việc xây dựng một sản phẩm CV có độ tin cậy cao với các kỹ thuật tiên tiến, đồng thời phù hợp với khuôn khổ thời gian thực hiện đồ án tốt nghiệp có hạn. Định hướng này cũng tạo nền tảng vững chắc cho việc mở rộng sang nền tảng đa người dùng trong các giai đoạn phát triển tiếp theo.
-Để triển khai định hướng này, đồ án sẽ xây dựng pipeline CV theo kiến trúc ba tầng. Tầng thứ nhất, Perception Layer, sử dụng các thư viện và mô hình pretrained như MediaPipe FaceMesh, MTCNN (Multi-task Cascaded Convolutional Networks), và YOLOv8 (You Only Look Once v8) để trích xuất các đặc trưng cơ bản từ khung hình webcam, gồm các điểm mốc khuôn mặt, phát hiện và theo dõi khuôn mặt, cũng như phát hiện các vật thể trong bức ảnh. Tầng thứ hai, Signal Extractors, tính toán bảy tín hiệu từ các đặc trưng vừa trích xuất: face presence (có khuôn mặt hay không), multi-face (phát hiện nhiều khuôn mặt), eye state (mắt mở hay nhắm, dựa trên Eye Aspect Ratio), mouth state (miệng mở hay đóng), object presence (phát hiện vật thể cấm như điện thoại, sách), head pose (góc quay đầu, được tính bằng phương pháp solvePnP sử dụng mô hình khuôn mặt 3D), và identity verification (xác thực danh tính bằng face embedding từ FaceNet). Tầng thứ ba, Risk Fusion Engine, là thành phần tự thiết kế quan trọng nhất, dùng state machine theo cửa sổ thời gian trượt cho mỗi tín hiệu, kết hợp các tín hiệu thành một điểm rủi ro liên tục bằng weighted scoring, và sử dụng cơ chế hysteresis (hai ngưỡng khác nhau để phát hiện và hồi phục) để tránh báo động giả do dao động quanh ngưỡng phát hiện.
-Đóng góp chính của đồ án này bao gồm bốn yếu tố. Thứ nhất, ước lượng góc đầu chính xác bằng phương pháp solvePnP (Perspective-n-Point), sử dụng sáu điểm landmark chuẩn từ mô hình khuôn mặt 3D để giải ra góc quay đầu (yaw, pitch, roll) thực tế, thay thế hoàn toàn cách pixel-based đơn giản của các dự án tham khảo. Thứ hai, khả năng xác thực danh tính xuyên suốt kỳ thi bằng cách so sánh face embedding hiện tại với embedding được ghi lại lúc bắt đầu thi, cho phép phát hiện đổi người thi hộ giữa chừng—đây là tính năng hoàn toàn mới mà các dự án tham khảo không có. Thứ ba, Risk Fusion Engine tự thiết kế thay thế logic if-elif, cho phép xử lý tình huống khi nhiều tín hiệu vi phạm xảy ra đồng thời, tránh bỏ sót, và giảm báo động giả nhờ cơ chế hysteresis. Thứ tư, đánh giá định lượng đầy đủ trên bộ test tự quay (25 clip ngắn gần 1 tiếng đồng hồ) với ground truth được gán nhãn thủ công, tính toán Precision, Recall, F1 score, độ trễ phát hiện trung bình, và so sánh chi tiết với một baseline đơn giản mô phỏng logic if-elif của exam-cheating-detection.
-Kết quả đạt được sau cùng sẽ là một hệ thống giám sát thi trực tuyến hoàn chỉnh, hoạt động một cách độc lập trên máy tính cục bộ, có khả năng phát hiện các hành vi gian lận với độ tin cậy cao hơn đáng kể so với các phương pháp đơn giản hiện tại. Hệ thống sẽ cung cấp các báo cáo chi tiết về các vi phạm được phát hiện, kèm theo ảnh chứng minh và timeline chi tiết, giúp các giáo viên và giám thị đưa ra quyết định công bằng và có cơ sở khoa học. Ngoài ra, đồ án cũng tạo ra một kiến trúc, một tập hợp các thuật toán, và một phương pháp đánh giá định lượng rõ ràng, có thể được tái sử dụng hoặc mở rộng trong các nghiên cứu tương lai hoặc các ứng dụng thực tế khác.
-1.4 Bố cục Đồ án tốt nghiệp
-Phần còn lại của báo cáo Đồ án tốt nghiệp này được tổ chức như sau.
-Chương 2 giới thiệu về các nghiên cứu và sản phẩm hiện tại trong lĩnh vực giám sát thi trực tuyến, bao gồm các sản phẩm thương mại như Proctorio, Honorlock, ProctorU với mô tả chức năng và hạn chế, các dự án mã nguồn mở như exam-cheating-detection với phân tích chi tiết kiến trúc và các phương pháp được sử dụng, cũng như các nghiên cứu học thuật về các kỹ thuật liên quan như head pose estimation, face verification, behavioral analysis, và các phương pháp fusion đa tín hiệu trong các hệ thống bảo mật. Chương này sẽ phân tích và so sánh chi tiết điểm mạnh, hạn chế, và lý do tại sao các phương pháp hiện tại chưa đủ để giải quyết vấn đề.
-Trong Chương 3, trình bày các cơ sở lý thuyết cần thiết cho đồ án, bao gồm những khái niệm cơ bản về thị giác máy tính, các kỹ thuật phát hiện và theo dõi khuôn mặt, phương pháp landmark detection để trích xuất các điểm mốc trên khuôn mặt, các phương pháp ước lượng góc đầu và đặc biệt là phương pháp solvePnP (Perspective-n-Point), kỹ thuật face embedding và similarity measurement để xác thực danh tính, những khái niệm cơ bản về xử lý tín hiệu và state machine, cũng như các phương pháp fusion dữ liệu từ nhiều nguồn khác nhau.
-Chương 4 trình bày chi tiết thiết kế kiến trúc hệ thống đề xuất, bao gồm mô tả ba tầng chính (Perception Layer, Signal Extractors, Risk Fusion Engine) và lý do lựa chọn kiến trúc này, chi tiết cách tính toán từng trong số bảy tín hiệu (face presence, multi-face, eye state, mouth state, object presence, head pose, identity verification) với giải thích toán học cơ bản cho mỗi tín hiệu, mô tả thuật toán solvePnP cho ước lượng góc đầu, phương pháp FaceNet embedding cho xác thực danh tính, và đặc biệt là mô tả chi tiết Risk Fusion Engine bao gồm state machine theo cửa sổ thời gian trượt, phương pháp weighted scoring để tổng hợp đa tín hiệu, cơ chế hysteresis để giảm báo động giả, và cách tính toán điểm rủi ro liên tục theo thời gian.
-Chương 5 trình bày việc cài đặt (implementation) các thành phần được thiết kế ở chương trước, bao gồm lựa chọn ngôn ngữ lập trình (Python) và các thư viện sử dụng, cách tích hợp MediaPipe, MTCNN, YOLOv8, FaceNet vào pipeline chính, xử lý các trường hợp đặc biệt (edge case) như không phát hiện khuôn mặt, nhiều khuôn mặt quá gần, điều kiện ánh sáng yếu, cấu trúc code, quản lý tài nguyên, và cách lưu trữ telemetry.
-Chương 6 là phần thực nghiệm và đánh giá, trình bày kế hoạch quay bộ test (25 clip ngắn gần 1 tiếng đồng hồ) bao gồm các kịch bản khác nhau như hành vi bình thường, sử dụng điện thoại, nhìn ra ngoài, nhiều người trong khung hình, đổi người giữa chừng, phương pháp gán nhãn ground truth chi tiết tại mức khung hình, cách tính toán các chỉ số Precision, Recall, F1 score, độ trễ phát hiện trung bình, kết quả thu được từ hệ thống đề xuất, và so sánh chi tiết với baseline đơn giản mô phỏng logic if-elif. Chương này cũng sẽ phân tích ảnh hưởng của các tham số như trọng số tín hiệu, ngưỡng hysteresis, và chiều dài cửa sổ thời gian lên hiệu năng.
-Cuối cùng, Chương 7 đưa ra các kết luận chính từ đồ án bao gồm những kết quả đạt được, những hạn chế của giải pháp hiện tại (như phụ thuộc vào điều kiện ánh sáng, khó xử lý các khuôn mặt có chướng ngại vật như kính), những giả định và điều kiện sử dụng, và các hướng phát triển tương lai có thể được thực hiện (như tích hợp backend để quản lý nhiều kỳ thi, thêm phát hiện các hành vi phức tạp khác, sử dụng deep learning cho Risk Fusion Engine, hoặc mở rộng sang các ứng dụng khác như phỏng vấn trực tuyến).
+# Chương 1. Giới thiệu đề tài
+
+## 1.1. Đặt vấn đề
+
+Thi trực tuyến ngày càng được sử dụng trong giáo dục, tuyển dụng và các chương trình cấp chứng chỉ. Hình thức này giúp giảm chi phí tổ chức, mở rộng phạm vi tiếp cận và tạo điều kiện cho người học tham gia từ nhiều địa điểm. Tuy nhiên, khi thí sinh làm bài trên thiết bị cá nhân và ngoài không gian thi truyền thống, đơn vị tổ chức khó duy trì mức độ giám sát tương đương một phòng thi trực tiếp.
+
+Các hành vi cần được quan tâm không chỉ gồm những vi phạm rõ ràng như rời khỏi vị trí, xuất hiện người thứ hai hoặc sử dụng điện thoại, mà còn gồm các tình huống khó quan sát hơn: thường xuyên nhìn ra ngoài màn hình, trao đổi với người khác, thay người giữa kỳ thi, chuyển tab, thoát chế độ toàn màn hình, sử dụng clipboard hoặc vô hiệu hóa thiết bị giám sát. Một giám thị theo dõi đồng thời nhiều thí sinh khó quan sát liên tục toàn bộ các dấu hiệu này. Sau kỳ thi, việc chỉ dựa vào trí nhớ của giám thị cũng không cung cấp đủ dữ liệu để xem xét một sự cố theo cách nhất quán.
+
+Giám sát tự động có thể hỗ trợ bằng cách thu thập tín hiệu, đánh dấu những khoảng thời gian bất thường và cung cấp bằng chứng để con người xem xét. Tuy nhiên, đây không phải bài toán phân loại một ảnh đơn giản. Dữ liệu webcam chịu ảnh hưởng của ánh sáng, góc đặt camera, đặc điểm khuôn mặt, kính, che khuất và năng lực phần cứng. Một lần chớp mắt hoặc quay đầu ngắn không đồng nghĩa với gian lận. Tương tự, một lần mất focus có thể xuất phát từ thông báo hệ thống thay vì chủ ý rời bài thi. Nếu mọi tín hiệu tức thời đều trở thành cảnh báo, số lượng báo động giả sẽ làm giảm giá trị của hệ thống và gây bất lợi cho thí sinh.
+
+Bài toán còn có khía cạnh vận hành. Một giải pháp sử dụng trong thực tế cần quản lý nhiều tổ chức, kỳ thi, giám thị và phiên thi; truyền trạng thái theo thời gian thực; kiểm soát quyền truy cập đến dữ liệu nhạy cảm; lưu ảnh và sự kiện có thể truy vết; và sinh báo cáo sau kỳ thi. Việc truyền video liên tục lên server làm tăng băng thông và phạm vi xử lý dữ liệu cá nhân, trong khi chỉ chạy một ứng dụng cục bộ lại không hỗ trợ giám sát tập trung. Do đó, hệ thống cần cân bằng giữa xử lý tại thiết bị, quản lý tập trung, khả năng giải thích và quyền riêng tư.
+
+Từ các vấn đề trên, đồ án lựa chọn đề tài **“Hệ thống giám sát thi trực tuyến bằng thị giác máy tính”**. Hệ thống kết hợp bảy tín hiệu thị giác máy tính, các sự kiện toàn vẹn trình duyệt và một nền tảng quản lý nhiều tổ chức. Mục tiêu của hệ thống là hỗ trợ giám thị phát hiện và xem xét sự kiện đáng ngờ, không tự động kết luận thí sinh gian lận. Quyết định cuối cùng vẫn thuộc về người có thẩm quyền dựa trên quy chế thi, ngữ cảnh và bằng chứng liên quan.
+
+## 1.2. Động lực và khoảng trống cần giải quyết
+
+Các giải pháp giám sát thi hiện có có thể được chia thành hai nhóm. Nhóm sản phẩm thương mại thường cung cấp nhiều chức năng như kiểm tra thiết bị, khóa hoặc theo dõi trình duyệt, ghi hình và hỗ trợ giám thị. Ưu điểm của nhóm này là quy trình vận hành tương đối hoàn chỉnh. Tuy nhiên, thuật toán phát hiện thường không được công bố đầy đủ; khả năng điều chỉnh, kiểm chứng độc lập và triển khai theo yêu cầu riêng có thể bị hạn chế.
+
+Nhóm dự án mã nguồn mở và nghiên cứu học thuật tạo điều kiện khảo sát thuật toán và tái sử dụng mã nguồn. Một số dự án kết hợp OpenCV, MediaPipe, MTCNN và YOLO để nhận biết khuôn mặt, trạng thái mắt, chuyển động miệng hoặc vật thể. Tuy vậy, nhiều giải pháp dừng ở một chương trình cục bộ, xử lý từng điều kiện bằng chuỗi `if-elif` và ghi một nhãn cho mỗi khung hình. Cách làm này có bốn hạn chế chính:
+
+1. Kết quả của một frame dễ bị ảnh hưởng bởi nhiễu và không biểu diễn được thời lượng hành vi.
+2. Nhiều tín hiệu xảy ra đồng thời không được kết hợp theo mức độ quan trọng.
+3. Một số phép đo dựa trên độ lệch pixel hoặc khoảng cách tuyệt đối phụ thuộc độ phân giải, FPS và vị trí khuôn mặt.
+4. Ứng dụng thiếu lớp quản lý kỳ thi, phân quyền, theo dõi thời gian thực, lưu bằng chứng và đánh giá sau sự kiện.
+
+Đồ án giải quyết khoảng trống này theo hướng thiết kế hệ thống thay vì chỉ ghép các mô hình nhận diện. Các mô hình pretrained được xem là thành phần nền; đóng góp tập trung vào kiến trúc pipeline, hợp đồng dữ liệu, xử lý theo thời gian, tổng hợp rủi ro, xác thực danh tính trong phiên, tích hợp trình duyệt, phân quyền theo tài nguyên và chu trình quản lý bằng chứng.
+
+## 1.3. Mục tiêu của đề tài
+
+### 1.3.1. Mục tiêu tổng quát
+
+Xây dựng một hệ thống giám sát thi trực tuyến có khả năng thu thập và tổng hợp nhiều tín hiệu bất thường, hỗ trợ giám thị theo dõi phiên thi theo thời gian thực và xem lại bằng chứng sau kỳ thi; đồng thời bảo đảm hệ thống có cấu trúc mô-đun, có thể kiểm thử, cấu hình và mở rộng.
+
+### 1.3.2. Mục tiêu cụ thể
+
+Để đạt mục tiêu tổng quát, đồ án xác định các mục tiêu cụ thể sau:
+
+- Xây dựng tầng nhận thức dùng chung để phát hiện khuôn mặt, trích xuất landmark và phát hiện vật thể mà không chạy lặp cùng một model cho từng tín hiệu.
+- Cài đặt bảy tín hiệu gồm `FACE_PRESENCE`, `MULTI_FACE`, `EYE_STATE`, `MOUTH_STATE`, `OBJECT_PRESENCE`, `HEAD_POSE` và `IDENTITY` theo một interface thống nhất.
+- Ước lượng yaw, pitch và roll bằng bài toán Perspective-n-Point thay cho phép so sánh độ lệch pixel đơn giản.
+- Đăng ký và kiểm tra lại danh tính bằng face embedding trong suốt phiên thi; kết hợp thử thách chớp mắt cơ bản trong bước enrollment.
+- Xây dựng state machine theo cửa sổ thời gian cho từng tín hiệu và Risk Fusion Engine có trọng số, hysteresis hai cấp và khả năng giải thích tín hiệu đóng góp.
+- Xây dựng browser extension theo dõi những sự kiện liên quan đến focus, tab, toàn màn hình, clipboard, camera, microphone và chia sẻ màn hình theo chính sách kỳ thi.
+- Xây dựng backend FastAPI và dashboard để quản lý tổ chức, thành viên, kỳ thi, phiên thi, sự cố và báo cáo; truyền cập nhật bằng WebSocket.
+- Thiết kế phân quyền theo vai trò, tổ chức và assignment của từng kỳ thi; hạn chế quyền truy cập đến bằng chứng nhạy cảm và ghi nhật ký hoạt động.
+- Tổ chức dữ liệu dưới dạng kết hợp cơ sở dữ liệu quan hệ với JSONL và ảnh snapshot, phục vụ đồng thời truy vấn trạng thái mới nhất và tái dựng timeline.
+- Đánh giá giải pháp bằng kiểm thử phần mềm, kiểm thử tích hợp và bộ 25 video có ground truth được thực hiện trong môi trường đánh giá riêng.
+
+## 1.4. Đối tượng và phạm vi nghiên cứu
+
+### 1.4.1. Đối tượng nghiên cứu
+
+Đối tượng nghiên cứu của đồ án gồm:
+
+- Các kỹ thuật phát hiện khuôn mặt, landmark khuôn mặt, trạng thái mắt và miệng, vật thể, góc quay đầu và face embedding.
+- Phương pháp xử lý tín hiệu theo thời gian, state machine, weighted scoring và hysteresis.
+- Cơ chế theo dõi tính toàn vẹn của phiên thi trong trình duyệt.
+- Kiến trúc backend thời gian thực, phân quyền nhiều tổ chức, lưu bằng chứng và sinh báo cáo.
+- Phương pháp đánh giá một hệ thống phát hiện sự kiện theo ground truth và phương pháp kiểm thử các thuộc tính phần mềm.
+
+### 1.4.2. Phạm vi thực hiện
+
+Các nội dung thuộc phạm vi đồ án gồm:
+
+- Webcam đơn hướng vào thí sinh, xử lý hình ảnh trên client desktop Python.
+- Sử dụng model pretrained: MTCNN, MediaPipe Face Landmarker, YOLOv8n trên COCO và InceptionResnetV1 trong `facenet-pytorch`.
+- Phát hiện hai lớp vật thể trong model hiện tại là `cell phone` và `book`.
+- Giám sát các sự kiện trình duyệt bằng extension và áp dụng chính sách camera, microphone, chia sẻ màn hình, toàn màn hình, clipboard và phiên bản extension.
+- Hai phương thức tham gia của thí sinh: thông tin thủ công hoặc Google OIDC tùy cấu hình kỳ thi.
+- Quản trị nhiều tổ chức với các vai trò System Admin, Organization Admin, Exam Manager và assignment `owner/manager/proctor` trên kỳ thi.
+- Dashboard thời gian thực, xem evidence, incident review, xuất báo cáo HTML/PDF, tác vụ report nền và chính sách lưu trữ.
+- Chạy cục bộ hoặc triển khai backend bằng Docker Compose với PostgreSQL và Redis.
+
+### 1.4.3. Nội dung ngoài phạm vi
+
+Đồ án không đặt mục tiêu xây dựng một lockdown browser hoặc hệ thống remote attestation hoàn chỉnh. Các nội dung sau nằm ngoài phạm vi:
+
+- Bảo đảm tuyệt đối client không bị sửa khi chạy trên thiết bị do thí sinh kiểm soát.
+- Quan sát ứng dụng ngoài trình duyệt, điện thoại thứ hai hoặc thiết bị nằm ngoài góc nhìn camera.
+- Phát hiện chắc chắn camera ảo, video replay hoặc deepfake bằng anti-spoofing chuyên dụng.
+- Nhận dạng giọng nói, phân tích nội dung âm thanh hoặc truyền video liên tục đến giám thị.
+- Huấn luyện lại toàn bộ các model nền từ đầu.
+- Tự động kết luận hoặc áp dụng kỷ luật đối với thí sinh.
+- Khẳng định khả năng triển khai quy mô lớn nhiều vùng địa lý khi chưa có đánh giá tải và hạ tầng tương ứng.
+
+Việc xác định giới hạn này giúp kết quả đồ án được diễn giải đúng: hệ thống cung cấp tín hiệu và bằng chứng hỗ trợ con người, không phải công cụ chứng minh gian lận một cách tuyệt đối.
+
+## 1.5. Định hướng giải pháp
+
+Đồ án áp dụng nguyên tắc xử lý tại biên kết hợp quản lý tập trung. Pipeline CV chạy tại máy thí sinh để giảm truyền dữ liệu hình ảnh và tránh đưa thư viện học sâu vào backend. Browser extension theo dõi các sự kiện nằm trong phạm vi trình duyệt. Backend tiếp nhận telemetry theo lô, kiểm tra schema, tính hoặc đối chiếu lại kết quả, lưu trạng thái và chuyển tiếp cập nhật đến dashboard.
+
+Luồng CV chính được tổ chức như sau:
+
+```text
+Webcam
+  → Perception Layer
+  → Bảy Signal Extractor
+  → State machine theo từng tín hiệu
+  → Weighted Risk Fusion và hysteresis cấp phiên
+  → ViolationEvent, snapshot và báo cáo
+```
+
+Luồng trình duyệt và nền tảng được tổ chức như sau:
+
+```text
+Mã tham gia
+  → Xác thực thí sinh và policy kỳ thi
+  → Kiểm tra thiết bị, consent và khởi tạo monitor
+  → Browser event/heartbeat qua WebSocket
+  → Backend kiểm tra và tính integrity
+  → Dashboard, evidence, incident review và báo cáo
+```
+
+Hai loại điểm được giữ tách biệt. `risk_score` phản ánh kết quả pipeline CV; `integrity_score` phản ánh sự kiện trình duyệt và trạng thái thiết bị. Việc tách này tránh gộp các hiện tượng khác bản chất thành một giá trị khó giải thích. Khi xem phiên, giám thị có thể đối chiếu timeline của cả hai nguồn và ảnh bằng chứng trước khi đưa ra nhận định.
+
+## 1.6. Phương pháp thực hiện
+
+Quá trình thực hiện đồ án gồm các nhóm công việc sau:
+
+1. **Khảo sát:** nghiên cứu cơ sở lý thuyết, sản phẩm và dự án liên quan; xác định hạn chế và yêu cầu của hệ thống.
+2. **Thiết kế:** xây dựng kiến trúc phân tầng, data contract, state machine, use case, mô hình phân quyền, mô hình dữ liệu và luồng truyền thời gian thực.
+3. **Cài đặt:** phát triển desktop CV, extension, backend, dashboard, reporting và các tác vụ vận hành.
+4. **Kiểm thử:** viết unit test, integration test, smoke test model, kiểm thử API/WebSocket, cô lập tổ chức, báo cáo và luồng mô phỏng đầu-cuối.
+5. **Thực nghiệm:** đánh giá pipeline trên bộ 25 video được gán ground truth trong môi trường thực nghiệm riêng; so sánh với baseline và tổng hợp Precision, Recall, F1-score cùng độ trễ phát hiện.
+6. **Phân tích:** đối chiếu kết quả với mục tiêu, chỉ ra giới hạn và đề xuất hướng cải tiến.
+
+Mã nguồn và bộ kiểm thử phần mềm được lưu trong repository của đồ án. Bộ video, ground truth, model/artifact thực nghiệm và biểu đồ đánh giá được tạo trong một môi trường khác do dung lượng và điều kiện chạy, vì vậy Chương 6 ghi rõ nguồn số liệu và phương pháp tính thay vì coi chúng là artifact có sẵn trong repository này.
+
+## 1.7. Các đóng góp chính
+
+Các đóng góp nổi bật của đồ án gồm:
+
+1. Kiến trúc pipeline dùng chung kết quả nhận thức, giúp bảy tín hiệu không chạy lặp detector và có hợp đồng dữ liệu thống nhất.
+2. Head pose bằng PnP, identity verification định kỳ và cơ chế enrollment có liveness chớp mắt cơ bản.
+3. Cơ chế kết hợp hai cấp: state machine độc lập theo cửa sổ thời gian cho từng tín hiệu và Risk Fusion Engine có trọng số/hysteresis ở cấp phiên.
+4. Khả năng giải thích quyết định thông qua trạng thái, tín hiệu đóng góp, mức nghiêm trọng, timeline và snapshot.
+5. Kết hợp client CV, browser extension và nền tảng quản lý thời gian thực mà không truyền video liên tục lên backend.
+6. Phân quyền nhiều tổ chức theo capability và phạm vi tài nguyên, kèm quyền đọc evidence ngoại lệ có phê duyệt và thời hạn.
+7. Mô hình dữ liệu lai SQL–JSONL, incident review tách khỏi sự kiện máy, report job nền và retention có audit.
+8. Bộ kiểm thử phần mềm đa tầng và đánh giá định lượng trên bộ video có ground truth.
+
+Chi tiết về vấn đề, giải pháp và kết quả của từng đóng góp được trình bày tại Chương 4.
+
+## 1.8. Bố cục báo cáo
+
+Báo cáo được tổ chức thành bảy chương:
+
+- **Chương 1 – Giới thiệu đề tài:** trình bày bối cảnh, bài toán, mục tiêu, phạm vi, phương pháp và đóng góp dự kiến của đồ án.
+- **Chương 2 – Cơ sở lý thuyết:** trình bày nền tảng về xử lý ảnh, phát hiện khuôn mặt, landmark, EAR/MAR, PnP, face embedding, phát hiện vật thể, state machine, hysteresis và các khái niệm nền tảng liên quan đến hệ thống.
+- **Chương 3 – Khảo sát và phân tích yêu cầu:** khảo sát giải pháp liên quan, xác định tác nhân, yêu cầu chức năng, yêu cầu phi chức năng, ràng buộc và tiêu chí nghiệm thu.
+- **Chương 4 – Các giải pháp và đóng góp nổi bật:** phân tích từng bài toán kỹ thuật, giải pháp được thiết kế và kết quả đạt được ở cấp hệ thống.
+- **Chương 5 – Cài đặt hệ thống:** mô tả cấu trúc mã nguồn và cách hiện thực desktop CV, browser extension, backend, dashboard, dữ liệu, bảo mật và triển khai.
+- **Chương 6 – Kiểm thử và đánh giá:** trình bày kiểm thử phần mềm, thiết kế thực nghiệm 25 video, baseline, các chỉ số định lượng và phân tích kết quả.
+- **Chương 7 – Kết luận và hướng phát triển:** tổng hợp kết quả, giới hạn và các hướng hoàn thiện hệ thống.
+
+## 1.9. Kết chương
+
+Chương 1 đã xác định bài toán của đồ án là xây dựng một hệ thống hỗ trợ giám sát thi có khả năng kết hợp nhiều nguồn tín hiệu, giảm cảnh báo tức thời thiếu ngữ cảnh, cung cấp dữ liệu có thể truy vết và quản lý an toàn trong môi trường nhiều tổ chức. Chương cũng làm rõ mục tiêu, phạm vi và giới hạn để tránh diễn giải hệ thống như một công cụ tự động kết luận gian lận hoặc một lockdown browser hoàn chỉnh.
+
+Chương 2 tiếp theo trình bày các cơ sở lý thuyết làm nền tảng cho pipeline thị giác máy tính, xử lý theo thời gian, xác thực danh tính và kiến trúc truyền/lưu dữ liệu của hệ thống.

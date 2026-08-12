@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 900">
+<defs><style>.h{font:700 26px Segoe UI,Arial;fill:#0f172a}.g{font:700 18px Segoe UI,Arial;fill:#4c1d95}.u{font:14px Segoe UI,Arial;fill:#1e293b}.a{font:700 14px Segoe UI,Arial;fill:#0f172a}.l{stroke:#64748b;stroke-width:1.7;fill:none}.d{stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 5;fill:none}.actor{stroke:#334155;stroke-width:2.2;fill:none}</style></defs>
+<rect width="1300" height="900" fill="#f8fafc"/><text x="650" y="40" text-anchor="middle" class="h">USE CASE TỔNG QUAN HỆ THỐNG</text>
+<rect x="255" y="75" width="790" height="770" rx="22" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/><text x="650" y="108" text-anchor="middle" class="g">NỀN TẢNG GIÁM SÁT THI TRỰC TUYẾN</text>
+<!-- actors -->
+<g transform="translate(90 135)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="a" stroke="none" fill="#0f172a">System Admin</text></g>
+<g transform="translate(90 360)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="a" stroke="none" fill="#0f172a">Organization Admin</text></g>
+<g transform="translate(90 650)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="a" stroke="none" fill="#0f172a">Exam Manager</text></g>
+<g transform="translate(1110 220)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="a" stroke="none" fill="#0f172a">Proctor</text></g>
+<g transform="translate(1110 610)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="a" stroke="none" fill="#0f172a">Candidate</text></g>
+<!-- use cases -->
+<ellipse cx="460" cy="165" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="460" y="161" text-anchor="middle" class="u">Quản lý tổ chức,</text><text x="460" y="181" text-anchor="middle" class="u">system policy và security</text>
+<ellipse cx="790" cy="165" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="790" y="161" text-anchor="middle" class="u">Xem audit và</text><text x="790" y="181" text-anchor="middle" class="u">trạng thái nền tảng</text>
+<ellipse cx="460" cy="290" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="460" y="286" text-anchor="middle" class="u">Quản lý thành viên,</text><text x="460" y="306" text-anchor="middle" class="u">invitation và quyền</text>
+<ellipse cx="790" cy="290" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="790" y="286" text-anchor="middle" class="u">Cấu hình chính sách</text><text x="790" y="306" text-anchor="middle" class="u">cấp tổ chức</text>
+<ellipse cx="460" cy="420" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="460" y="416" text-anchor="middle" class="u">Tạo và cấu hình</text><text x="460" y="436" text-anchor="middle" class="u">kỳ thi</text>
+<ellipse cx="790" cy="420" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="790" y="416" text-anchor="middle" class="u">Phân công giám thị,</text><text x="790" y="436" text-anchor="middle" class="u">kiểm tra readiness</text>
+<ellipse cx="460" cy="550" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="460" y="546" text-anchor="middle" class="u">Theo dõi dashboard</text><text x="460" y="566" text-anchor="middle" class="u">thời gian thực</text>
+<ellipse cx="790" cy="550" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="790" y="546" text-anchor="middle" class="u">Xem evidence, review</text><text x="790" y="566" text-anchor="middle" class="u">và sinh báo cáo</text>
+<ellipse cx="460" cy="690" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="460" y="686" text-anchor="middle" class="u">Tham gia kỳ thi và</text><text x="460" y="706" text-anchor="middle" class="u">xác thực danh tính</text>
+<ellipse cx="790" cy="690" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="790" y="678" text-anchor="middle" class="u">Cấp quyền, kiểm tra thiết bị</text><text x="790" y="698" text-anchor="middle" class="u">và nhận trạng thái</text><text x="790" y="718" text-anchor="middle" class="u">đang được giám sát</text>
+<ellipse cx="625" cy="790" rx="170" ry="36" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/><text x="625" y="795" text-anchor="middle" class="u">Ghi nhận CV signal và browser event</text>
+<!-- associations -->
+<path d="M155 190L315 165M155 205L645 165" class="l"/><path d="M155 430L315 290M155 440L645 290M155 455L315 420" class="l"/><path d="M155 720L315 420M155 735L645 420M155 750L315 550" class="l"/>
+<path d="M1110 285L935 550M1110 300L935 550M1110 315L935 550" class="l"/><path d="M1110 675L605 690M1110 690L935 690M1110 705L795 790" class="l"/>
+<path d="M605 550L645 550" class="d"/><path d="M790 732L705 775M460 732L555 775" class="d"/>
+<text x="650" y="870" text-anchor="middle" class="u">Quyền truy cập thực tế còn được giới hạn theo tổ chức, kỳ thi và capability trên tài nguyên.</text>
+</svg>

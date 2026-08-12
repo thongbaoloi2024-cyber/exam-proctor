@@ -2,15 +2,17 @@
 
 ## 4.0. Mở đầu
 
-Các chương trước đã trình bày cơ sở lý thuyết của MTCNN, MediaPipe FaceMesh, YOLOv8, FaceNet, bài toán ước lượng góc quay đầu và nguyên lý kết hợp đa tín hiệu. Vì vậy, chương này không lặp lại cách hoạt động của từng mô hình, mà tập trung vào các vấn đề kỹ thuật đã xuất hiện khi xây dựng một hệ thống giám sát thi hoàn chỉnh và những giải pháp đã được thiết kế, cài đặt để giải quyết các vấn đề đó.
+Các chương trước đã trình bày cơ sở lý thuyết của MTCNN, MediaPipe Face Landmarker, YOLOv8, FaceNet, bài toán ước lượng góc quay đầu và nguyên lý kết hợp đa tín hiệu; đồng thời xác định các yêu cầu `FR-*` và `NFR-*` của hệ thống. Vì vậy, chương này không lặp lại cách hoạt động của từng mô hình, mà tập trung vào các vấn đề kỹ thuật đã xuất hiện khi xây dựng một hệ thống giám sát thi hoàn chỉnh và những giải pháp đã được thiết kế, cài đặt để giải quyết các vấn đề đó.
 
-Đóng góp của đồ án không nằm ở việc huấn luyện một mô hình thị giác máy tính mới. Điểm nổi bật là việc tổ chức các mô hình có sẵn thành một pipeline có trạng thái, kết hợp kết quả thị giác máy tính với dữ liệu toàn vẹn trình duyệt, xây dựng lớp nền tảng nhiều tổ chức, truyền trạng thái theo thời gian thực, quản lý bằng chứng và tạo báo cáo có thể truy vết. Mỗi giải pháp trong chương được trình bày theo ba nội dung: bài toán đặt ra, giải pháp thực hiện và kết quả đạt được.
+Đóng góp của đồ án không nằm ở việc huấn luyện một mô hình thị giác máy tính mới. Điểm nổi bật là việc tổ chức các mô hình có sẵn thành một pipeline có trạng thái, kết hợp kết quả thị giác máy tính với dữ liệu toàn vẹn trình duyệt, xây dựng lớp nền tảng nhiều tổ chức, truyền trạng thái theo thời gian thực, quản lý bằng chứng và tạo báo cáo có thể truy vết. Mỗi giải pháp trong chương được trình bày theo ba nội dung: bài toán đặt ra, giải pháp thực hiện và kết quả đạt được. Quan hệ giữa giải pháp và yêu cầu được tóm tắt tại mục 4.8.
 
 ## 4.1. Giải pháp kiến trúc tổng thể cho hệ thống giám sát thi
 
 ### 4.1.1. Bài toán và yêu cầu kiến trúc
 
 Một chương trình chỉ đọc webcam và hiển thị nhãn bất thường chưa đủ để vận hành một kỳ thi. Hệ thống thực tế phải đồng thời giải quyết nhiều nhóm yêu cầu: xử lý hình ảnh tại máy thí sinh; giám sát các thao tác trong trình duyệt; xác thực và phân quyền người dùng; quản lý tổ chức, kỳ thi và phiên thi; chuyển trạng thái đến giám thị theo thời gian thực; lưu bằng chứng; và tổng hợp báo cáo sau kỳ thi.
+
+Nhóm vấn đề này tương ứng với các yêu cầu `FR-SESSION-*`, `FR-RT-*`, `FR-EVID-*`, `FR-REPORT-*`, `NFR-PRIV-*` và `NFR-PORT-01` tại Chương 3.
 
 Nếu ghép toàn bộ trách nhiệm vào một chương trình đơn khối, ba vấn đề xuất hiện. Thứ nhất, các mô hình thị giác máy tính có chi phí tính toán lớn và không phù hợp để chạy đồng bộ trong backend phục vụ nhiều người dùng. Thứ hai, truyền video liên tục làm tăng băng thông, chi phí lưu trữ và mức độ nhạy cảm của dữ liệu. Thứ ba, giao diện quản trị, dữ liệu phiên và thuật toán nhận diện bị phụ thuộc chặt vào nhau, gây khó kiểm thử và mở rộng.
 
@@ -22,49 +24,9 @@ Nếu ghép toàn bộ trách nhiệm vào một chương trình đơn khối, b
 - **Browser Extension** quản lý luồng tham gia kỳ thi trong trình duyệt, kiểm tra chính sách thiết bị và ghi nhận các sự kiện như rời toàn màn hình, chuyển tab, mất focus, thao tác clipboard, camera hoặc chia sẻ màn hình bị dừng.
 - **Backend FastAPI và dashboard** quản lý tổ chức, tài khoản, kỳ thi, phiên thi, phân quyền, kết nối WebSocket, lưu bằng chứng, hỗ trợ giám thị xem lại sự cố và sinh báo cáo.
 
-Kiến trúc tổng thể được minh họa ở Hình 4.1.
+Kiến trúc tổng thể được minh họa ở Hình 4.1. Sơ đồ phân biệt bốn vùng trách nhiệm: thu thập và xử lý tại máy thí sinh; tiếp nhận, kiểm chứng và điều phối tại nền tảng; lưu trữ dữ liệu; và khai thác dữ liệu qua các giao diện vận hành. Các đường kết nối cũng cho thấy REST được dùng cho nghiệp vụ có trạng thái, còn WebSocket phục vụ telemetry, heartbeat và cập nhật dashboard theo thời gian thực.
 
-```mermaid
-flowchart LR
-    subgraph CANDIDATE["Máy thí sinh"]
-        CAM["Webcam"] --> CV["Desktop CV client\nPerception → 7 tín hiệu → Risk Fusion"]
-        BROWSER["Trang làm bài"] <--> EXT["Browser Extension\nTheo dõi tính toàn vẹn trình duyệt"]
-        CV --> LOCAL["Log và báo cáo cục bộ"]
-    end
-
-    subgraph PLATFORM["Nền tảng FastAPI"]
-        REST["REST API\nAuth, tổ chức, kỳ thi, phiên"]
-        WS["WebSocket Gateway\nClient và dashboard"]
-        AUTHZ["RBAC + tenant/resource scope"]
-        VALIDATE["Kiểm tra schema và tính lại telemetry"]
-        WORKER["Report worker và retention job"]
-        AUTHZ --> REST
-        AUTHZ --> WS
-        WS --> VALIDATE
-    end
-
-    subgraph DATA["Tầng dữ liệu"]
-        DB[("CSDL quan hệ\nmetadata và trạng thái hiện tại")]
-        EVIDENCE[("JSONL + snapshots\nbằng chứng theo phiên")]
-        REPORT[("Báo cáo HTML/PDF")]
-    end
-
-    subgraph STAFF["Người vận hành"]
-        DASH["Dashboard giám thị"]
-        ADMIN["Giao diện quản trị"]
-    end
-
-    CV -->|"Telemetry theo lô và sự kiện vi phạm"| WS
-    EXT -->|"Browser event, heartbeat"| WS
-    EXT -->|"Join, xác thực, chính sách"| REST
-    WS -->|"Cập nhật thời gian thực"| DASH
-    REST <--> ADMIN
-    REST <--> DB
-    VALIDATE --> DB
-    VALIDATE --> EVIDENCE
-    EVIDENCE --> WORKER --> REPORT
-    DASH -->|"Xem evidence và báo cáo"| REST
-```
+![Kiến trúc tổng thể hệ thống giám sát thi](image/kien_truc_tong_the_he_thong.svg)
 
 **Hình 4.1. Kiến trúc tổng thể của hệ thống**
 
@@ -84,33 +46,13 @@ Trong một hệ thống giám sát thi, “quản trị viên” không phải 
 
 Nếu chỉ kiểm tra một trường `role` toàn cục, một người là quản lý ở kỳ thi A có thể bị hiển thị nhầm quyền quản lý ở kỳ thi B, hoặc người thuộc tổ chức này có thể suy đoán sự tồn tại của tài nguyên thuộc tổ chức khác.
 
+Giải pháp tại mục này đáp ứng các nhóm `FR-AUTH-*`, `FR-ORG-*`, `FR-EXAM-04`, `FR-EXAM-05` và `NFR-SEC-01`.
+
 ### 4.2.2. Giải pháp
 
-Đồ án xây dựng kiểm soát truy cập theo ba bước: xác thực danh tính, xác định phạm vi và kiểm tra capability trên tài nguyên. Các vai trò và use case chính được thể hiện ở Hình 4.2.
+Đồ án xây dựng kiểm soát truy cập theo ba bước: xác thực danh tính, xác định phạm vi và kiểm tra capability trên tài nguyên. Các vai trò và use case chính được thể hiện ở Hình 4.2. Ranh giới use case mô tả chức năng người dùng nhìn thấy; quyền thực thi cuối cùng vẫn do backend quyết định theo tổ chức, kỳ thi và tài nguyên cụ thể.
 
-```mermaid
-flowchart LR
-    SA["System Admin"] --> U1(("Quản lý tổ chức, quota,\nchính sách nền tảng"))
-    SA --> U2(("Xem nhật ký và vận hành"))
-    SA --> U3(("Yêu cầu quyền đọc evidence\ncó phê duyệt và thời hạn"))
-
-    OA["Organization Admin"] --> U4(("Quản lý hồ sơ tổ chức"))
-    OA --> U5(("Mời và quản lý thành viên"))
-    OA --> U6(("Thiết lập chính sách tổ chức"))
-    OA --> U7(("Duyệt quyền truy cập ngoại lệ"))
-
-    EM["Exam Manager\nowner/manager"] --> U8(("Tạo và cấu hình kỳ thi"))
-    EM --> U9(("Phân công nhân sự và\nquản lý vòng đời kỳ thi"))
-    EM --> U10(("Theo dõi phiên và xuất báo cáo"))
-
-    PR["Proctor"] --> U11(("Giám sát thời gian thực"))
-    PR --> U12(("Xem evidence, đánh giá sự cố"))
-    PR --> U13(("Kết thúc phiên theo quyền"))
-
-    ST["Thí sinh"] --> U14(("Nhập mã và xác thực"))
-    ST --> U15(("Kiểm tra thiết bị, tham gia thi"))
-    ST --> U16(("Gửi telemetry của chính phiên"))
-```
+![Use case tổng quan theo vai trò](image/use_case_tong_quan_he_thong.svg)
 
 **Hình 4.2. Use case theo các vai trò của hệ thống**
 
@@ -126,6 +68,8 @@ System Admin phải bật MFA mới có vai trò hệ thống hiệu lực. Vai 
 
 Thí sinh được tách khỏi bảng tài khoản nhân sự. Chế độ thủ công tạo phiên từ mã dự thi và thông tin thí sinh; chế độ Google lưu các claim OIDC tối thiểu trong `CandidateIdentity`, không lưu access token hoặc refresh token của Google. Token phiên thí sinh và token người dùng có loại riêng, không thể dùng thay thế cho nhau.
 
+Luồng use case được triển khai theo nguyên tắc “quyền tối thiểu”: System Admin quản lý mặt bằng nền tảng nhưng không mặc nhiên đọc evidence; Organization Admin quản lý phạm vi tổ chức; Exam Manager chịu trách nhiệm cấu hình và vòng đời kỳ thi; Proctor tập trung vào giám sát, review và báo cáo; Candidate chỉ tham gia và gửi dữ liệu của phiên đã xác thực. Việc tách nhiệm vụ này giảm khả năng một vai trò vừa tạo chính sách, vừa vận hành, vừa tự xác nhận kết quả mà không có dấu vết audit.
+
 ### 4.2.3. Kết quả đạt được
 
 Giải pháp đã tạo được mô hình quản trị đa tổ chức và giới hạn quyền theo từng tài nguyên. Một Exam Manager chỉ liệt kê được các kỳ thi mình được phân công; vai trò manager ở kỳ thi này không làm phát sinh quyền quản lý ở kỳ thi khác. Organization Admin được tách khỏi công việc vận hành kỳ thi, còn System Admin chỉ đọc dữ liệu giám sát khi có quyền ngoại lệ hợp lệ.
@@ -137,6 +81,8 @@ Các trường hợp cô lập tenant, thu hồi role/assignment, nhầm loại 
 ### 4.3.1. Bài toán xử lý nhiều mô hình trên mỗi khung hình
 
 Bảy tín hiệu giám sát không hoàn toàn độc lập về dữ liệu đầu vào. Face Presence, Multi-face và Identity cần vùng khuôn mặt; Eye State, Mouth State và Head Pose cần landmark; Object Presence cần kết quả phát hiện vật thể. Nếu mỗi tín hiệu tự tải mô hình và tự xử lý lại khung hình, cùng một phép phát hiện sẽ chạy nhiều lần, làm giảm tốc độ và khiến các tín hiệu sử dụng kết quả không đồng nhất về thời điểm.
+
+Đây là bài toán trung tâm của `FR-CV-01`, `NFR-PERF-01`, `NFR-REL-01` và `NFR-MAIN-02`.
 
 Ngoài ra, YOLOv8 có chi phí lớn hơn các bước xử lý còn lại. Chạy YOLO ở mọi frame gây lãng phí tài nguyên, nhưng nếu bỏ trống kết quả ở các frame không chạy model thì bộ đếm thời gian xuất hiện vật thể sẽ bị ngắt sai.
 
@@ -209,6 +155,8 @@ So với cách dùng bộ đếm số frame, nhiều điều kiện trong đồ 
 
 Kết quả của một frame đơn lẻ không đủ để kết luận hành vi bất thường. Người dùng có thể chớp mắt, nhìn sang bên trong thời gian ngắn hoặc một detector có thể nhận nhầm vật thể ở đúng một frame. Nếu ghi một vi phạm cho mọi frame vượt ngưỡng, log sẽ bị ngập bởi các sự kiện lặp và giám thị khó phân biệt hành vi kéo dài với nhiễu tức thời.
 
+Giải pháp tại mục này trực tiếp hiện thực `FR-CV-03`, `FR-CV-04`, `NFR-MAIN-01` và `NFR-EXPL-01`.
+
 Một ngưỡng duy nhất cũng làm trạng thái liên tục bật/tắt khi điểm số dao động gần biên. Ngoài ra, các hành vi không có mức nghiêm trọng như nhau: không khớp danh tính hoặc có điện thoại cần đóng góp nhiều hơn một lần nhắm mắt.
 
 ### 4.4.2. Giải pháp
@@ -269,6 +217,8 @@ Các kiểm thử đã bao phủ các tình huống: chưa vượt ngưỡng kh�
 ### 4.5.1. Bài toán truyền trạng thái từ client không đáng tin cậy hoàn toàn
 
 Giám thị cần thấy thay đổi của nhiều phiên gần như tức thời. Polling REST liên tục tạo độ trễ và tải thừa, trong khi WebSocket cho phép cập nhật hai chiều nhưng phát sinh rủi ro khác: token có thể bị lộ trong URL, message có thể bị giả mạo hoặc gửi quá nhanh, timestamp của client có thể sai và kết nối có thể mất mà dashboard không nhận biết.
+
+Các yêu cầu liên quan gồm `FR-RT-*`, `FR-SESSION-03`, `NFR-SEC-02`, `NFR-SEC-03` và `NFR-PERF-02`.
 
 ### 4.5.2. Giải pháp
 
@@ -337,6 +287,8 @@ Backend không còn là bộ chuyển tiếp mù quáng dữ liệu do client kh
 
 Dashboard cần truy vấn nhanh danh sách kỳ thi, người dùng và trạng thái mới nhất của phiên. Ngược lại, tín hiệu theo thời gian, transition, sự kiện trình duyệt và vi phạm là dữ liệu append-only có số lượng lớn, phù hợp với xử lý tuần tự và sinh báo cáo. Nếu đưa toàn bộ frame-level telemetry vào cơ sở dữ liệu quan hệ, schema trở nên nặng và mỗi frame có thể gây một transaction. Nếu chỉ lưu file, việc lọc theo tổ chức, phân quyền và tải trạng thái ban đầu cho dashboard trở nên khó khăn.
 
+Nhóm vấn đề này tương ứng với `FR-EVID-*`, `FR-REVIEW-01`, `FR-REPORT-*`, `FR-RET-01` và yêu cầu giải thích `NFR-EXPL-01`.
+
 ### 4.6.2. Giải pháp
 
 Đồ án sử dụng mô hình dữ liệu lai:
@@ -344,74 +296,25 @@ Dashboard cần truy vấn nhanh danh sách kỳ thi, người dùng và trạng
 - **Cơ sở dữ liệu quan hệ** lưu identity, tổ chức, membership, role, kỳ thi, assignment, phiên thi, trạng thái hiện tại, review, report job và audit log.
 - **Kho evidence theo phiên** lưu metadata, tín hiệu, transition, timeline risk, sự kiện trình duyệt, vi phạm và ảnh snapshot dưới dạng JSON/JSONL và tệp ảnh.
 
-Sơ đồ quan hệ chính được trình bày ở Hình 4.7.
+Sơ đồ quan hệ chính được trình bày ở Hình 4.7. ERD chỉ giữ các thực thể và khóa quan trọng để làm rõ phạm vi dữ liệu; các trường kỹ thuật chi tiết tiếp tục được mô tả ở Chương 5.
 
-```mermaid
-erDiagram
-    USER ||--o{ SYSTEM_ROLE : has
-    USER ||--o{ ORGANIZATION_MEMBERSHIP : joins
-    ORGANIZATION ||--o{ ORGANIZATION_MEMBERSHIP : contains
-    ORGANIZATION ||--o{ EXAM : owns
-    USER ||--o{ EXAM_ASSIGNMENT : receives
-    EXAM ||--o{ EXAM_ASSIGNMENT : scopes
-    EXAM ||--o{ EXAM_SESSION : contains
-    CANDIDATE_IDENTITY ||--o{ CANDIDATE_DEVICE : owns
-    CANDIDATE_IDENTITY ||--o{ EXAM_SESSION : authenticates
-    EXAM_SESSION ||--o{ INCIDENT_REVIEW : has
-    EXAM_SESSION ||--o{ REPORT_JOB : produces
-    USER ||--o{ AUDIT_LOG : acts
-    ORGANIZATION ||--o{ AUDIT_LOG : scopes
-    USER ||--o{ ACCESS_GRANT : requests
-    ORGANIZATION ||--o{ ACCESS_GRANT : protects
-
-    ORGANIZATION {
-        string id PK
-        string name
-        string status
-        int retention_days
-        int quota_concurrent_sessions
-    }
-    EXAM {
-        string id PK
-        string org_id FK
-        string status
-        string join_code
-        datetime join_code_expires_at
-        int version
-    }
-    EXAM_SESSION {
-        string id PK
-        string exam_id FK
-        string status
-        float risk_score_current
-        float integrity_score_current
-        datetime last_seen_at
-    }
-```
+![ERD rút gọn của lớp nền tảng](image/mo_hinh_du_lieu_erd.svg)
 
 **Hình 4.7. ERD rút gọn của lớp nền tảng**
 
-Luồng dữ liệu từ lúc phát sinh đến lúc giám thị xem báo cáo được mô tả ở Hình 4.8.
+Trước khi đi vào chi tiết kỹ thuật, Hình 4.8 xác định biên hệ thống và bốn nhóm tác nhân ngoài. Thí sinh cung cấp thông tin tham gia, consent và dữ liệu giám sát; giám thị khai thác trạng thái, evidence và ghi kết luận; Exam Manager quản lý vòng đời kỳ thi; còn quản trị viên cung cấp cấu hình tổ chức, người dùng và policy. Sự phân tách này giúp nhận biết dữ liệu nào đi vào, dữ liệu nào đi ra và ai chịu trách nhiệm với từng luồng.
 
-```mermaid
-flowchart LR
-    E1["Thí sinh / Client"] -->|"D1: telemetry CV"| P1["P1. Kiểm tra và tổng hợp"]
-    E1 -->|"D2: browser event"| P2["P2. Đánh giá integrity"]
-    P1 --> DSQL[("D3. Trạng thái phiên trong SQL")]
-    P2 --> DSQL
-    P1 --> DFILE[("D4. JSONL và snapshots")]
-    P2 --> DFILE
-    DSQL --> P3["P3. Dashboard thời gian thực"]
-    DFILE --> P3
-    P3 --> E2["Giám thị"]
-    DFILE --> P4["P4. Tổng hợp và sinh báo cáo"]
-    DSQL --> P4
-    P4 --> DREP[("D5. HTML/PDF")]
-    DREP --> E2
-    E2 -->|"D6: kết luận review"| DREV[("D7. IncidentReview")]
-```
+![Sơ đồ luồng dữ liệu mức ngữ cảnh](image/data_flow_muc_ngu_canh.svg)
 
-**Hình 4.8. Sơ đồ luồng dữ liệu bằng chứng và báo cáo**
+**Hình 4.8. Sơ đồ luồng dữ liệu mức ngữ cảnh của hệ thống**
+
+Luồng dữ liệu nội bộ của một phiên thi được thể hiện ở Hình 4.9. Hai nguồn dữ liệu được xử lý song song: CV telemetry/violation từ desktop client và browser event/heartbeat từ extension. Backend kiểm tra phạm vi phiên, schema, sequence và dữ liệu dẫn xuất trước khi cập nhật trạng thái. Dữ liệu đã kiểm chứng vừa được fan-out tới dashboard, vừa được lưu theo hai lớp: trạng thái hiện tại trong SQL và chuỗi bằng chứng trong JSONL/snapshot.
+
+![Luồng dữ liệu chi tiết của một phiên thi](image/data_flow_phien_thi.svg)
+
+**Hình 4.9. Sơ đồ luồng dữ liệu chi tiết của một phiên thi**
+
+Data flow trên cũng làm rõ ba thời điểm sử dụng dữ liệu. Trong khi thi, dashboard cần current state và alert có độ trễ thấp. Khi hậu kiểm, giám thị cần timeline, snapshot và sự kiện nguyên bản. Khi kết thúc, reporting worker tổng hợp cả metadata quan hệ lẫn evidence append-only để dựng HTML/PDF. Vì vậy, một biểu diễn dữ liệu duy nhất không phù hợp cho cả ba tải truy cập.
 
 Mỗi thư mục `sessions/<session_id>/` có cấu trúc thống nhất:
 
@@ -442,6 +345,8 @@ Trình đọc báo cáo có khả năng dung nạp file thiếu hoặc phiên b�
 ### 4.7.1. Bài toán an toàn hệ thống
 
 Hệ thống giám sát thi xử lý thông tin định danh, hành vi và hình ảnh của thí sinh. Các rủi ro không chỉ nằm ở việc đăng nhập sai mật khẩu mà còn gồm lộ token qua URL, nhầm token người dùng với token phiên, truy cập chéo tổ chức, path traversal khi tải ảnh, replay WebSocket ticket, dữ liệu HTML không an toàn, thay đổi cấu hình kỳ thi đồng thời và chính sách cấp dưới làm yếu yêu cầu bảo mật của cấp trên.
+
+Giải pháp này bao phủ các yêu cầu `NFR-SEC-*`, `NFR-PRIV-*`, `FR-AUTH-*`, `FR-ORG-04`, `FR-ORG-05` và `FR-EXAM-06`.
 
 ### 4.7.2. Giải pháp
 
@@ -479,9 +384,20 @@ Các đóng góp chính của đồ án có thể tổng quát hóa như sau:
 - **Phòng thủ phía server:** không tin điểm và đường dẫn do client khai báo; kiểm tra schema, dùng thời gian server, tính lại hoặc đối chiếu risk/integrity, kiểm tra ảnh và ghi audit.
 - **Chu trình sau phát hiện:** hỗ trợ giám thị xem timeline, thực hiện incident review và tạo report job HTML/PDF, giữ kết luận của con người tách khỏi sự kiện máy.
 
+Bảng 4.2 tổng hợp tuyến liên kết từ đóng góp đến nhóm yêu cầu chính.
+
+| Đóng góp | Nhóm yêu cầu chính |
+|---|---|
+| Kiến trúc client–extension–backend | `FR-SESSION-*`, `FR-RT-*`, `NFR-PRIV-*`, `NFR-PORT-01` |
+| Pipeline nhận thức và bảy signal | `FR-CV-01..03`, `NFR-PERF-01`, `NFR-REL-01` |
+| Risk Fusion Engine hai cấp | `FR-CV-04`, `NFR-MAIN-01`, `NFR-EXPL-01` |
+| RBAC và policy phân tầng | `FR-AUTH-*`, `FR-ORG-*`, `FR-EXAM-*`, `NFR-SEC-01` |
+| WebSocket và kiểm chứng telemetry | `FR-RT-*`, `FR-BROWSER-02`, `NFR-SEC-02..03`, `NFR-PERF-02` |
+| Evidence, review, report và retention | `FR-EVID-*`, `FR-REVIEW-01`, `FR-REPORT-*`, `FR-RET-01` |
+
 ### 4.8.3. Kết quả đạt được và giới hạn đánh giá
 
-Tại thời điểm hoàn thành chương này, kho mã có 225 hàm kiểm thử tự động bao phủ từ công thức và state machine, pipeline CV, báo cáo, API, authentication, policy, tenant isolation đến WebSocket và giao diện quản trị. Ngoài unit test, dự án còn có smoke test với model thật, kiểm thử tích hợp video mẫu và luồng mô phỏng đầu-cuối tạo báo cáo thực. Kết quả này cho thấy kiến trúc và các hợp đồng dữ liệu có thể vận hành xuyên suốt các module.
+Tại thời điểm chốt báo cáo, bộ kiểm thử chạy thành công 309 ca Python và 8 ca extension, bao phủ từ công thức và state machine, pipeline CV, báo cáo, API, authentication, policy, tenant isolation đến WebSocket và giao diện quản trị. Ngoài unit test, dự án còn có smoke test với model thật, kiểm thử tích hợp video mẫu và luồng mô phỏng đầu-cuối tạo báo cáo thực. Kết quả này cho thấy kiến trúc và các hợp đồng dữ liệu có thể vận hành xuyên suốt các module.
 
 Tuy nhiên, số lượng test phần mềm không đồng nghĩa với độ chính xác nhận diện ngoài thực tế. Để kết luận precision, recall, F1-score hoặc tỉ lệ báo động giả của từng tín hiệu, hệ thống cần một bộ video thật đủ đa dạng về ánh sáng, thiết bị, góc mặt và đặc điểm người dùng, kèm ground truth độc lập. Vì vậy, chương này chỉ khẳng định các kết quả đã được kiểm chứng về chức năng, tính nhất quán, khả năng chịu lỗi và an toàn truy cập; không đưa ra số liệu độ chính xác chưa có cơ sở thực nghiệm.
 
