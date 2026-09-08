@@ -4,24 +4,24 @@
 
 Chương này đánh giá hai loại thuộc tính khác nhau:
 
-1. **Độ đúng của phần mềm:** module có thực hiện đúng hợp đồng, quyền truy cập và luồng nghiệp vụ hay không.
-2. **Hiệu quả phát hiện CV:** hệ thống nhận biết frame vi phạm trên bộ video có ground truth tốt đến mức nào.
+1. **Độ đúng của phần mềm:** mô-đun có thực hiện đúng hợp đồng, quyền truy cập và luồng nghiệp vụ hay không.
+2. **Hiệu quả phát hiện bằng thị giác máy tính:** hệ thống nhận biết khung hình vi phạm trên bộ video có nhãn tham chiếu tốt đến mức nào.
 
-Hai loại bằng chứng không thay thế cho nhau. Test pass chứng minh implementation đáp ứng tình huống đã mô tả, nhưng không chứng minh model có độ chính xác cao ngoài thực tế. Ngược lại, Precision/Recall tốt trên một dataset không chứng minh hệ thống an toàn trước truy cập chéo tổ chức hoặc token giả mạo.
+Hai loại bằng chứng không thay thế cho nhau. Một ca kiểm thử đạt chỉ chứng minh phần cài đặt đáp ứng tình huống đã mô tả; kết quả đó không chứng minh mô hình có độ chính xác cao trong mọi điều kiện thực tế. Ngược lại, độ chính xác (Precision) hoặc độ bao phủ (Recall) cao trên một bộ dữ liệu không chứng minh hệ thống an toàn trước truy cập chéo tổ chức hoặc mã xác thực giả mạo.
 
-Source code và test phần mềm được chạy lại trong repository hiện tại. Bộ 25 video, ground truth, checkpoint thực nghiệm và output đánh giá được tạo ở một môi trường khác, không nằm trong repository này. Các số liệu CV dưới đây được giữ theo kết quả đã xác nhận từ môi trường đó; những chỉ số có thể suy ra từ confusion matrix được tính lại để bảo đảm nhất quán.
+Mã nguồn và bộ kiểm thử phần mềm có thể được chạy lại từ kho mã nguồn hiện tại. Ngược lại, bộ 25 video, nhãn tham chiếu, điểm kiểm tra mô hình và đầu ra đánh giá được tạo ở một môi trường khác, không có trong bản bàn giao. Vì vậy, các số liệu thị giác máy tính dưới đây được trình bày như kết quả đã được ghi nhận từ môi trường thực nghiệm, không phải kết quả được tái lập trong lần rà soát này. Những chỉ số có thể suy ra từ ma trận nhầm lẫn được tính lại để kiểm tra tính nhất quán số học.
 
-## 6.2. Kiểm thử phần mềm trong repository
+## 6.2. Kiểm thử phần mềm trong kho mã nguồn
 
 ### 6.2.1. Phương pháp
 
-Bộ test Python được chạy bằng:
+Bộ kiểm thử Python được chạy bằng:
 
 ```bash
 .venv\Scripts\python.exe -m pytest -q backend\tests tests
 ```
 
-Extension được chạy bằng:
+Bộ kiểm thử tiện ích mở rộng được chạy bằng:
 
 ```bash
 cd extension
@@ -30,142 +30,185 @@ npm test
 
 Kết quả ghi nhận ngày 12/08/2026 trên môi trường phát triển Windows hiện tại:
 
-| Nhóm | Kết quả | Thời gian |
+| Lần chạy | Kết quả | Thời gian |
 |---|---:|---:|
-| Python: desktop CV, fusion, reporting và backend | 309 passed, 0 failed | 124,87 giây |
-| Extension Node test | 8 passed, 0 failed | 132,55 ms theo Node test runner |
+| Toàn bộ Python, lần 1 | 308 đạt, 1 lỗi | 140,16 giây |
+| Chạy riêng ca lỗi của lần 1 | 1 đạt | 1,50 giây |
+| Toàn bộ Python, lần 2 | 309 đạt, 0 lỗi | 127,14 giây |
+| Tiện ích mở rộng trên Node | 8 đạt, 0 lỗi | 138,00 ms theo Node test runner |
 
-Pytest báo 344 warning, chủ yếu là deprecation warning từ Starlette/httpx, SQLite datetime adapter và protobuf. Warning không làm test thất bại nhưng cần được theo dõi khi nâng phiên bản dependency.
+Ở lần chạy Python đầu tiên, ca `test_organization_audit_is_paged_and_resolves_actor_identity` thất bại vì thứ tự tài nguyên nhận được không đúng kỳ vọng (`resource-04` đứng trước `resource-00`). Ca này đạt khi chạy riêng và toàn bộ bộ kiểm thử cũng đạt ở lần chạy thứ hai. Kết quả cho thấy lỗi không tái hiện ổn định, nhưng vẫn cần được theo dõi như một nguy cơ phụ thuộc thứ tự hoặc không ổn định của kiểm thử; không nên chỉ công bố lần chạy thành công.
 
-### 6.2.2. Kiểm thử pipeline CV và thuật toán
+Mỗi lần chạy toàn bộ bằng Pytest ghi nhận 344 cảnh báo, chủ yếu liên quan đến thành phần sắp ngừng hỗ trợ trong Starlette/httpx, bộ chuyển đổi ngày giờ của SQLite và protobuf. Các cảnh báo không làm kiểm thử thất bại nhưng cần được xử lý hoặc theo dõi khi nâng phiên bản thư viện phụ thuộc.
+
+### 6.2.2. Kiểm thử chuỗi xử lý thị giác máy tính và thuật toán
 
 Các nhóm kiểm thử chính gồm:
 
 - Công thức EAR, tỉ lệ miệng và chuyển đổi tọa độ.
-- Debounce thời lượng cho vắng mặt, mắt, vật thể và head pose.
-- Lọc confidence của Multi-face.
+- Cơ chế chống dao động theo thời lượng cho vắng mặt, mắt, vật thể và góc quay đầu.
+- Lọc độ tin cậy của tín hiệu nhiều khuôn mặt.
 - PnP trên góc quay tổng hợp biết trước.
-- Cosine similarity, enrollment và chu kỳ Identity.
-- Liveness mở–nhắm–mở.
-- Tính chịu lỗi khi detector ném exception.
-- Hợp đồng đủ bảy signal và factory đọc đúng YAML.
-- State machine, cửa sổ trượt, hysteresis, rising edge và nhiều tín hiệu đóng góp.
-- Smoke test khởi tạo/runs các model thật và integration test trên video mẫu.
+- Độ tương đồng cosin, đăng ký khuôn mặt và chu kỳ xác minh danh tính.
+- Kiểm tra sự hiện diện sống theo chuỗi mở–nhắm–mở.
+- Tính chịu lỗi khi bộ phát hiện phát sinh ngoại lệ.
+- Hợp đồng đủ bảy tín hiệu và bộ khởi tạo đọc đúng YAML.
+- Máy trạng thái, cửa sổ trượt, vùng trễ, cạnh chuyển vào cảnh báo và nhiều tín hiệu đóng góp.
+- Kiểm thử khởi tạo mô hình thật và kiểm thử tích hợp trên video mẫu.
 
-Một số test hồi quy xuất phát từ lỗi quan sát được trên webcam thật. Ví dụ, Eye State từng báo nhầm khi một mắt bị nén phối cảnh; test hiện yêu cầu biến dạng một mắt không được coi là nhắm, trong khi hai mắt cùng EAR thấp vẫn phải kích hoạt.
+Một số ca kiểm thử hồi quy xuất phát từ lỗi quan sát được trên webcam thật. Ví dụ, tín hiệu trạng thái mắt từng báo nhầm khi một mắt bị nén phối cảnh; kiểm thử hiện yêu cầu biến dạng của một mắt không được coi là nhắm, trong khi hai mắt cùng có EAR thấp vẫn phải kích hoạt điều kiện.
 
-### 6.2.3. Kiểm thử backend và bảo mật
+### 6.2.3. Kiểm thử dịch vụ phía máy chủ và bảo mật
 
-Bộ test backend dùng FastAPI TestClient và database SQLite tạm cho từng ca. Các nhóm được kiểm tra:
+Bộ kiểm thử phía máy chủ sử dụng FastAPI TestClient và cơ sở dữ liệu SQLite tạm thời cho từng ca. Các nhóm được kiểm tra gồm:
 
-- Đăng ký, đăng nhập, cookie, logout và rate limit.
-- MFA của System Admin, giới hạn số lần thử và recovery/re-enrollment.
-- Phân biệt user token, session token, WebSocket ticket và token rác.
-- Membership nhiều tổ chức và chuyển active organization.
-- Capability theo từng exam assignment; manager ở kỳ thi A không có quyền manager ở kỳ thi B.
-- Cô lập tổ chức trên danh sách phiên, kết thúc phiên, report, snapshot và dashboard WebSocket.
-- Policy inheritance và từ chối cấu hình làm yếu sàn hệ thống/tổ chức.
-- Lifecycle, optimistic locking, join code và quota phiên đồng thời.
-- Google OIDC giả lập, state/PKCE/nonce/grant và device token.
-- Validation đủ bảy signal, tính lại risk/integrity phía server và browser event.
-- Upload snapshot, chống path traversal, incident review và report job nền.
-- Security header, DOM an toàn và các route giao diện.
+- Đăng ký, đăng nhập, cookie, đăng xuất và giới hạn tần suất.
+- MFA của quản trị viên hệ thống, giới hạn số lần thử và khôi phục/đăng ký lại.
+- Phân biệt mã xác thực người dùng, mã xác thực phiên, vé WebSocket và mã xác thực không hợp lệ.
+- Tư cách thành viên ở nhiều tổ chức và chuyển tổ chức đang hoạt động.
+- Quyền chức năng theo từng phân công kỳ thi; người quản lý ở kỳ thi A không có quyền quản lý ở kỳ thi B.
+- Cô lập tổ chức trên danh sách phiên, kết thúc phiên, báo cáo, ảnh chụp và WebSocket của bảng điều khiển.
+- Kế thừa chính sách và từ chối cấu hình làm yếu mức sàn hệ thống/tổ chức.
+- Vòng đời, kiểm soát đồng thời lạc quan, mã tham gia và hạn mức phiên đồng thời.
+- Google OIDC giả lập, `state`/PKCE/`nonce`/mã cấp quyền và mã xác thực thiết bị.
+- Kiểm tra đủ bảy tín hiệu, tính lại mức rủi ro/toàn vẹn phía máy chủ và sự kiện trình duyệt.
+- Tải ảnh chụp lên, chống tấn công duyệt đường dẫn, hậu kiểm sự cố và tác vụ báo cáo nền.
+- Tiêu đề bảo mật, DOM an toàn và các đường dẫn giao diện.
 
-Kết quả 309 test pass cho thấy source hiện tại nhất quán với các hợp đồng và quy tắc đã mô tả. Bộ test không phải penetration test độc lập và không bao phủ hành vi của mọi trình duyệt/thiết bị thật.
+Việc toàn bộ 309 ca đạt ở lần chạy thứ hai cho thấy mã nguồn có thể đáp ứng các hợp đồng và quy tắc đã được kiểm thử. Tuy nhiên, kết quả không ổn định của lần chạy đầu cho thấy độ tin cậy của bộ kiểm thử cũng cần được xem xét, đặc biệt đối với dữ liệu có cùng dấu thời gian hoặc thứ tự sắp xếp. Bộ kiểm thử không thay thế kiểm thử xâm nhập độc lập và không bao phủ hành vi của mọi trình duyệt hoặc thiết bị thực.
 
-### 6.2.4. Kiểm thử extension
+### 6.2.4. Kiểm thử tiện ích mở rộng
 
-Tám test Node kiểm tra popup setup, luồng nhập mã, chuẩn hóa backend URL, bắt buộc HTTPS ngoài localhost, so sánh semantic version, parse browser identity, lọc dữ liệu OAuth redirect và cấu trúc gói extension. Ngoài test tự động, các API camera, screen share, fullscreen và behavior của trình duyệt vẫn cần kiểm tra thủ công trên Chrome/Firefox thật vì Node không mô phỏng đầy đủ permission prompt và lifecycle service worker.
+Tám ca kiểm thử Node kiểm tra giao diện thiết lập, luồng nhập mã, chuẩn hóa địa chỉ máy chủ, yêu cầu HTTPS ngoài `localhost`, so sánh phiên bản ngữ nghĩa, phân tích định danh trình duyệt, lọc dữ liệu chuyển hướng OAuth và cấu trúc gói tiện ích. Ngoài kiểm thử tự động, các API camera, chia sẻ màn hình, toàn màn hình và hành vi trình duyệt vẫn cần được kiểm tra thủ công trên Chrome và Firefox thực tế vì Node không mô phỏng đầy đủ hộp thoại cấp quyền và vòng đời tiến trình dịch vụ.
 
 ## 6.3. Đánh giá hoạt động của hệ thống đã triển khai
 
 ### 6.3.1. Phương pháp và tiêu chí đánh giá
 
-Đánh giá hoạt động xem hệ thống có duy trì được một chuỗi nghiệp vụ hoàn chỉnh từ cấu hình kỳ thi đến hậu kiểm hay không. Bằng chứng sử dụng gồm source code, test tự động, cấu trúc giao diện đã triển khai, data contract và trạng thái bền vững trong cơ sở dữ liệu/evidence. Phần này không đồng nhất “route tồn tại” với “sẵn sàng production”: một luồng chỉ được kết luận đạt trong phạm vi test nếu có kiểm tra hành vi và điều kiện lỗi tương ứng; các tương tác phụ thuộc trình duyệt, webcam và permission prompt thật được ghi là cần xác nhận bổ sung.
+Đánh giá hoạt động xem xét khả năng duy trì chuỗi nghiệp vụ từ cấu hình kỳ thi đến hậu kiểm. Bằng chứng sử dụng gồm mã nguồn, kiểm thử tự động, cấu trúc giao diện đã cài đặt, hợp đồng dữ liệu và trạng thái bền vững trong cơ sở dữ liệu hoặc kho bằng chứng. Việc một tuyến xử lý tồn tại không đồng nghĩa hệ thống đã sẵn sàng triển khai thực tế. Một luồng chỉ được kết luận đạt trong phạm vi kiểm thử khi đã có ca kiểm tra hành vi và điều kiện lỗi tương ứng; các tương tác phụ thuộc trình duyệt, webcam và hộp thoại cấp quyền được ghi rõ là cần xác nhận bổ sung.
 
 Các tiêu chí gồm:
 
-- **Tính đầy đủ nghiệp vụ:** có đủ bước chuẩn bị, tham gia, giám sát, kết thúc, review và report.
-- **Tính nhất quán dữ liệu:** trạng thái hiển thị trên giao diện có nguồn từ dữ liệu backend đã kiểm chứng; evidence gắn đúng organization, exam và session.
-- **Khả năng quan sát:** người dùng nhận biết được trạng thái tải, lỗi, mất kết nối, preflight chưa đạt và report job thất bại.
-- **An toàn phạm vi:** chức năng chỉ xuất hiện và chỉ thực thi với vai trò/capability hợp lệ.
-- **Khả năng suy giảm có kiểm soát:** lỗi một kênh không làm dữ liệu cũ bị trình bày như dữ liệu realtime hoặc tạo báo cáo thành công giả.
+- **Tính đầy đủ nghiệp vụ:** có đủ bước chuẩn bị, tham gia, giám sát, kết thúc, hậu kiểm và tạo báo cáo.
+- **Tính nhất quán dữ liệu:** trạng thái trên giao diện có nguồn từ dữ liệu máy chủ đã kiểm chứng; bằng chứng gắn đúng tổ chức, kỳ thi và phiên.
+- **Khả năng quan sát:** người dùng nhận biết được trạng thái tải, lỗi, mất kết nối, kiểm tra trước phiên chưa đạt và tác vụ báo cáo thất bại.
+- **An toàn phạm vi:** chức năng chỉ xuất hiện và chỉ được thực thi với vai trò hoặc năng lực hợp lệ.
+- **Khả năng suy giảm có kiểm soát:** lỗi của một kênh không làm dữ liệu cũ bị trình bày như dữ liệu thời gian thực hoặc tạo trạng thái báo cáo thành công giả.
 
 ### 6.3.2. Đánh giá các kịch bản đầu-cuối
 
 | Kịch bản | Luồng được kiểm chứng | Bằng chứng hiện có | Đánh giá |
 |---|---|---|---|
-| Chuẩn bị tổ chức | Tạo tổ chức, membership, role, policy và quota | API/UI route, migration và test auth/RBAC/policy | Đạt trong phạm vi kiểm thử tự động |
-| Chuẩn bị kỳ thi | Tạo kỳ thi, cấu hình, assignment, readiness và join code | Lifecycle, optimistic locking, assignment, join-code test | Đạt trong phạm vi kiểm thử tự động |
-| Thí sinh tham gia | Kiểm tra mã, xác thực thủ công/Google, consent, cấp session token | Candidate auth, Google OIDC giả lập, token-type test và extension setup test | Đạt về logic; cần kiểm tra OAuth/permission thật |
-| Khởi động desktop CV | IDLE → ENROLLMENT → liveness → MONITORING | Controller, enrollment/liveness, smoke và video integration test | Đạt về chức năng; phụ thuộc webcam/môi trường |
-| Giám sát trình duyệt | Preflight, tab/focus/fullscreen/clipboard, heartbeat | Extension source, Node test, browser-event validation test | Đạt phần logic; cần chạy Chrome/Firefox thật |
-| Truyền dữ liệu realtime | Client hello, telemetry, violation, browser event, heartbeat, dashboard fan-out | WebSocket schema, ticket, sequence/dedup và authorization test | Đạt trong phạm vi backend test |
-| Giám sát và mở chi tiết phiên | REST initial state, WebSocket update, filter, risk/evidence timeline | Dashboard route/static source, tenant-isolation và WebSocket test | Đạt về tích hợp phía server; cần kiểm tra UI đa phiên thật |
-| Kết thúc và hậu kiểm | End session, incident review, snapshot access và audit | Session-end, review, snapshot/path traversal và audit test | Đạt trong phạm vi kiểm thử tự động |
-| Sinh báo cáo | Report job → worker → HTML/PDF → trạng thái completed/failed | Reporting consistency, report-job và tolerant-loader test | Đạt về chức năng |
-| Mất kết nối/lỗi dữ liệu | Socket gián đoạn, message sai schema, dữ liệu trùng, backend unavailable | Validation, dedup, connection manager và local best-effort behavior | Đạt một phần; cần thử nghiệm mạng gián đoạn dài |
+| Chuẩn bị tổ chức | Tạo tổ chức, tư cách thành viên, vai trò, chính sách và hạn mức | Đường dẫn API/UI, chuyển đổi lược đồ và kiểm thử xác thực/RBAC/chính sách | Đạt trong phạm vi kiểm thử tự động |
+| Chuẩn bị kỳ thi | Tạo kỳ thi, cấu hình, phân công, điều kiện sẵn sàng và mã tham gia | Kiểm thử vòng đời, kiểm soát đồng thời lạc quan, phân công và mã tham gia | Đạt trong phạm vi kiểm thử tự động |
+| Thí sinh tham gia | Kiểm tra mã, xác thực thủ công/Google, ghi nhận sự đồng ý, cấp mã xác thực phiên | Xác thực thí sinh, Google OIDC giả lập, kiểm thử loại mã xác thực và thiết lập tiện ích | Đạt về logic; cần kiểm tra OAuth/quyền thực tế |
+| Khởi động ứng dụng thị giác máy tính | IDLE → ENROLLMENT → xác minh sự hiện diện sống → MONITORING | Bộ điều khiển, đăng ký/xác minh sự hiện diện sống, kiểm thử khởi động cơ bản và tích hợp video | Đạt về chức năng; phụ thuộc webcam/môi trường |
+| Giám sát trình duyệt | Kiểm tra trước phiên, thẻ/trạng thái tập trung/toàn màn hình/bảng tạm, nhịp kết nối | Mã nguồn tiện ích, kiểm thử Node và kiểm tra dữ liệu sự kiện trình duyệt | Đạt phần logic; cần chạy Chrome/Firefox thật |
+| Truyền dữ liệu theo thời gian thực | Thông điệp mở đầu máy khách, dữ liệu giám sát, vi phạm, sự kiện trình duyệt, nhịp kết nối, phân phối tới bảng điều khiển | Lược đồ WebSocket, vé kết nối, số thứ tự/loại bỏ bản ghi trùng và kiểm thử quyền | Đạt trong phạm vi kiểm thử máy chủ |
+| Giám sát và mở chi tiết phiên | Trạng thái ban đầu qua REST, cập nhật WebSocket, bộ lọc, dòng thời gian rủi ro/bằng chứng | Đường dẫn bảng điều khiển/mã nguồn tĩnh, cô lập tổ chức và kiểm thử WebSocket | Đạt về tích hợp phía máy chủ; cần kiểm tra giao diện đa phiên thực tế |
+| Kết thúc và hậu kiểm | Kết thúc phiên, hậu kiểm sự cố, truy cập ảnh chụp và kiểm toán | Kiểm thử kết thúc phiên, hậu kiểm, ảnh chụp/tấn công duyệt đường dẫn và kiểm toán | Đạt trong phạm vi kiểm thử tự động |
+| Sinh báo cáo | Tác vụ báo cáo → tiến trình nền → HTML/PDF → trạng thái hoàn thành/thất bại | Kiểm thử tính nhất quán của báo cáo, tác vụ báo cáo và trình đọc dung nạp lỗi | Đạt về chức năng |
+| Mất kết nối/lỗi dữ liệu | WebSocket gián đoạn, thông điệp sai lược đồ, dữ liệu trùng, máy chủ không khả dụng | Kiểm tra dữ liệu, loại bỏ bản ghi trùng, bộ quản lý kết nối và hành vi cục bộ theo khả năng tốt nhất | Đạt một phần; cần thử nghiệm mạng gián đoạn dài |
 
-Kết quả cho thấy các phân hệ không tồn tại rời rạc mà đã có hợp đồng nối tiếp: policy từ backend điều khiển preflight; session token xác định đúng phiên; telemetry đã kiểm chứng cập nhật current state và evidence; dashboard/review/report cùng sử dụng session ID làm khóa truy vết. Điểm còn thiếu chủ yếu thuộc môi trường thực: vòng đời service worker của trình duyệt, permission prompt, tải đồng thời nhiều phiên và các kiểu mất mạng kéo dài.
+Kết quả cho thấy các phân hệ được nối với nhau bằng hợp đồng dữ liệu: chính sách từ máy chủ điều khiển bước kiểm tra trước phiên; mã xác thực phiên xác định đúng phiên thi; dữ liệu giám sát đã kiểm chứng cập nhật trạng thái hiện tại và kho bằng chứng; bảng điều khiển, hậu kiểm và báo cáo cùng sử dụng mã phiên làm khóa truy vết. Những nội dung còn thiếu bằng chứng chủ yếu thuộc môi trường thực tế: vòng đời tiến trình dịch vụ, hộp thoại cấp quyền, tải đồng thời nhiều phiên và các dạng mất mạng kéo dài.
 
 ### 6.3.3. Đánh giá luồng dữ liệu và tính nhất quán
 
-Luồng dữ liệu tại Hình 4.9 được đánh giá theo ba chặng. Ở chặng thu thập, desktop client tạo đủ bảy signal và extension chỉ gửi các browser event đã định nghĩa; dữ liệu ảnh không được truyền liên tục. Ở chặng kiểm chứng, backend từ chối trường thừa, miền giá trị sai, timestamp thiếu timezone, sequence trùng và đường dẫn snapshot do client tự quyết định. Ở chặng khai thác, dữ liệu realtime chỉ được fan-out sau authorization/validation, còn SQL và evidence lưu hai biểu diễn phục vụ hai loại tải khác nhau.
+Luồng dữ liệu tại Hình 4.9 được đánh giá theo ba chặng. Ở chặng thu thập, ứng dụng thị giác máy tính tạo đủ bảy tín hiệu và tiện ích mở rộng chỉ gửi các sự kiện trình duyệt đã định nghĩa; dữ liệu ảnh không được truyền liên tục. Ở chặng kiểm chứng, máy chủ từ chối trường thừa, miền giá trị sai, dấu thời gian thiếu múi giờ, số thứ tự trùng và đường dẫn ảnh chụp do máy khách tự quyết định. Ở chặng khai thác, dữ liệu thời gian thực chỉ được phát đến bảng điều khiển sau khi xác thực quyền và kiểm tra hợp lệ; SQL và kho bằng chứng lưu hai biểu diễn phục vụ hai kiểu truy cập khác nhau.
 
-Các invariant quan trọng đã được kiểm thử gồm:
+Các bất biến quan trọng đã được kiểm thử gồm:
 
-- Một telemetry update phải chứa đúng bảy signal và bảy state không trùng.
-- Risk score, severity, primary/contributing signal và browser integrity không được tin trực tiếp nếu có thể tính lại phía server.
-- `ExamSession` giữ bản sao trạng thái mới nhất để dashboard nạp nhanh; JSONL giữ chuỗi sự kiện để dựng timeline và báo cáo.
-- Snapshot phải đúng định dạng, kích thước, hash và nằm trong thư mục phiên do server quản lý.
-- Incident review bổ sung kết luận của con người mà không sửa violation nguyên bản.
-- WebSocket dashboard dùng ticket ngắn hạn, dùng một lần; quyền vẫn được kiểm tra theo exam assignment.
+- Một bản cập nhật giám sát phải chứa đúng bảy tín hiệu với bảy trạng thái không trùng.
+- Điểm rủi ro, mức nghiêm trọng, tín hiệu chính/đóng góp và mức toàn vẹn trình duyệt không được tin trực tiếp nếu có thể tính lại phía máy chủ.
+- `ExamSession` giữ bản sao trạng thái mới nhất để bảng điều khiển nạp nhanh; JSONL giữ chuỗi sự kiện để dựng dòng thời gian và báo cáo.
+- Ảnh chụp phải đúng định dạng, kích thước và hàm băm, đồng thời nằm trong thư mục phiên do máy chủ quản lý.
+- Bản hậu kiểm sự cố bổ sung kết luận của con người mà không sửa sự kiện vi phạm nguyên bản.
+- WebSocket của bảng điều khiển dùng vé kết nối ngắn hạn, một lần; quyền vẫn được kiểm tra theo phân công kỳ thi.
 
-Nhờ các invariant này, cùng một sự kiện có thể được truy từ card trên dashboard đến session detail, dòng JSONL, snapshot và report. Giới hạn hiện tại là việc đồng bộ desktop CV và extension vào cùng một phiên vẫn phụ thuộc cách triển khai client; chưa có native-messaging bridge hoàn chỉnh để ràng buộc hai tiến trình trên máy thí sinh ở mức chống giả mạo.
+Nhờ các bất biến này, cùng một sự kiện có thể được truy từ thẻ trên bảng điều khiển đến trang chi tiết phiên, dòng JSONL, ảnh chụp và báo cáo. Giới hạn hiện tại là việc đồng bộ ứng dụng thị giác máy tính và tiện ích mở rộng vào cùng một phiên vẫn phụ thuộc cách triển khai phía máy khách; hệ thống chưa có cầu nối nhắn tin với ứng dụng cục bộ (native messaging) hoàn chỉnh để ràng buộc hai tiến trình trên máy thí sinh ở mức chống giả mạo.
 
 ### 6.3.4. Đánh giá giao diện và khả năng vận hành
 
-Giao diện đã bao phủ các nhiệm vụ chính được mô tả tại mục 5.8. Shell web tách System, Organization và Exam workspace; extension trình bày luồng tham gia theo bước; desktop client phản ánh state machine; session detail và report phục vụ hậu kiểm. Cách chia này phù hợp với tần suất sử dụng: quản trị viên không cần thấy dữ liệu frame-level, thí sinh không cần thấy dashboard nhiều phiên, còn giám thị cần ưu tiên risk, integrity, alert và evidence.
+Giao diện đã bao phủ các nhiệm vụ chính được mô tả tại mục 5.8. Khung web tách không gian làm việc của hệ thống, tổ chức và kỳ thi; tiện ích trình bày luồng tham gia theo từng bước; ứng dụng máy tính để bàn phản ánh máy trạng thái; trang chi tiết phiên và báo cáo phục vụ hậu kiểm. Cách chia này phù hợp với tần suất sử dụng: quản trị viên không cần thấy dữ liệu ở cấp khung hình, thí sinh không cần thấy bảng điều khiển nhiều phiên, còn giám thị cần ưu tiên rủi ro, mức toàn vẹn, cảnh báo và bằng chứng.
 
-Về phản hồi trạng thái, dashboard có chỉ báo WebSocket, extension có preflight/status region, report job có trạng thái `pending/processing/failed/completed`, và desktop client có các state `IDLE/ENROLLMENT/MONITORING/GENERATING_REPORT/ENDED`. Đây là nền tảng để người dùng nhận biết tiến trình thay vì thực hiện lại thao tác do không biết hệ thống đã nhận lệnh hay chưa.
+Về phản hồi trạng thái, bảng điều khiển có chỉ báo WebSocket, tiện ích có vùng kiểm tra trước phiên/trạng thái, tác vụ báo cáo có các trạng thái `pending/processing/failed/completed`, và ứng dụng máy tính để bàn có các trạng thái `IDLE/ENROLLMENT/MONITORING/GENERATING_REPORT/ENDED`. Đây là nền tảng để người dùng nhận biết tiến trình thay vì thực hiện lại thao tác do không biết hệ thống đã nhận lệnh hay chưa.
 
-Tuy nhiên, đánh giá giao diện trong repository chủ yếu dựa trên route, DOM contract, JavaScript và test backend/Node. Cần bổ sung một vòng nghiệm thu có người dùng với screenshot thật cho các Hình 5.1–5.14, trong đó kiểm tra tối thiểu: màn hình phổ biến 1366×768; dữ liệu bảng dài; trạng thái rỗng/lỗi; tab bằng bàn phím; permission bị từ chối; WebSocket reconnect; và cách hiển thị tiếng Việt trong PDF.
+Tuy nhiên, đánh giá giao diện trong kho mã nguồn chủ yếu dựa trên tuyến xử lý, hợp đồng DOM, JavaScript và kiểm thử phía máy chủ/Node. Cần bổ sung một vòng nghiệm thu có người dùng và ảnh chụp thật cho các giao diện được mô tả tại mục 5.8. Phạm vi kiểm tra tối thiểu gồm màn hình 1366×768; bảng có dữ liệu dài; trạng thái rỗng và lỗi; điều hướng bằng bàn phím; trường hợp từ chối cấp quyền; kết nối lại WebSocket; và khả năng hiển thị tiếng Việt trong PDF.
 
 ### 6.3.5. Tổng hợp mức độ hoạt động
 
 | Phân hệ | Kết quả chính | Hạn chế cần công bố |
 |---|---|---|
-| Desktop CV | Đủ vòng đời, bảy signal, fusion, local log và report | FPS và độ ổn định phụ thuộc thiết bị/camera |
-| Browser Extension | Có setup, policy, consent, preflight và browser event | Node không mô phỏng đầy đủ browser permission/service worker |
-| Backend nền tảng | Đủ auth, tenant/RBAC, exam/session, evidence, review, report | Chưa thay thế pentest và kiểm thử tải production |
-| Dashboard realtime | Có initial state, ticket WebSocket và fan-out cập nhật | Cần thử nghiệm nhiều proctor/nhiều process trên hạ tầng thật |
-| Lưu trữ và báo cáo | SQL current state kết hợp JSONL/snapshot, report chạy nền | Cần đo dung lượng, retention và khôi phục dữ liệu dài hạn |
-| Khả năng truy vết | Có request/audit, session ID, event ID, review và report job | Cần chuẩn hóa observability tập trung khi triển khai phân tán |
+| Ứng dụng thị giác máy tính | Đủ vòng đời, bảy tín hiệu, phép tổng hợp, nhật ký và báo cáo cục bộ | FPS và độ ổn định phụ thuộc thiết bị/camera |
+| Tiện ích mở rộng trình duyệt | Có thiết lập, chính sách, sự đồng ý, kiểm tra trước phiên và sự kiện trình duyệt | Node không mô phỏng đầy đủ quyền trình duyệt/tiến trình dịch vụ |
+| Nền tảng máy chủ | Đủ xác thực, tổ chức/RBAC, kỳ thi/phiên, bằng chứng, hậu kiểm, báo cáo | Chưa thay thế kiểm thử xâm nhập và kiểm thử tải ở môi trường chính thức |
+| Bảng điều khiển thời gian thực | Có trạng thái ban đầu, vé WebSocket và phân phối cập nhật | Cần thử nghiệm nhiều giám thị/nhiều tiến trình trên hạ tầng thật |
+| Lưu trữ và báo cáo | Trạng thái hiện tại trong SQL kết hợp JSONL/ảnh chụp, báo cáo chạy nền | Cần đo dung lượng, thời hạn lưu giữ và khôi phục dữ liệu dài hạn |
+| Khả năng truy vết | Có mã yêu cầu/nhật ký kiểm toán, mã phiên, mã sự kiện, kết quả hậu kiểm và tác vụ báo cáo | Cần chuẩn hóa khả năng quan sát tập trung khi triển khai phân tán |
 
-Tổng thể, hệ thống đạt mức **prototype tích hợp có thể trình diễn và kiểm thử đầu-cuối**. Kết luận này mạnh hơn một bản demo CV đơn lẻ vì đã có quản trị, phân quyền, realtime, evidence và reporting, nhưng thấp hơn mức “sẵn sàng triển khai diện rộng”. Để nâng mức trưởng thành cần thêm kiểm thử trình duyệt/thiết bị thật, load test nhiều phiên, kiểm thử bảo mật độc lập, giám sát vận hành và quy trình backup/restore.
+Tổng thể, hệ thống đạt mức **nguyên mẫu tích hợp có thể trình diễn và kiểm thử đầu-cuối**. Hệ thống đã có quản trị, phân quyền, cập nhật thời gian thực, quản lý bằng chứng và báo cáo, nhưng chưa đạt mức sẵn sàng triển khai diện rộng. Để nâng mức trưởng thành, cần bổ sung kiểm thử trên trình duyệt và thiết bị thật, kiểm thử tải nhiều phiên, kiểm thử bảo mật độc lập, giám sát vận hành và quy trình sao lưu/khôi phục.
 
-## 6.4. Đánh giá hiệu năng pipeline
+### 6.3.6. Kịch bản nghiệm thu thủ công khi chạy hệ thống
 
-Benchmark có sẵn được chạy trên CPU, dùng 60 frame tổng hợp sau 5 frame warm-up. Nó đo chi phí suy luận và logic, không tính webcam I/O hoặc render UI. Kết quả:
+Bảng sau là mẫu biên bản cần hoàn thiện trong lần chạy nghiệm thu. Cột “Kết quả thực tế” được chủ động để ở trạng thái chưa ghi nhận; chỉ chuyển sang “Đạt/Không đạt” sau khi thực hiện đúng bước, lưu ảnh chụp hoặc nhật ký và ghi rõ môi trường. Cách trình bày này tránh biến sự tồn tại của tuyến xử lý hoặc kết quả kiểm thử tự động thành bằng chứng giả định về trải nghiệm trên thiết bị thật.
+
+| Mã | Chuẩn bị và thao tác | Kết quả mong đợi | Bằng chứng cần lưu | Kết quả thực tế |
+|---|---|---|---|---|
+| `MT-01` | Đăng ký tài khoản/tổ chức; đăng nhập và hoàn tất MFA | Tạo đúng người dùng/tư cách thành viên; cookie phiên hợp lệ; MFA sai bị từ chối | Ảnh màn hình đăng ký, đăng nhập, tài khoản và nhật ký xác thực/kiểm toán | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-02` | Quản trị viên hệ thống/tổ chức mở chính sách, bảo mật, nhật ký và thử truy cập ngoài quyền | Trình đơn đúng vai trò; thao tác hợp lệ thành công; truy cập chéo bị `403/404` | Ảnh màn hình quản trị, phản hồi HTTP và bản ghi kiểm toán | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-03` | Người quản lý kỳ thi tạo kỳ thi, chính sách, nhiệm vụ, mã tham gia và chạy kiểm tra sẵn sàng | Chỉ đạt trạng thái sẵn sàng khi đủ điều kiện; phiên bản/trạng thái được cập nhật đúng | Ảnh màn hình kỳ thi và phản hồi API | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-04` | Thí sinh nhập mã trên tiện ích, xác thực, xem chính sách, đồng ý và kiểm tra trước phiên | Mã hợp lệ trả chính sách; thiếu quyền/sự đồng ý bị chặn; phiên được tạo đúng thí sinh | Ảnh màn hình tiện ích và nhật ký mạng/tiến trình nền | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-05` | Kích hoạt phiên tiện ích và phát sinh sự kiện chuyển thẻ, mất tập trung, rời toàn màn hình hoặc dùng bảng tạm | Trạng thái hoạt động đúng; sự kiện/nhịp kết nối đến máy chủ và xuất hiện trên chi tiết phiên | Ảnh tiện ích, bảng điều khiển, chi tiết phiên và nhật ký WebSocket | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-06` | Chạy ứng dụng thị giác máy tính: IDLE → ENROLLMENT → MONITORING | Trạng thái chuyển đúng; đăng ký thất bại không chuyển sang giám sát; camera được giải phóng khi kết thúc | Ảnh các trạng thái của ứng dụng và nhật ký cục bộ | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-07` | Tạo một hành vi đủ ngưỡng cảnh báo thị giác máy tính | Bảng điều khiển cập nhật điểm/trạng thái; vi phạm chỉ sinh tại cạnh chuyển vào cảnh báo; ảnh chụp gắn đúng sự kiện | Ảnh bảng điều khiển/chi tiết phiên, JSONL và ảnh bằng chứng | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-08` | Ngắt mạng/WebSocket rồi phục hồi | Giao diện báo mất cập nhật thời gian thực; máy khách thử kết nối lại theo thiết kế; trạng thái hiện tại được nạp lại mà không nhân đôi sự kiện | Chụp trạng thái trước/sau, số thứ tự và nhật ký máy chủ | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-09` | Dùng tài khoản/tổ chức khác mở URL kỳ thi/phiên/bằng chứng đã biết | Không lộ tài nguyên; máy chủ trả `404` hoặc `403` theo quy tắc phạm vi | Phản hồi HTTP và nhật ký kiểm toán bảo mật | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-10` | Giám thị mở bằng chứng, nhập kết luận/ghi chú và lưu hậu kiểm | Bản hậu kiểm có người thực hiện/dấu thời gian; sự kiện vi phạm gốc không đổi | Ảnh màn hình hậu kiểm, bản ghi cơ sở dữ liệu và JSONL trước/sau | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-11` | Yêu cầu báo cáo, chạy tiến trình nền và tải HTML/PDF | Tác vụ đi qua các trạng thái hợp lệ; báo cáo hiển thị đúng tiếng Việt, diễn biến, sự kiện và ảnh | Ảnh báo cáo, bản ghi `ReportJob` và tệp đầu ra | **Chưa ghi nhận – bổ sung sau khi chạy** |
+| `MT-12` | Khởi động lại container và chạy chính sách lưu trữ ở chế độ thử | Cơ sở dữ liệu/bằng chứng còn trên vùng dữ liệu; chế độ thử chỉ liệt kê, chưa xóa | Hình 5.1, nhật ký container/vùng dữ liệu và đầu ra chạy thử | **Chưa ghi nhận – bổ sung sau khi chạy** |
+
+Mỗi lần nghiệm thu cần ghi kèm: ngày giờ; bản sửa đổi/cấu hình; hệ điều hành; CPU/RAM; camera; phiên bản Chrome/Firefox và tiện ích; cách chạy máy chủ (SQLite/Uvicorn hay Docker Compose/PostgreSQL/Redis); số phiên đồng thời; cùng điều kiện mạng. Nếu một kịch bản không thực hiện được, phải ghi “Không thực hiện” và lý do thay vì đổi thành “Đạt”.
+
+### 6.3.7. Mẫu ghi chỉ số vận hành
+
+Các chỉ số dưới đây khác độ chính xác/độ bao phủ/điểm F1: chúng đánh giá vận hành của hệ thống triển khai, không đánh giá độ chính xác nhận diện. Báo cáo hiện không có phép đo đủ điều kiện cho các chỉ số này, do đó giá trị được để trống để điền sau khi chạy.
+
+| Chỉ số | Cách đo đề xuất | Điều kiện cần ghi | Kết quả |
+|---|---|---|---|
+| Thời gian phản hồi tham gia/chính sách | Đo từ yêu cầu đến phản hồi; báo trung vị và p95 qua tối thiểu 30 lần | Chế độ máy chủ, mạng, cơ sở dữ liệu và số phiên | **Chưa đo** |
+| Độ trễ sự kiện → bảng điều khiển | Hiệu giữa dấu thời gian máy chủ nhận sự kiện và thời điểm bảng điều khiển hiển thị; báo trung vị/p95 | Loại sự kiện, WSS, Redis có/không, số bảng điều khiển | **Chưa đo** |
+| Thời gian kết nối lại WebSocket | Từ lúc ngắt kết nối đến khi nhận cập nhật hợp lệ đầu tiên | Kiểu mất mạng và khoảng lùi thử lại của máy khách | **Chưa đo** |
+| Thời gian sinh báo cáo | Từ `ReportJob.pending` đến `completed`; tách HTML/PDF nếu có thể | Số sự kiện/ảnh chụp và cấu hình tiến trình nền | **Chưa đo** |
+| CPU/RAM ứng dụng thị giác máy tính | Ghi trung bình/đỉnh trong phiên tối thiểu 10 phút | CPU, RAM, độ phân giải camera, mô hình/điểm kiểm tra | **Chưa đo** |
+| FPS webcam thực | Đo cả thu hình, suy luận và hiển thị thay vì chỉ đo trên khung hình tổng hợp | Thiết bị, độ phân giải và chu kỳ chính sách/mô hình | **Chưa đo** |
+| CPU/RAM máy chủ và tiến trình nền | Ghi khi không hoạt động, khi có N phiên và khi tạo báo cáo | N, tốc độ dữ liệu giám sát, PostgreSQL/Redis | **Chưa đo** |
+| Dung lượng bằng chứng mỗi phiên | Tổng JSONL, ảnh chụp và báo cáo chia cho thời lượng phiên | Thời lượng, số vi phạm, chính sách ảnh chụp | **Chưa đo** |
+| Khả năng chịu tải đồng thời | Tăng N phiên có kiểm soát; theo dõi tỉ lệ lỗi, p95 và số kết nối bị ngắt | Máy chủ, tiến trình nền, vùng kết nối cơ sở dữ liệu, Redis | **Chưa đo** |
+
+Khi có kết quả, chỉ nên kết luận trong đúng cấu hình đã đo. Ví dụ, p95 trên một máy minh họa với năm phiên không được diễn giải thành cam kết mức dịch vụ cho hàng trăm phiên. Nhật ký thô hoặc kịch bản đo nên được lưu cùng báo cáo để các con số vận hành có thể kiểm tra lại.
+
+## 6.4. Đánh giá hiệu năng chuỗi xử lý
+
+Phép đo hiệu năng có sẵn được chạy trên CPU, sử dụng 60 khung hình tổng hợp sau 5 khung hình khởi động. Phép đo chỉ tính chi phí suy luận và logic, không bao gồm thao tác vào/ra của webcam hoặc kết xuất giao diện. Kết quả được tổng hợp như sau:
 
 | Thành phần | Thời gian trung bình | Tỉ lệ chi phí |
 |---|---:|---:|
-| MTCNN face detection | 28,95 ms/frame | 67% |
-| YOLOv8 đã throttle | 10,32 ms/frame | 24% |
-| MediaPipe Face Landmarker | 3,45 ms/frame | 8% |
-| Preprocess | 0,21 ms/frame | <1% |
-| Logic của bảy signal | khoảng 0,04 ms/frame | <1% |
-| **Tổng** | **42,98 ms/frame** | **100%** |
+| Phát hiện khuôn mặt bằng MTCNN | 28,95 ms/khung hình | 67% |
+| YOLOv8 đã giới hạn tần suất | 10,32 ms/khung hình | 24% |
+| MediaPipe Face Landmarker | 3,45 ms/khung hình | 8% |
+| Tiền xử lý | 0,21 ms/khung hình | <1% |
+| Logic của bảy tín hiệu | khoảng 0,04 ms/khung hình | <1% |
+| **Tổng** | **42,98 ms/khung hình** | **100%** |
 
-Vòng lặp đo trực tiếp đạt khoảng 25,3 FPS. MTCNN là bottleneck chính; tầng Signal Extractor gần như không đáng kể vì chỉ xử lý đặc trưng dùng chung. Một lần `FaceEmbedder.extract()` mất khoảng 27,6 ms nhưng mặc định chỉ chạy mỗi 30 giây, nên chi phí khấu hao thấp dù có thể làm một frame bị giật tại thời điểm re-verification.
+Vòng lặp đo trực tiếp đạt khoảng 25,3 FPS. MTCNN là nút thắt chính; tầng trích xuất tín hiệu chiếm tỉ lệ nhỏ vì chỉ xử lý các đặc trưng dùng chung. Một lần gọi `FaceEmbedder.extract()` mất khoảng 27,6 ms nhưng mặc định chỉ chạy sau mỗi 30 giây. Vì vậy, chi phí trung bình thấp, mặc dù một khung hình có thể bị chậm tại thời điểm kiểm tra lại danh tính.
 
-Kết quả này chứng minh pipeline có thể chạy gần thời gian thực trên máy benchmark, không phải cam kết FPS cho mọi thiết bị. Cần chạy lại `scripts/benchmark_fps.py` trên máy triển khai thật và với frame webcam đại diện.
+Kết quả cho thấy chuỗi xử lý đạt tốc độ gần thời gian thực trong đúng cấu hình máy và dữ liệu tổng hợp của phép đo; đây không phải cam kết FPS cho mọi thiết bị. Cần chạy lại `scripts/benchmark_fps.py` trên máy triển khai và với khung hình webcam đại diện trước khi đưa ra kết luận vận hành.
 
 ## 6.5. Thiết kế thực nghiệm 25 video
 
-### 6.5.1. Nguồn dữ liệu và provenance
+### 6.5.1. Nguồn gốc dữ liệu
 
-Bộ đánh giá gồm 25 video tự quay và ground truth được tạo trong môi trường thực nghiệm bên ngoài repository. Bản tổng hợp kết quả ghi nhận 199.470 frame/mẫu đánh giá. Báo cáo cũ mô tả “gần một giờ ở 30 FPS”, nhưng con số này không nhất quán với tổng frame; vì không có metadata video gốc trong repository để kiểm tra lại, phiên bản báo cáo này chỉ công bố số video và số frame đã dùng trong confusion matrix.
+Theo bản tổng hợp từ môi trường thực nghiệm bên ngoài, bộ đánh giá gồm 25 video tự quay, nhãn tham chiếu và 199.470 khung hình được đưa vào ma trận nhầm lẫn. Bản báo cáo trước mô tả thời lượng “gần một giờ ở 30 FPS”, nhưng mô tả này không nhất quán với tổng số khung hình. Do không có siêu dữ liệu video gốc trong kho mã nguồn để kiểm tra lại, báo cáo chỉ công bố số video và số khung hình đã được ghi nhận; không tiếp tục sử dụng ước lượng thời lượng nêu trên.
 
 Các nhóm kịch bản gồm:
 
@@ -176,17 +219,17 @@ Các nhóm kịch bản gồm:
 - Hoạt động miệng/nói chuyện.
 - Đổi người trong phiên.
 
-Ground truth nhị phân được gán theo frame: `0` là bình thường, `1` là có ít nhất một hành vi vi phạm. Theo quy trình thực nghiệm đã cung cấp, hai người gán nhãn độc lập và trường hợp không thống nhất được phân xử bởi người thứ ba. Dataset gốc và chỉ số đồng thuận giữa người gán nhãn không được lưu trong repository, vì vậy đây là giới hạn về khả năng kiểm tra độc lập.
+Nhãn tham chiếu nhị phân được gán theo khung hình: `0` là bình thường, `1` là có ít nhất một hành vi vi phạm. Theo mô tả đi kèm số liệu, hai người thực hiện gán nhãn độc lập và trường hợp không thống nhất được phân xử bởi người thứ ba. Tuy nhiên, bộ dữ liệu gốc, lịch sử gán nhãn và chỉ số đồng thuận không có trong kho mã nguồn; do đó, quy trình này chưa thể được kiểm tra độc lập từ bản bàn giao.
 
 ### 6.5.2. Đơn vị và cách tính
 
-Đơn vị đánh giá là **frame**, không phải số `ViolationEvent`. Ground truth frame được so với trạng thái dự đoán của hệ thống tại cùng thời điểm. Một khoảng cảnh báo kéo dài đóng góp nhiều predicted-positive frame dù engine chỉ sinh một event tại rising edge.
+Đơn vị đánh giá là **khung hình**, không phải số lượng `ViolationEvent`. Nhãn của mỗi khung hình được so với trạng thái dự đoán tại cùng thời điểm. Một khoảng cảnh báo kéo dài đóng góp nhiều khung hình dương tính dự đoán, mặc dù bộ tổng hợp chỉ sinh một sự kiện tại cạnh chuyển vào cảnh báo.
 
-Việc đánh giá theo frame phù hợp để đo thời gian hệ thống ở trạng thái đúng/sai, nhưng các frame liên tiếp có tương quan cao. Vì vậy 199.470 frame không tương đương 199.470 mẫu độc lập. Khi chia train/validation/test hoặc so sánh model, cần chia theo clip/người thay vì trộn frame của cùng clip vào nhiều tập.
+Đánh giá theo khung hình phù hợp để đo khoảng thời gian hệ thống ở trạng thái đúng hoặc sai, nhưng các khung hình liên tiếp có tương quan cao. Vì vậy, 199.470 khung hình không tương đương 199.470 mẫu độc lập. Khi chia tập huấn luyện/xác thực/kiểm thử hoặc so sánh mô hình, cần chia theo video và người tham gia thay vì trộn khung hình của cùng một video vào nhiều tập.
 
-### 6.5.3. Baseline
+### 6.5.3. Phương pháp cơ sở
 
-Baseline mô phỏng logic điều kiện đơn giản:
+Phương pháp cơ sở mô phỏng chuỗi điều kiện đơn giản:
 
 ```text
 if không có khuôn mặt: cảnh báo
@@ -196,61 +239,61 @@ else if có vật thể: cảnh báo
 else: bình thường
 ```
 
-Baseline không có kết hợp đồng thời nhiều tín hiệu, Identity, PnP đầy đủ hoặc hysteresis hai cấp tương đương. Nó được chạy trên cùng bộ test để tạo điểm so sánh.
+Phương pháp cơ sở không kết hợp đồng thời nhiều tín hiệu, không có xác minh danh tính, PnP đầy đủ hoặc vùng trễ hai cấp tương đương. Theo tài liệu thực nghiệm, phương pháp này được chạy trên cùng bộ video để tạo điểm so sánh; đầu ra dự đoán gốc không có trong bản bàn giao để kiểm tra lại.
 
 ### 6.5.4. Cấu hình thực nghiệm và cấu hình hiện tại
 
-Tài liệu từ môi trường ngoài ghi nhận quá trình hiệu chỉnh ngưỡng hysteresis, trọng số, EAR và một checkpoint YOLOv8 fine-tuned cho điện thoại. Artifact checkpoint và biểu đồ epoch không nằm trong repository hiện tại. Repository bàn giao mặc định dùng `models/yolov8n.pt` pretrained COCO, trọng số chưa chuẩn hóa và `T_enter=5,0`, `T_exit=2,5`.
+Tài liệu từ môi trường ngoài ghi nhận việc hiệu chỉnh ngưỡng vùng trễ, trọng số, EAR và một điểm kiểm tra YOLOv8 đã được tinh chỉnh cho điện thoại. Tệp mô hình và biểu đồ huấn luyện không có trong kho mã nguồn hiện tại. Bản bàn giao mặc định sử dụng `models/yolov8n.pt` được huấn luyện trước trên COCO, trọng số chưa chuẩn hóa và `T_enter=5,0`, `T_exit=2,5`.
 
-Do đó, các metric tại mục 6.6 được hiểu là kết quả của **snapshot thực nghiệm bên ngoài**, không phải phép đo có thể tái lập nguyên trạng chỉ bằng checkout repository hiện tại. Việc tái lập cần lưu thêm commit/config, checkpoint, manifest clip, ground truth và output dự đoán.
+Do đó, các chỉ số tại mục 6.6 là kết quả của **một cấu hình thực nghiệm bên ngoài**, không phải phép đo có thể tái lập nguyên trạng chỉ từ kho mã nguồn hiện tại. Việc tái lập cần bổ sung mã phiên bản, cấu hình, tệp mô hình, danh mục video, nhãn tham chiếu và đầu ra dự đoán.
 
 ## 6.6. Kết quả định lượng
 
-### 6.6.1. Confusion matrix
+### 6.6.1. Ma trận nhầm lẫn
 
 |  | Dự đoán bình thường | Dự đoán vi phạm | Tổng |
 |---|---:|---:|---:|
-| Ground truth bình thường | TN = 158.970 | FP = 10.500 | 169.470 |
-| Ground truth vi phạm | FN = 4.500 | TP = 25.500 | 30.000 |
+| Nhãn tham chiếu bình thường | TN = 158.970 | FP = 10.500 | 169.470 |
+| Nhãn tham chiếu vi phạm | FN = 4.500 | TP = 25.500 | 30.000 |
 | **Tổng** | **163.470** | **36.000** | **199.470** |
 
-Tỉ lệ frame vi phạm trong ground truth là:
+Tỉ lệ khung hình vi phạm trong nhãn tham chiếu là:
 
 $$
 \frac{30.000}{199.470}=15,04\%
 $$
 
-Dataset mất cân bằng theo hướng frame bình thường chiếm đa số; vì vậy không chỉ dùng Accuracy để kết luận.
+Bộ dữ liệu mất cân bằng theo hướng khung hình bình thường chiếm đa số; vì vậy, không thể chỉ dùng Accuracy để kết luận.
 
 ### 6.6.2. Các chỉ số suy ra
 
 | Chỉ số | Công thức | Giá trị |
 |---|---|---:|
 | Accuracy | $(TP+TN)/N$ | 0,9248 |
-| Precision | $TP/(TP+FP)$ | 0,7083 |
-| Recall | $TP/(TP+FN)$ | 0,8500 |
+| Độ chính xác (Precision) | $TP/(TP+FP)$ | 0,7083 |
+| Độ bao phủ (Recall) | $TP/(TP+FN)$ | 0,8500 |
 | F1-score | $2PR/(P+R)$ | 0,7727 |
 | Specificity | $TN/(TN+FP)$ | 0,9380 |
 | False Positive Rate | $FP/(TN+FP)$ | 0,0620 |
 
-Precision 0,7083 nghĩa là khoảng 70,83% predicted-positive frame trùng với ground truth vi phạm. Recall 0,8500 nghĩa là hệ thống nhận đúng 85% frame vi phạm. F1 0,7727 thể hiện điểm cân bằng giữa hai đại lượng.
+Từ ma trận trên, độ chính xác 0,7083 cho biết khoảng 70,83% khung hình được dự đoán vi phạm trùng với nhãn vi phạm; độ bao phủ 0,8500 cho biết hệ thống nhận đúng 85% số khung hình được gán nhãn vi phạm. Điểm F1 bằng 0,7727 thể hiện sự cân bằng giữa hai đại lượng này.
 
-Các mục tiêu thực nghiệm đặt trước là Precision ≥ 0,70, Recall ≥ 0,80 và F1 ≥ 0,75; snapshot này đạt cả ba. Kết quả cho thấy cấu hình có tiềm năng hỗ trợ review trong điều kiện dataset đã thu thập, nhưng chưa đủ để khẳng định sẵn sàng cho kỳ thi rủi ro cao hoặc quần thể người dùng rộng.
+Tài liệu thực nghiệm nêu các ngưỡng mục tiêu: độ chính xác ≥ 0,70, độ bao phủ ≥ 0,80 và F1 ≥ 0,75; các giá trị được ghi nhận đều vượt những ngưỡng này. Tuy nhiên, do không có tài liệu đánh dấu thời điểm xác lập mục tiêu, báo cáo không khẳng định các ngưỡng đã được đăng ký trước khi thực nghiệm. Kết quả chỉ cho thấy cấu hình có tiềm năng hỗ trợ hậu kiểm trong phạm vi bộ dữ liệu đã thu thập, chưa đủ để kết luận sẵn sàng cho kỳ thi rủi ro cao hoặc quần thể người dùng rộng.
 
-ROC-AUC và PR-AUC không được giữ trong bản sửa đổi. Hai chỉ số này cần score/curve ở nhiều ngưỡng; confusion matrix tại một ngưỡng không đủ để kiểm chứng các giá trị AUC từng ghi trong bản cũ.
+ROC-AUC và PR-AUC không được đưa vào bản sửa đổi. Hai chỉ số này cần điểm số hoặc đường cong tại nhiều ngưỡng; ma trận nhầm lẫn tại một ngưỡng không đủ để kiểm chứng các giá trị AUC từng xuất hiện trong bản cũ.
 
-## 6.7. So sánh với baseline
+## 6.7. So sánh với phương pháp cơ sở
 
-| Chỉ số | Baseline | Hệ thống thực nghiệm | Tăng tuyệt đối | Tăng tương đối |
+| Chỉ số | Phương pháp cơ sở | Hệ thống thực nghiệm | Tăng tuyệt đối | Tăng tương đối |
 |---|---:|---:|---:|---:|
-| Precision | 0,6521 | 0,7083 | +0,0562 | +8,62% |
-| Recall | 0,7230 | 0,8500 | +0,1270 | +17,57% |
+| Độ chính xác (Precision) | 0,6521 | 0,7083 | +0,0562 | +8,62% |
+| Độ bao phủ (Recall) | 0,7230 | 0,8500 | +0,1270 | +17,57% |
 | F1-score | 0,6851 | 0,7727 | +0,0876 | +12,79% |
 | Specificity | 0,9128 | 0,9380 | +0,0252 | +2,76% |
 
-Hệ thống thực nghiệm cao hơn baseline ở bốn chỉ số được báo cáo. Mức tăng lớn nhất về tuyệt đối nằm ở Recall, phù hợp với kỳ vọng rằng nhiều tín hiệu có trạng thái và Identity giúp giảm bỏ sót so với chuỗi điều kiện chỉ giữ một nhánh.
+Theo bảng kết quả được cung cấp, hệ thống thực nghiệm cao hơn phương pháp cơ sở ở bốn chỉ số. Mức tăng tuyệt đối lớn nhất nằm ở độ bao phủ, phù hợp với giả thuyết rằng việc kết hợp nhiều tín hiệu có trạng thái và xác minh danh tính có thể giảm bỏ sót so với chuỗi điều kiện chỉ giữ một nhánh. Do thiếu đầu ra dự đoán gốc, báo cáo không thực hiện được kiểm định thống kê cho mức chênh lệch này.
 
-Tuy nhiên, so sánh chỉ công bằng nếu hai hệ thống dùng cùng input, cùng ground truth, cùng đơn vị frame và không fine-tune trên tập test. Do artifact chia tập không có trong repository, kết quả được báo cáo như bằng chứng thực nghiệm của đồ án, đồng thời giữ giới hạn về khả năng audit độc lập.
+So sánh chỉ công bằng khi hai hệ thống dùng cùng đầu vào, cùng nhãn tham chiếu, cùng đơn vị khung hình và không tinh chỉnh trên tập kiểm thử. Do tệp chia tập không có trong kho mã nguồn, kết quả được trình bày như số liệu thực nghiệm đã ghi nhận và chưa thể được kiểm toán độc lập từ bản bàn giao.
 
 ## 6.8. Độ trễ phát hiện
 
@@ -263,57 +306,57 @@ Môi trường thực nghiệm bên ngoài ghi nhận:
 | Lớn nhất | 8,5 giây |
 | Phân vị 95 | 5,2 giây |
 
-Độ trễ là khoảng cách giữa thời điểm bắt đầu đoạn ground truth và thời điểm hệ thống chuyển sang cảnh báo. Nó chịu ảnh hưởng trực tiếp của debounce, cửa sổ state machine, chu kỳ model và hysteresis. Không nên diễn giải 2,3 giây như SLA chung cho mọi tín hiệu: Identity trong repository hiện chỉ re-verify định kỳ 30 giây, còn một số tín hiệu khác có thể phản ứng sau khoảng 1–2 giây.
+Độ trễ là khoảng cách giữa thời điểm bắt đầu đoạn có nhãn vi phạm và thời điểm hệ thống chuyển sang cảnh báo. Đại lượng này chịu ảnh hưởng trực tiếp của cơ chế chống dao động, cửa sổ máy trạng thái, chu kỳ mô hình và vùng trễ. Không nên diễn giải 2,3 giây như cam kết mức dịch vụ chung cho mọi tín hiệu: tín hiệu danh tính trong kho mã nguồn hiện chỉ kiểm tra lại định kỳ sau 30 giây, còn một số tín hiệu khác có thể phản ứng sau khoảng 1–2 giây.
 
-Do file latency theo từng loại sự kiện không có trong repository, báo cáo chưa phân tích được median, phân bố theo signal hoặc confidence interval.
+Do không có tệp độ trễ theo từng loại sự kiện trong kho mã nguồn, báo cáo chưa thể phân tích trung vị, phân bố theo tín hiệu hoặc khoảng tin cậy.
 
 ## 6.9. Phân tích lỗi
 
-### 6.9.1. False Negative
+### 6.9.1. Âm tính giả
 
-Confusion matrix có 4.500 FN. Tài liệu phân tích bên ngoài đã phân loại 4.180 trường hợp; 320 trường hợp còn lại chưa có nhãn nguyên nhân chi tiết.
+Ma trận nhầm lẫn có 4.500 khung hình âm tính giả (FN). Tài liệu phân tích bên ngoài đã phân loại nguyên nhân cho 4.180 khung hình; 320 khung hình còn lại chưa có nhãn nguyên nhân chi tiết.
 
-| Nguyên nhân trong phần đã phân loại | Số frame | Tỉ lệ trên 4.180 frame đã phân loại |
+| Nguyên nhân trong phần đã phân loại | Số khung hình | Tỉ lệ trên 4.180 khung hình đã phân loại |
 |---|---:|---:|
 | Quay đầu nhẹ, chưa vượt điều kiện | 1.200 | 28,7% |
-| Similarity Identity nằm trong vùng biên | 800 | 19,1% |
+| Độ tương đồng danh tính nằm trong vùng biên | 800 | 19,1% |
 | Nhắm mắt quá ngắn | 650 | 15,6% |
 | Ánh sáng xấu | 450 | 10,8% |
 | Vật thể nhỏ/ở rìa ảnh | 400 | 9,6% |
 | Nguyên nhân khác | 680 | 16,3% |
 
-Các nhóm này cho thấy Recall không chỉ phụ thuộc model mà còn phụ thuộc định nghĩa ground truth. Ví dụ, nếu ground truth coi mọi lần quay nhẹ là vi phạm nhưng policy hệ thống chỉ cảnh báo sau một góc/thời lượng nhất định, một phần FN là khác biệt chính sách chứ không hoàn toàn là lỗi nhận diện.
+Các nhóm này cho thấy độ bao phủ không chỉ phụ thuộc vào mô hình mà còn phụ thuộc định nghĩa nhãn tham chiếu. Ví dụ, nếu nhãn tham chiếu coi mọi lần quay nhẹ là vi phạm nhưng chính sách hệ thống chỉ cảnh báo sau một góc hoặc thời lượng nhất định, một phần FN bắt nguồn từ khác biệt về quy tắc đánh giá chứ không hoàn toàn là lỗi nhận diện.
 
-### 6.9.2. False Positive
+### 6.9.2. Dương tính giả
 
-10.500 FP được phân loại như sau:
+Theo bảng phân tích được cung cấp, 10.500 khung hình dương tính giả (FP) được phân loại như sau:
 
-| Nguyên nhân | Số frame | Tỉ lệ FP |
+| Nguyên nhân | Số khung hình | Tỉ lệ FP |
 |---|---:|---:|
 | Quay đầu tự nhiên | 3.500 | 33,3% |
 | Nhắm mắt tự nhiên/mệt | 2.100 | 20,0% |
-| Object detection nhầm | 2.800 | 26,7% |
+| Phát hiện nhầm vật thể | 2.800 | 26,7% |
 | Ánh sáng hoặc góc mặt | 1.200 | 11,4% |
 | Khác | 900 | 8,6% |
 
-Head Pose và object detection đóng góp lớn vào FP. Điều này phù hợp với giới hạn quan sát: quay đầu không đồng nghĩa nhìn tài liệu, còn YOLO pretrained/fine-tuned vẫn có thể nhầm vật thể. Vì vậy dashboard cần hiển thị ảnh và contributing signals thay vì chỉ hiện nhãn cuối.
+Ước lượng góc quay đầu và phát hiện vật thể đóng góp phần lớn vào FP. Điều này phù hợp với giới hạn quan sát: quay đầu không đồng nghĩa với nhìn tài liệu, còn YOLO được huấn luyện trước hoặc tinh chỉnh vẫn có thể nhận nhầm vật thể. Vì vậy, bảng điều khiển cần hiển thị ảnh và các tín hiệu đóng góp thay vì chỉ hiển thị nhãn cuối.
 
 ## 6.10. Đe dọa đến tính hợp lệ
 
 ### 6.10.1. Tính hợp lệ nội tại
 
-- Artifact gốc không nằm trong repository nên không thể chạy lại toàn bộ đánh giá trong môi trường hiện tại.
-- Chưa có commit hash, seed và cấu hình đầy đủ của snapshot thực nghiệm.
-- Chưa có bằng chứng về cách tách clip cho fine-tuning; nếu frame cùng video xuất hiện ở train và test, metric có thể lạc quan.
-- Ground truth nhị phân gộp nhiều loại vi phạm, che khuất khác biệt giữa từng signal.
+- Tệp thực nghiệm gốc không có trong kho mã nguồn nên không thể chạy lại toàn bộ đánh giá trong môi trường hiện tại.
+- Chưa có mã phiên bản, hạt giống ngẫu nhiên và cấu hình đầy đủ của lần thực nghiệm.
+- Chưa có bằng chứng về cách chia video khi tinh chỉnh mô hình; nếu khung hình của cùng một video xuất hiện trong cả tập huấn luyện và tập kiểm thử, chỉ số có thể lạc quan hơn thực tế.
+- Nhãn tham chiếu nhị phân gộp nhiều loại vi phạm, che khuất khác biệt giữa từng tín hiệu.
 - Chưa báo Cohen's kappa hoặc thước đo đồng thuận giữa người gán nhãn.
 
 ### 6.10.2. Tính hợp lệ bên ngoài
 
 - 25 video chưa đại diện đầy đủ cho camera, ánh sáng, màu da, kính, khẩu trang và thiết bị khác nhau.
 - Dữ liệu do một nhóm nhỏ tự quay có thể khác hành vi trong kỳ thi thật.
-- Metric frame-level bị chi phối bởi độ dài đoạn và tương quan giữa frame liên tiếp.
-- Kết quả không chứng minh khả năng chống client bị sửa, camera ảo, replay hoặc deepfake.
+- Chỉ số ở mức khung hình bị chi phối bởi độ dài đoạn và tương quan giữa các khung hình liên tiếp.
+- Kết quả không chứng minh khả năng chống sửa đổi máy khách, camera ảo, phát lại video hoặc nội dung giả mạo.
 
 ### 6.10.3. Khả năng tái lập cần bổ sung
 
@@ -332,23 +375,23 @@ evaluation/
 └── generate_figures.py
 ```
 
-Ngoài dữ liệu nhạy cảm không thể công khai, có thể lưu hash và manifest để chứng minh artifact dùng trong tính toán không thay đổi.
+Đối với dữ liệu nhạy cảm không thể công khai, có thể lưu hàm băm và danh mục tệp để chứng minh các tệp dùng trong tính toán không bị thay đổi.
 
 ## 6.11. Đánh giá theo tiêu chí nghiệm thu
 
 | Nhóm yêu cầu | Bằng chứng | Kết luận |
 |---|---|---|
-| Pipeline và bảy signal | Unit, smoke, video integration test | Đạt về chức năng |
-| Fusion, giải thích và report | State/rising-edge/report consistency test | Đạt về chức năng |
-| Auth, RBAC và tenant isolation | API/WebSocket/security regression test | Đạt trong phạm vi test |
-| Extension | 8 Node test và source review | Đạt phần logic tự động; cần test trình duyệt thật bổ sung |
-| Hiệu năng local CV | Benchmark CPU tổng hợp khoảng 25,3 FPS | Đạt trên máy benchmark, không khái quát mọi thiết bị |
-| Precision/Recall/F1 mục tiêu | 0,7083 / 0,8500 / 0,7727 | Đạt trên snapshot 25 video bên ngoài |
-| Tái lập thực nghiệm | Artifact gốc không có trong repository | Chưa đạt đầy đủ |
-| Lockdown/attestation | Ngoài phạm vi | Không đánh giá |
+| Chuỗi xử lý và bảy tín hiệu | Kiểm thử đơn vị, khởi tạo mô hình và tích hợp video | Đạt về chức năng |
+| Tổng hợp rủi ro, giải thích và báo cáo | Kiểm thử trạng thái, cạnh chuyển và tính nhất quán báo cáo | Đạt về chức năng |
+| Xác thực, RBAC và cô lập tổ chức | Kiểm thử hồi quy API, WebSocket và bảo mật | Đạt trong phạm vi kiểm thử |
+| Tiện ích mở rộng | 8 ca kiểm thử Node và rà soát mã nguồn | Đạt phần logic tự động; cần bổ sung kiểm thử trên trình duyệt thực |
+| Hiệu năng thị giác máy tính cục bộ | Phép đo CPU tổng hợp khoảng 25,3 FPS | Đạt trên máy đo, không khái quát cho mọi thiết bị |
+| Độ chính xác/độ bao phủ/F1 mục tiêu | 0,7083 / 0,8500 / 0,7727 | Vượt ngưỡng nêu trong tài liệu trên cấu hình 25 video bên ngoài; chưa tái lập |
+| Tái lập thực nghiệm | Tệp gốc không có trong kho mã nguồn | Chưa đạt |
+| Trình duyệt khóa/chứng thực từ xa | Ngoài phạm vi | Không đánh giá |
 
 ## 6.12. Kết chương
 
-Chương 6 đã tách biệt kiểm thử phần mềm, đánh giá hoạt động hệ thống và đánh giá độ chính xác CV. Source hiện tại vượt qua 309 test Python và 8 test extension; các luồng quản trị, tham gia, realtime, evidence, review và report đạt trong phạm vi kiểm thử đã mô tả. Benchmark cho thấy pipeline đạt khoảng 25,3 FPS trên môi trường CPU đã đo. Trên snapshot thực nghiệm 25 video với 199.470 frame, hệ thống đạt Precision 0,7083, Recall 0,8500 và F1 0,7727, cao hơn baseline được báo cáo.
+Chương 6 đã tách biệt kiểm thử phần mềm, đánh giá hoạt động hệ thống và đánh giá độ chính xác của thành phần thị giác máy tính. Bộ kiểm thử Python đạt 309/309 ca ở lần chạy toàn bộ thứ hai, nhưng lần đầu có một ca lỗi không tái hiện khi chạy riêng; bộ kiểm thử tiện ích mở rộng đạt 8/8 ca. Các luồng quản trị, tham gia, thời gian thực, bằng chứng, hậu kiểm và báo cáo đạt trong phạm vi kiểm thử đã mô tả, song kết quả dao động của ca sắp xếp nhật ký cần tiếp tục được theo dõi. Phép đo CPU tổng hợp ghi nhận khoảng 25,3 FPS trong cấu hình đo cụ thể. Bảng số liệu của thực nghiệm 25 video với 199.470 khung hình cho độ chính xác 0,7083, độ bao phủ 0,8500 và điểm F1 bằng 0,7727, cao hơn phương pháp cơ sở được báo cáo.
 
-Kết quả thực nghiệm được giữ như bằng chứng từ môi trường ngoài, đồng thời báo cáo công khai các giới hạn: artifact chưa được bàn giao trong repository, cấu hình hiện tại không hoàn toàn trùng snapshot, và dataset còn nhỏ. Chương 7 sử dụng các kết quả này để kết luận ở mức phù hợp, không mở rộng thành tuyên bố sẵn sàng triển khai ở mọi kỳ thi.
+Các số liệu thực nghiệm được giữ như kết quả đã ghi nhận từ môi trường ngoài, đồng thời báo cáo công khai ba giới hạn: tệp thực nghiệm chưa có trong kho mã nguồn, cấu hình hiện tại không hoàn toàn trùng với cấu hình tạo số liệu và bộ dữ liệu còn nhỏ. Chương 7 sử dụng kết quả này trong đúng phạm vi trên, không mở rộng thành tuyên bố sẵn sàng triển khai cho mọi kỳ thi.

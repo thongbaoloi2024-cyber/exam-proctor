@@ -1,5 +1,7 @@
 # Tài liệu tham khảo
 
+Tài liệu được đánh số theo thứ tự trích dẫn trong báo cáo. Ngày truy cập được ghi đối với nguồn trực tuyến có nội dung có thể thay đổi; tài liệu nội bộ được dẫn bằng đường dẫn tương đối trong kho mã nguồn.
+
 ## A. Công trình khoa học và tiêu chuẩn
 
 1. Viola, P., & Jones, M. (2001). *Rapid Object Detection using a Boosted Cascade of Simple Features*. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR).
@@ -44,18 +46,18 @@
 
 19. Meazure Learning. *ProctorU Proctoring Platform*. [https://www.meazurelearning.com/exam-technology/proctoru-online-proctoring](https://www.meazurelearning.com/exam-technology/proctoru-online-proctoring), truy cập ngày 12/08/2026.
 
-20. AarambhTech. *exam-cheating-detection*. GitHub repository. [https://github.com/AarambhTech/exam-cheating-detection](https://github.com/AarambhTech/exam-cheating-detection), truy cập tháng 8/2026.
+20. AarambhTech. *exam-cheating-detection*. Kho mã nguồn GitHub. [https://github.com/AarambhTech/exam-cheating-detection](https://github.com/AarambhTech/exam-cheating-detection), truy cập tháng 8/2026.
 
 ## D. Tài liệu nội bộ của đồ án
 
-21. `config/fusion.yaml` — cấu hình ngưỡng, trọng số, ứng dụng và kết nối backend.
+21. `config/fusion.yaml` — cấu hình ngưỡng, trọng số, ứng dụng và kết nối dịch vụ phía máy chủ.
 
-22. `docs/DIAGRAMS.md` — sơ đồ pipeline, state machine, luồng người dùng và phân quyền.
+22. `docs/DIAGRAMS.md` — sơ đồ chuỗi xử lý, máy trạng thái, luồng người dùng và phân quyền.
 
-23. `docs/DATA_SCHEMAS.md` — hợp đồng `SignalResult`, `ViolationEvent`, log và ground truth.
+23. `docs/DATA_SCHEMAS.md` — hợp đồng `SignalResult`, `ViolationEvent`, nhật ký và nhãn tham chiếu.
 
 24. `docs/SO_SANH_KY_THUAT_TUAN4.md` — phân tích mã nguồn dự án đối chứng.
 
-25. `docs/PERFORMANCE_NOTES.md` — kết quả benchmark pipeline trên CPU.
+25. `docs/PERFORMANCE_NOTES.md` — kết quả đo hiệu năng chuỗi xử lý trên CPU.
 
 26. `README.md` và `SECURITY.md` — nguồn chuẩn về chức năng, triển khai và giới hạn của phiên bản bàn giao.

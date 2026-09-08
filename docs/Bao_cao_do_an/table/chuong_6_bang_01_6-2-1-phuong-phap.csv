@@ -1,0 +1,5 @@
+﻿"Lần chạy","Kết quả","Thời gian"
+"Toàn bộ Python, lần 1","308 đạt, 1 lỗi","140,16 giây"
+"Chạy riêng ca lỗi của lần 1","1 đạt","1,50 giây"
+"Toàn bộ Python, lần 2","309 đạt, 0 lỗi","127,14 giây"
+"Tiện ích mở rộng trên Node","8 đạt, 0 lỗi","138,00 ms theo Node test runner"

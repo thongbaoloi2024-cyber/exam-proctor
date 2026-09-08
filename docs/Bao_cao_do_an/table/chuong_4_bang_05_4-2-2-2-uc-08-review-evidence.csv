@@ -1,0 +1,6 @@
+﻿"Thuộc tính","Nội dung"
+"Tác nhân","Proctor có quyền đọc evidence/review"
+"Tiền điều kiện","Phiên thuộc kỳ thi được phân công; snapshot và log đã qua kiểm tra đường dẫn/phạm vi"
+"Luồng chính","Mở session detail → chọn sự kiện trên timeline → xem contributing signals, browser event và snapshot → nhập verdict/ghi chú → xác nhận review"
+"Luồng thay thế/ngoại lệ","Evidence thiếu vẫn hiển thị metadata còn lại; truy cập chéo tenant hoặc đường dẫn ngoài thư mục phiên bị từ chối"
+"Hậu điều kiện","IncidentReview mới được tạo và audit; ViolationEvent nguyên bản không bị thay đổi"

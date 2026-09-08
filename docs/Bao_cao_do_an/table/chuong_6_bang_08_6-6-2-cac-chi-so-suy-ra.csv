@@ -1,0 +1,7 @@
+﻿"Chỉ số","Công thức","Giá trị"
+"Accuracy","$(TP+TN)/N$","0,9248"
+"Precision","$TP/(TP+FP)$","0,7083"
+"Recall","$TP/(TP+FN)$","0,8500"
+"F1-score","$2PR/(P+R)$","0,7727"
+"Specificity","$TN/(TN+FP)$","0,9380"
+"False Positive Rate","$FP/(TN+FP)$","0,0620"

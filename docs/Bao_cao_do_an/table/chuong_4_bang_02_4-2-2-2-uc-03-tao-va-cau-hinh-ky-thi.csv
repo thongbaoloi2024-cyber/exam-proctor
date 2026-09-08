@@ -1,0 +1,6 @@
+﻿"Thuộc tính","Nội dung"
+"Tác nhân","Exam Owner hoặc Exam Manager có exam.manage"
+"Tiền điều kiện","Người dùng đã đăng nhập; tổ chức và membership đang hoạt động; quota cho phép"
+"Luồng chính","Mở Exam workspace → nhập metadata và thời gian → chọn phương thức xác thực → cấu hình policy → phân công nhân sự → lưu phiên bản cấu hình"
+"Luồng thay thế/ngoại lệ","Dữ liệu sai miền bị từ chối; policy yếu hơn sàn hệ thống/tổ chức không được lưu; xung đột phiên bản trả lỗi optimistic locking"
+"Hậu điều kiện","Kỳ thi ở trạng thái cấu hình, có policy hiệu lực và danh sách assignment có phạm vi rõ ràng"

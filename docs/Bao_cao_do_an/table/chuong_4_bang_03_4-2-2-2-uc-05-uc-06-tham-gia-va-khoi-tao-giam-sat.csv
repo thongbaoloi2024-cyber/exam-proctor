@@ -1,0 +1,6 @@
+﻿"Thuộc tính","Nội dung"
+"Tác nhân","Candidate"
+"Tiền điều kiện","Join code còn hạn; kỳ thi cho phép tham gia; thiết bị có trình duyệt/desktop client phù hợp"
+"Luồng chính","Nhập join code → nhận thông tin và policy → xác thực thủ công hoặc Google → xác nhận consent → chạy preflight → tạo phiên và nhận session token → thực hiện enrollment/liveness nếu dùng desktop CV → mở kênh WebSocket"
+"Luồng thay thế/ngoại lệ","Mã sai/hết hạn, kỳ thi chưa mở, consent thiếu, quyền camera/screen share bị từ chối hoặc liveness thất bại thì phiên không chuyển sang giám sát đầy đủ"
+"Hậu điều kiện","Phiên thuộc đúng candidate/exam; client chỉ gửi dữ liệu bằng token của phiên đó; trạng thái thiết bị được quan sát trên dashboard"

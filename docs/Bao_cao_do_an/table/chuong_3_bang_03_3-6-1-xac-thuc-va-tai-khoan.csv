@@ -1,0 +1,6 @@
+﻿"Mã","Yêu cầu"
+"FR-AUTH-01","Hệ thống cho phép nhân sự đăng nhập và đăng xuất bằng phiên được bảo vệ."
+"FR-AUTH-02","System Admin phải hoàn tất MFA trước khi vai trò hệ thống có hiệu lực."
+"FR-AUTH-03","Hệ thống phân biệt token nhân sự, token phiên thí sinh, device token và WebSocket ticket."
+"FR-AUTH-04","Thay đổi trạng thái tài khoản, membership hoặc assignment phải làm quyền cũ mất hiệu lực."
+"FR-AUTH-05","Hệ thống hỗ trợ thí sinh tham gia theo chế độ thủ công hoặc Google OIDC tùy policy kỳ thi."

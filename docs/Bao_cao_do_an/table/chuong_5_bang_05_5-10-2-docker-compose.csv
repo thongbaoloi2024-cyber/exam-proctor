@@ -1,0 +1,8 @@
+﻿"Kết nối","Giao thức/địa chỉ","Dữ liệu","Ghi chú triển khai"
+"Browser Extension → Backend","HTTPS REST và WSS, cổng công bố 8000 trong compose","Join/auth/policy, browser event, heartbeat, end session","Production cần TLS tại backend hoặc reverse proxy"
+"Desktop CV → Backend","HTTPS REST và WSS","Join, client hello, telemetry, violation, snapshot, heartbeat","Có local degraded mode khi backend không sẵn sàng"
+"Dashboard → Backend","HTTPS REST và WSS","Initial state, WebSocket ticket, realtime update, review/report request","Ticket WebSocket ngắn hạn và dùng một lần"
+"Backend → PostgreSQL","SQLAlchemy/PostgreSQL tới db:5432","Identity, organization, exam, session, review, audit, report job","db_data duy trì dữ liệu qua container restart"
+"Backend/Worker ↔ Redis","Redis protocol tới redis:6379","Client lease, pub/sub đa process và trạng thái phối hợp","redis_data bật append-only persistence"
+"Backend/Worker ↔ sessions_data","Shared Docker volume tại /app/sessions","JSONL, snapshot, chart, HTML/PDF","Cả hai service phải dùng cùng SESSIONS_ROOT"
+"Report Worker → PostgreSQL","SQLAlchemy/PostgreSQL","Nhận job pending, cập nhật processing/completed/failed","Worker chạy tách request web để tránh chặn API"

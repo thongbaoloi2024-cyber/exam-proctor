@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 900" role="img" aria-labelledby="title desc">
+  <title id="title">Sơ đồ triển khai hệ thống giám sát thi</title>
+  <desc id="desc">Các client, container backend, worker, PostgreSQL, Redis và volume dữ liệu.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+    <style>.h{font:700 28px 'Segoe UI',Arial;fill:#0f172a}.g{font:700 19px 'Segoe UI',Arial}.b{font:700 15px 'Segoe UI',Arial;fill:#0f172a}.t{font:13px 'Segoe UI',Arial;fill:#334155}.s{font:12px 'Segoe UI',Arial;fill:#475569}.lab{font:600 12px 'Segoe UI',Arial;fill:#334155}.edge{stroke:#334155;stroke-width:2.1;fill:none;marker-end:url(#arrow)}.bi{stroke:#334155;stroke-width:2.1;fill:none;marker-start:url(#arrow);marker-end:url(#arrow)}.dash{stroke:#64748b;stroke-width:1.8;stroke-dasharray:7 5;fill:none;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1500" height="900" fill="#f8fafc"/>
+  <text x="750" y="42" text-anchor="middle" class="h">SƠ ĐỒ TRIỂN KHAI HỆ THỐNG</text>
+  <text x="750" y="69" text-anchor="middle" class="s">Mô hình Docker Compose phục vụ triển khai/demo và các client kết nối qua REST/WebSocket</text>
+
+  <!-- Candidate node -->
+  <rect x="35" y="105" width="360" height="540" rx="22" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.5"/><text x="60" y="142" class="g" fill="#075985">MÁY THÍ SINH</text>
+  <rect x="75" y="180" width="280" height="95" rx="13" fill="white" stroke="#38bdf8" stroke-width="2"/><text x="215" y="211" text-anchor="middle" class="b">Chrome/Firefox</text><text x="215" y="237" text-anchor="middle" class="t">Trang làm bài + Browser Extension</text><text x="215" y="260" text-anchor="middle" class="s">REST join/auth · WSS event/heartbeat</text>
+  <rect x="75" y="330" width="280" height="110" rx="13" fill="white" stroke="#38bdf8" stroke-width="2"/><text x="215" y="361" text-anchor="middle" class="b">Python Desktop CV</text><text x="215" y="387" text-anchor="middle" class="t">AppController + CV pipeline</text><text x="215" y="411" text-anchor="middle" class="s">REST join · WSS telemetry/violation</text><text x="215" y="432" text-anchor="middle" class="s">Local degraded mode</text>
+  <rect x="115" y="500" width="200" height="75" rx="12" fill="#bae6fd" stroke="#0284c7"/><text x="215" y="530" text-anchor="middle" class="b">Webcam / Thiết bị</text><text x="215" y="555" text-anchor="middle" class="t">Camera · Microphone · Screen</text>
+  <path d="M215 500V440" class="edge"/><path d="M255 500C330 455 330 310 275 275" class="dash"/>
+
+  <!-- Staff node -->
+  <rect x="35" y="690" width="360" height="145" rx="22" fill="#dcfce7" stroke="#16a34a" stroke-width="2.5"/><text x="60" y="727" class="g" fill="#166534">MÁY GIÁM THỊ / QUẢN TRỊ</text><rect x="75" y="750" width="280" height="58" rx="12" fill="white" stroke="#4ade80"/><text x="215" y="776" text-anchor="middle" class="b">Web Dashboard</text><text x="215" y="798" text-anchor="middle" class="s">HTTPS REST · WSS dashboard</text>
+
+  <!-- Network boundary -->
+  <rect x="455" y="105" width="1000" height="730" rx="24" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2.5"/><text x="480" y="142" class="g" fill="#5b21b6">MÁY CHỦ / DOCKER COMPOSE</text>
+  <rect x="500" y="180" width="350" height="180" rx="16" fill="white" stroke="#7c3aed" stroke-width="2"/><text x="675" y="213" text-anchor="middle" class="b">backend container</text><text x="675" y="240" text-anchor="middle" class="t">FastAPI + Uvicorn · cổng 8000</text><text x="675" y="267" text-anchor="middle" class="t">REST API · WebSocket Gateway</text><text x="675" y="294" text-anchor="middle" class="t">Auth/RBAC · Validation · Dashboard</text><text x="675" y="321" text-anchor="middle" class="s">APP_ENV=production · SESSIONS_ROOT=/app/sessions</text>
+  <rect x="500" y="450" width="350" height="130" rx="16" fill="white" stroke="#7c3aed" stroke-width="2"/><text x="675" y="484" text-anchor="middle" class="b">report-worker container</text><text x="675" y="512" text-anchor="middle" class="t">scripts/report_worker.py</text><text x="675" y="538" text-anchor="middle" class="t">Đọc ReportJob · dựng HTML/PDF</text><text x="675" y="563" text-anchor="middle" class="s">Dùng chung DB, Redis và sessions volume</text>
+
+  <!-- Services -->
+  <rect x="940" y="175" width="235" height="105" rx="15" fill="#fef3c7" stroke="#d97706" stroke-width="2"/><text x="1058" y="208" text-anchor="middle" class="b">PostgreSQL 16</text><text x="1058" y="235" text-anchor="middle" class="t">db:5432</text><text x="1058" y="260" text-anchor="middle" class="s">Metadata / current state</text>
+  <rect x="1220" y="175" width="195" height="105" rx="15" fill="#fef3c7" stroke="#d97706" stroke-width="2"/><text x="1318" y="208" text-anchor="middle" class="b">Redis 7</text><text x="1318" y="235" text-anchor="middle" class="t">redis:6379</text><text x="1318" y="260" text-anchor="middle" class="s">Lease · Pub/Sub · AOF</text>
+
+  <!-- Volumes -->
+  <g transform="translate(920 420)"><ellipse cx="130" cy="16" rx="130" ry="16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/><path d="M0 16V95C0 116 260 116 260 95V16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/><ellipse cx="130" cy="95" rx="130" ry="16" fill="none" stroke="#d97706" stroke-width="2"/><text x="130" y="55" text-anchor="middle" class="b">db_data</text><text x="130" y="78" text-anchor="middle" class="s">PostgreSQL persistence</text></g>
+  <g transform="translate(1190 420)"><ellipse cx="110" cy="16" rx="110" ry="16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/><path d="M0 16V95C0 116 220 116 220 95V16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/><ellipse cx="110" cy="95" rx="110" ry="16" fill="none" stroke="#d97706" stroke-width="2"/><text x="110" y="55" text-anchor="middle" class="b">redis_data</text><text x="110" y="78" text-anchor="middle" class="s">AOF persistence</text></g>
+  <g transform="translate(955 650)"><ellipse cx="180" cy="16" rx="180" ry="16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/><path d="M0 16V100C0 122 360 122 360 100V16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/><ellipse cx="180" cy="100" rx="180" ry="16" fill="none" stroke="#d97706" stroke-width="2"/><text x="180" y="57" text-anchor="middle" class="b">sessions_data</text><text x="180" y="82" text-anchor="middle" class="t">JSONL · Snapshot · HTML/PDF</text></g>
+
+  <!-- Connections -->
+  <path d="M355 225C420 225 440 225 500 225" class="bi"/><text x="425" y="209" text-anchor="middle" class="lab">HTTPS / WSS</text>
+  <path d="M355 385C420 385 440 300 500 300" class="bi"/><text x="420" y="347" text-anchor="middle" class="lab">HTTPS / WSS</text>
+  <path d="M355 779C430 779 440 330 500 330" class="bi"/><text x="430" y="640" class="lab">HTTPS / WSS</text>
+  <path d="M850 225H940" class="bi"/><text x="895" y="209" text-anchor="middle" class="lab">SQL</text>
+  <path d="M850 260C1020 330 1120 300 1220 235" class="bi"/><text x="1035" y="326" class="lab">Redis protocol</text>
+  <path d="M850 500C885 420 900 285 940 250" class="bi"/><text x="870" y="378" class="lab">SQL</text>
+  <path d="M850 530C1000 570 1130 320 1220 260" class="bi"/><text x="1050" y="520" class="lab">Lease/queue state</text>
+  <path d="M1050 280V420" class="edge"/><path d="M1318 280V420" class="edge"/>
+  <path d="M800 360C880 610 930 700 955 700" class="bi"/><text x="830" y="620" class="lab">Evidence volume</text>
+  <path d="M850 555C900 630 930 720 955 720" class="bi"/><text x="870" y="680" class="lab">Report I/O</text>
+
+  <rect x="455" y="855" width="1000" height="30" rx="8" fill="#e2e8f0"/><text x="955" y="876" text-anchor="middle" class="s">Production cần TLS, secret mạnh, backup/restore và giám sát vận hành; Docker Compose hiện mô tả topology của bản triển khai đồ án.</text>
+</svg>

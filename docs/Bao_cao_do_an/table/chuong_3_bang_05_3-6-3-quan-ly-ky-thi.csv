@@ -1,0 +1,8 @@
+﻿"Mã","Yêu cầu"
+"FR-EXAM-01","Exam Manager tạo kỳ thi và trở thành owner của kỳ thi đó."
+"FR-EXAM-02","Kỳ thi hỗ trợ vòng đời draft, scheduled, open, closed, archived và chỉ cho phép chuyển trạng thái hợp lệ."
+"FR-EXAM-03","Mã tham gia phải có thời hạn, có thể xoay và không tự thay đổi lifecycle ngoài ý muốn."
+"FR-EXAM-04","Người sở hữu hoặc quản lý phân công owner, manager, proctor với trạng thái và thời hạn cụ thể."
+"FR-EXAM-05","Hành động trên giao diện và máy chủ phải dựa trên năng lực được cấp trong từng kỳ thi."
+"FR-EXAM-06","Cập nhật kỳ thi phải hỗ trợ khóa lạc quan để phát hiện chỉnh sửa đồng thời."
+"FR-EXAM-07","Hệ thống cung cấp danh sách kiểm tra mức độ sẵn sàng dựa trên lịch, chính sách, mã tham gia, nhân sự và hạn mức."

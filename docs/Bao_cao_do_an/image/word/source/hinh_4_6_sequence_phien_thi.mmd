@@ -1,0 +1,39 @@
+%%{init: {"theme": "neutral", "sequence": {"useMaxWidth": true, "wrap": true, "diagramMarginX": 40, "diagramMarginY": 20, "actorMargin": 45, "messageMargin": 30}}}%%
+sequenceDiagram
+    actor Manager as Exam Manager
+    actor Student as Thí sinh
+    participant Ext as Extension/Desktop client
+    participant API as FastAPI REST
+    participant WS as WebSocket Gateway
+    participant Data as DB + Evidence Store
+    actor Proctor as Giám thị
+
+    Manager->>API: Tạo/cấu hình và mở kỳ thi
+    API-->>Manager: Mã tham gia có thời hạn
+    Student->>Ext: Nhập mã, thông tin/xác thực Google
+    Ext->>API: Kiểm tra chính sách và tham gia
+    API-->>Ext: Session token và policy đã resolve
+    Ext->>Ext: Consent, kiểm tra thiết bị, khởi tạo monitor
+    Proctor->>API: Yêu cầu WebSocket ticket dùng một lần
+    API-->>Proctor: Ticket ngắn hạn
+    Proctor->>WS: Kết nối dashboard theo exam_id
+    Ext->>WS: Kết nối kênh của session
+
+    loop Theo chu kỳ trong phiên thi
+        Ext->>WS: heartbeat / telemetry / browser_event
+        WS->>WS: Kiểm tra schema, tần suất, quyền và thời gian server
+        WS->>WS: Tính/đối chiếu risk và integrity
+        WS->>Data: Cập nhật trạng thái + append evidence
+        WS-->>Proctor: Fan-out cập nhật phiên
+    end
+
+    opt Có vi phạm kèm ảnh
+        Ext->>WS: violation_event + snapshot
+        WS->>WS: Kiểm tra event và ảnh
+        WS->>Data: Lưu tên server sinh và hash
+        WS-->>Proctor: Thông báo cảnh báo
+    end
+
+    Student->>WS: Kết thúc phiên
+    WS->>Data: Chuyển trạng thái ended
+    WS-->>Proctor: session_ended

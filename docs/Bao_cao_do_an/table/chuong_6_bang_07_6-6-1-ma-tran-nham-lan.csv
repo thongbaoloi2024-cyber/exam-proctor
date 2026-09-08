@@ -1,0 +1,4 @@
+﻿"Nhãn tham chiếu","Dự đoán bình thường","Dự đoán vi phạm","Tổng"
+"Nhãn tham chiếu bình thường","TN = 158.970","FP = 10.500","169.470"
+"Nhãn tham chiếu vi phạm","FN = 4.500","TP = 25.500","30.000"
+"Tổng","163.470","36.000","199.470"

@@ -1,0 +1,12 @@
+﻿Số hình,Tên file PNG,Kích thước PNG,Tệp vector SVG,Tệp nguồn Mermaid,Chú thích
+Hình 4.1,hinh_4_1_kien_truc_tong_the.png,2400x1400,../kien_truc_tong_the_he_thong.svg,,Kiến trúc tổng thể của hệ thống
+Hình 4.2,hinh_4_2_use_case_theo_vai_tro.png,2600x1800,../use_case_tong_quan_he_thong.svg,,Các ca sử dụng theo vai trò của hệ thống
+Hình 4.3,hinh_4_3_kien_truc_pipeline_cv.png,3136x2032,hinh_4_3_kien_truc_pipeline_cv.svg,source/hinh_4_3_kien_truc_pipeline_cv.mmd,Kiến trúc pipeline thị giác máy tính
+Hình 4.4,hinh_4_4_state_machine_tin_hieu.png,3136x608,hinh_4_4_state_machine_tin_hieu.svg,source/hinh_4_4_state_machine_tin_hieu.mmd,State machine độc lập của một tín hiệu
+Hình 4.5,hinh_4_5_hysteresis_cap_phien.png,3136x796,hinh_4_5_hysteresis_cap_phien.svg,source/hinh_4_5_hysteresis_cap_phien.mmd,Hysteresis ở cấp phiên thi
+Hình 4.6,hinh_4_6_sequence_phien_thi.png,3136x3920,hinh_4_6_sequence_phien_thi.svg,source/hinh_4_6_sequence_phien_thi.mmd,Sequence diagram của một phiên thi được giám sát
+Hình 4.7,hinh_4_7_erd_rut_gon.png,2800x1800,../mo_hinh_du_lieu_erd.svg,,ERD rút gọn của lớp nền tảng
+Hình 4.8,hinh_4_8_luong_du_lieu_ngu_canh.png,2400x1440,../data_flow_muc_ngu_canh.svg,,Sơ đồ luồng dữ liệu mức ngữ cảnh của hệ thống
+Hình 4.9,hinh_4_9_luong_du_lieu_phien_thi.png,2800x1800,../data_flow_phien_thi.svg,,Sơ đồ luồng dữ liệu chi tiết của một phiên thi
+Hình 4.10,hinh_4_10_luong_du_lieu_muc_1.png,3000x1920,../data_flow_level_1.svg,,Sơ đồ luồng dữ liệu mức 1 của hệ thống
+Hình 5.1,hinh_5_1_so_do_trien_khai.png,3000x1800,../so_do_trien_khai_he_thong.svg,,Sơ đồ triển khai các máy khách dịch vụ và vùng dữ liệu

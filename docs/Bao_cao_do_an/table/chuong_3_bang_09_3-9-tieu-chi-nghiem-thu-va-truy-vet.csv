@@ -1,0 +1,7 @@
+﻿"Nhóm yêu cầu","Giải pháp/đóng góp","Thành phần cài đặt","Bằng chứng đánh giá"
+"FR-CV-*, NFR-PERF-*","Chuỗi xử lý dùng chung và bảy tín hiệu","src/perception, src/signals, src/orchestrator.py","Kiểm thử đơn vị, khởi tạo mô hình, tích hợp video và đo hiệu năng"
+"FR-CV-04, NFR-EXPL-01","Máy trạng thái và tổng hợp rủi ro hai cấp","src/fusion, config/fusion.yaml","Kiểm thử chuyển trạng thái, cạnh chuyển, nhiều tín hiệu và tính nhất quán báo cáo"
+"FR-BROWSER-*, FR-RT-*","Tiện ích mở rộng và kiểm tra WebSocket","extension/, backend/routers/ws.py","Kiểm thử tiện ích, tích hợp WebSocket và xác thực"
+"FR-AUTH-*, FR-ORG-*, FR-EXAM-*","RBAC và phạm vi tổ chức/tài nguyên","backend/auth.py, backend/authorization.py, backend/policies.py","Kiểm thử API, MFA, chính sách, cô lập tổ chức và nhiệm vụ"
+"FR-EVID-*, FR-REPORT-*, FR-RET-01","Dữ liệu lai và vòng đời bằng chứng","backend/session_materializer.py, src/reporting, scripts/report_worker.py, scripts/cleanup_retention.py","Kiểm thử ảnh chụp, đường dẫn, báo cáo và tác vụ nền"
+"Chỉ số CV","Đánh giá trên 25 video","Chuỗi xử lý/phương pháp cơ sở trong môi trường thực nghiệm","Ma trận nhầm lẫn, Precision, Recall, F1-score và độ trễ tại Chương 6"

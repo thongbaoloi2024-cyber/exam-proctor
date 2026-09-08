@@ -1,0 +1,8 @@
+﻿"Tín hiệu","Dữ liệu dùng chung","Cách ổn định chính","Tham số cấu hình hiện tại"
+"FACE_PRESENCE","Face boxes","Chỉ bất thường khi vắng mặt đủ lâu","2,0 giây"
+"MULTI_FACE","Face boxes","Lọc khuôn mặt có độ tin cậy thấp","confidence ≥ 0,90"
+"EYE_STATE","Face landmarks","Kết hợp hai mắt và thời lượng nhắm","EAR 0,21; 1,0 giây"
+"MOUTH_STATE","Face landmarks","Tỉ lệ chuẩn hóa và cửa sổ hoạt động theo thời gian","cửa sổ 2,0 giây; activity ratio 0,25"
+"OBJECT_PRESENCE","YOLO boxes","Throttle model và debounce thời lượng","1,0 giây; model lọc phone/book"
+"HEAD_POSE","Face landmarks","Ngưỡng yaw/pitch và thời lượng quay","20°; 1,0 giây"
+"IDENTITY","Face crop/embedding","Hai mức cosine, kiểm tra lại định kỳ và yêu cầu lỗi liên tiếp","30 giây; warn 0,55; alert 0,40"

@@ -1,0 +1,19 @@
+{
+  "theme": "neutral",
+  "fontFamily": "Arial, 'Segoe UI', sans-serif",
+  "fontSize": 18,
+  "flowchart": {
+    "htmlLabels": true,
+    "curve": "basis",
+    "nodeSpacing": 35,
+    "rankSpacing": 55
+  },
+  "sequence": {
+    "useMaxWidth": true,
+    "wrap": true,
+    "diagramMarginX": 40,
+    "diagramMarginY": 20,
+    "actorMargin": 45,
+    "messageMargin": 30
+  }
+}

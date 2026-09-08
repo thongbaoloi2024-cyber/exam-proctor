@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 960" role="img" aria-labelledby="title desc">
+  <title id="title">Sơ đồ luồng dữ liệu mức 1 của hệ thống giám sát thi</title>
+  <desc id="desc">DFD mức 1 gồm ba thực thể ngoài, năm tiến trình và ba kho dữ liệu.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+    <style>.h{font:700 28px 'Segoe UI',Arial;fill:#0f172a}.sub{font:14px 'Segoe UI',Arial;fill:#475569}.et{font:700 16px 'Segoe UI',Arial;fill:#0f172a}.pt{font:700 15px 'Segoe UI',Arial;fill:#4c1d95}.tx{font:13px 'Segoe UI',Arial;fill:#334155}.lab{font:600 12px 'Segoe UI',Arial;fill:#334155}.edge{stroke:#334155;stroke-width:2;fill:none;marker-end:url(#arrow)}.read{stroke:#64748b;stroke-width:1.8;stroke-dasharray:7 5;fill:none;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1500" height="960" fill="#f8fafc"/>
+  <text x="750" y="42" text-anchor="middle" class="h">SƠ ĐỒ LUỒNG DỮ LIỆU MỨC 1</text>
+  <text x="750" y="69" text-anchor="middle" class="sub">Phân rã luồng cấu hình, tham gia, giám sát, hậu kiểm và báo cáo</text>
+
+  <!-- External entities -->
+  <rect x="35" y="145" width="240" height="88" rx="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/><text x="155" y="180" text-anchor="middle" class="et">E1. THÍ SINH</text><text x="155" y="207" text-anchor="middle" class="tx">Candidate + client thiết bị</text>
+  <rect x="35" y="665" width="240" height="88" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/><text x="155" y="700" text-anchor="middle" class="et">E2. QUẢN TRỊ KỲ THI</text><text x="155" y="727" text-anchor="middle" class="tx">Admin / Exam Manager</text>
+  <rect x="1225" y="390" width="240" height="88" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="1345" y="425" text-anchor="middle" class="et">E3. GIÁM THỊ</text><text x="1345" y="452" text-anchor="middle" class="tx">Proctor được phân công</text>
+
+  <!-- Processes -->
+  <rect x="365" y="115" width="285" height="118" rx="55" fill="#ede9fe" stroke="#7c3aed" stroke-width="2.5"/><text x="507" y="153" text-anchor="middle" class="pt">P1. XÁC THỰC VÀ</text><text x="507" y="176" text-anchor="middle" class="pt">GIẢI QUYẾT CHÍNH SÁCH</text><text x="507" y="205" text-anchor="middle" class="tx">Join code · Auth · RBAC · Policy</text>
+  <rect x="365" y="330" width="285" height="118" rx="55" fill="#ede9fe" stroke="#7c3aed" stroke-width="2.5"/><text x="507" y="369" text-anchor="middle" class="pt">P2. KHỞI TẠO</text><text x="507" y="392" text-anchor="middle" class="pt">PHIÊN GIÁM SÁT</text><text x="507" y="421" text-anchor="middle" class="tx">Consent · Preflight · Session token</text>
+  <rect x="720" y="330" width="300" height="145" rx="62" fill="#ede9fe" stroke="#7c3aed" stroke-width="2.5"/><text x="870" y="365" text-anchor="middle" class="pt">P3. TIẾP NHẬN VÀ</text><text x="870" y="388" text-anchor="middle" class="pt">KIỂM CHỨNG GIÁM SÁT</text><text x="870" y="418" text-anchor="middle" class="tx">Telemetry · Violation · Browser event</text><text x="870" y="442" text-anchor="middle" class="tx">Schema · Sequence · Server derivation</text>
+  <rect x="1045" y="550" width="285" height="118" rx="55" fill="#ede9fe" stroke="#7c3aed" stroke-width="2.5"/><text x="1187" y="589" text-anchor="middle" class="pt">P4. DASHBOARD VÀ</text><text x="1187" y="612" text-anchor="middle" class="pt">HẬU KIỂM</text><text x="1187" y="641" text-anchor="middle" class="tx">Realtime · Evidence · Review</text>
+  <rect x="720" y="735" width="300" height="118" rx="55" fill="#ede9fe" stroke="#7c3aed" stroke-width="2.5"/><text x="870" y="774" text-anchor="middle" class="pt">P5. TỔNG HỢP VÀ</text><text x="870" y="797" text-anchor="middle" class="pt">SINH BÁO CÁO</text><text x="870" y="826" text-anchor="middle" class="tx">Aggregate · Chart · HTML/PDF</text>
+
+  <!-- Data stores -->
+  <g transform="translate(355 590)"><path d="M0 0H300V82H0M0 0V82" fill="#fff7ed" stroke="#d97706" stroke-width="2"/><path d="M18 0V82" stroke="#d97706" stroke-width="2"/><text x="160" y="32" text-anchor="middle" class="et">DS1. CSDL QUAN HỆ</text><text x="160" y="59" text-anchor="middle" class="tx">Identity · Exam · Session · Review</text></g>
+  <g transform="translate(720 590)"><path d="M0 0H300V82H0M0 0V82" fill="#fff7ed" stroke="#d97706" stroke-width="2"/><path d="M18 0V82" stroke="#d97706" stroke-width="2"/><text x="160" y="32" text-anchor="middle" class="et">DS2. KHO EVIDENCE</text><text x="160" y="59" text-anchor="middle" class="tx">JSONL · Snapshot · Timeline</text></g>
+  <g transform="translate(1070 735)"><path d="M0 0H270V82H0M0 0V82" fill="#fff7ed" stroke="#d97706" stroke-width="2"/><path d="M18 0V82" stroke="#d97706" stroke-width="2"/><text x="145" y="32" text-anchor="middle" class="et">DS3. KHO BÁO CÁO</text><text x="145" y="59" text-anchor="middle" class="tx">HTML · PDF · Job status</text></g>
+
+  <!-- Flows -->
+  <path d="M275 175H365" class="edge"/><text x="320" y="160" text-anchor="middle" class="lab">F01 Join/Auth</text>
+  <path d="M365 210C325 250 305 275 275 215" class="edge"/><text x="310" y="268" class="lab">F02 Policy/Auth result</text>
+  <path d="M275 700C315 700 320 195 365 195" class="edge"/><text x="288" y="480" class="lab">F03 Cấu hình/assignment</text>
+  <path d="M507 233V330" class="edge"/><text x="520" y="283" class="lab">F04 Identity + policy</text>
+  <path d="M275 195C310 300 320 370 365 385" class="edge"/><text x="275" y="328" class="lab">F05 Consent/preflight</text>
+  <path d="M650 389H720" class="edge"/><text x="685" y="374" text-anchor="middle" class="lab">F06 Session context</text>
+  <path d="M275 225C430 290 600 350 720 380" class="edge"/><text x="495" y="300" class="lab">F07 Telemetry/event/heartbeat</text>
+  <path d="M790 475C730 520 680 560 630 590" class="edge"/><text x="668" y="526" class="lab">F08 Current state</text>
+  <path d="M890 475V590" class="edge"/><text x="900" y="535" class="lab">F09 Evidence</text>
+  <path d="M1020 402C1130 402 1160 540 1110 550" class="edge"/><text x="1080" y="425" class="lab">F10 Realtime update</text>
+  <path d="M1225 435C1170 460 1140 500 1160 550" class="edge"/><text x="1165" y="486" class="lab">F11 Dashboard/review request</text>
+  <path d="M1270 550C1310 520 1325 488 1335 478" class="edge"/><text x="1300" y="530" class="lab">F12 Alert/evidence</text>
+  <path d="M1045 625C900 705 720 710 650 650" class="edge"/><text x="820" y="690" class="lab">F13 Verdict/audit</text>
+  <path d="M275 720C430 790 570 795 720 795" class="edge"/><text x="470" y="804" class="lab">F14 Report request</text>
+  <path d="M655 640C710 690 760 710 800 735" class="read"/><text x="700" y="713" class="lab">F15 Metadata</text>
+  <path d="M870 672V735" class="read"/><text x="880" y="710" class="lab">F16 Timeline/snapshot</text>
+  <path d="M1020 795H1070" class="edge"/><text x="1045" y="780" text-anchor="middle" class="lab">F17 Output</text>
+  <path d="M1205 735C1260 660 1310 560 1340 478" class="edge"/><text x="1270" y="660" class="lab">F18 Report/status</text>
+
+  <rect x="35" y="875" width="1430" height="52" rx="10" fill="#e2e8f0"/><text x="750" y="898" text-anchor="middle" class="tx">Đường liền: ghi/gửi dữ liệu · Đường nét đứt: đọc dữ liệu phục vụ tổng hợp.</text><text x="750" y="918" text-anchor="middle" class="sub">Mọi luồng qua backend đều được kiểm tra danh tính, phạm vi tài nguyên và schema trước khi lưu hoặc phát tán.</text>
+</svg>

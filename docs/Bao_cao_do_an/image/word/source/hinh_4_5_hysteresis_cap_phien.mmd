@@ -1,0 +1,11 @@
+%%{init: {"theme": "neutral", "state": {"useMaxWidth": true}}}%%
+stateDiagram-v2
+    direction LR
+    [*] --> SESSION_NORMAL
+    SESSION_NORMAL --> SESSION_ALERT: R(t) ≥ 5
+    SESSION_ALERT --> SESSION_NORMAL: R(t) ≤ 2,5
+    SESSION_NORMAL --> SESSION_NORMAL: R(t) < 5
+    SESSION_ALERT --> SESSION_ALERT: 2,5 < R(t) < 5
+    note right of SESSION_ALERT
+        Khi chuyển vào SESSION_ALERT:<br/>sinh ViolationEvent
+    end note

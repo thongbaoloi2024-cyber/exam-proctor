@@ -1,0 +1,5 @@
+﻿"Service","Vai trò"
+"db","PostgreSQL 16 và volume db_data"
+"redis","Redis 7 với append-only persistence"
+"backend","FastAPI/Uvicorn, port 8000 và volume evidence"
+"report-worker","Xử lý report job dùng cùng database/evidence volume"

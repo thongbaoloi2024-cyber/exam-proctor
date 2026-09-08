@@ -1,0 +1,6 @@
+﻿"Tác nhân","Phạm vi trách nhiệm"
+"System Admin","Quản lý nền tảng, tổ chức, hạn mức, chính sách cơ sở, vận hành và nhật ký toàn cục; không mặc nhiên được xem bằng chứng"
+"Organization Admin","Quản lý hồ sơ, thành viên, lời mời, chính sách và nhật ký kiểm toán của một tổ chức"
+"Exam Manager","Tạo kỳ thi; với nhiệm vụ owner/manager có thể cấu hình, phân công và vận hành kỳ thi tương ứng"
+"Proctor","Theo dõi bảng điều khiển, xem bằng chứng, hậu kiểm sự cố, kết thúc phiên và xuất báo cáo theo nhiệm vụ được giao"
+"Thí sinh","Xác thực/tham gia đúng kỳ thi, cấp quyền cần thiết và gửi dữ liệu của chính phiên"

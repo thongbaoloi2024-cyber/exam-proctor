@@ -1,0 +1,7 @@
+﻿"Thành phần","Thời gian trung bình","Tỉ lệ chi phí"
+"Phát hiện khuôn mặt bằng MTCNN","28,95 ms/khung hình","67%"
+"YOLOv8 đã giới hạn tần suất","10,32 ms/khung hình","24%"
+"MediaPipe Face Landmarker","3,45 ms/frame","8%"
+"Tiền xử lý","0,21 ms/khung hình","<1%"
+"Logic của bảy tín hiệu","khoảng 0,04 ms/khung hình","<1%"
+"Tổng","42,98 ms/khung hình","100%"

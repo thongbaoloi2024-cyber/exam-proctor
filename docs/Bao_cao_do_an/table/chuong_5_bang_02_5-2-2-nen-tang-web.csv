@@ -1,0 +1,8 @@
+﻿"Công nghệ","Vai trò"
+"FastAPI/Uvicorn","REST API, trang web và điểm cuối WebSocket"
+"SQLAlchemy","ORM cho dữ liệu nền tảng"
+"SQLite/PostgreSQL","SQLite cho phát triển; PostgreSQL cho Docker Compose"
+"Redis","Giới hạn tần suất phân tán, quản lý quyền giữ kết nối và phát–nhận cập nhật bảng điều khiển khi được cấu hình"
+"Jinja2 + JavaScript thuần","Bảng điều khiển và giao diện quản trị được kết xuất phía máy chủ"
+"JWT, bcrypt, TOTP","Phiên đăng nhập, băm mật khẩu và MFA"
+"Google Auth/OIDC","Xác thực Google cho nhân sự/thí sinh theo luồng tương ứng"

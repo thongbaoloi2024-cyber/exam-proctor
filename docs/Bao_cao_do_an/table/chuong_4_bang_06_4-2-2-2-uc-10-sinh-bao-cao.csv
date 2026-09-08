@@ -1,0 +1,6 @@
+﻿"Thuộc tính","Nội dung"
+"Tác nhân","Exam Manager hoặc Proctor có exam.reports.export"
+"Tiền điều kiện","Phiên tồn tại; người dùng có quyền trên kỳ thi; dữ liệu phiên đã được materialize"
+"Luồng chính","Yêu cầu báo cáo → tạo job pending → worker đọc SQL và evidence → tổng hợp/charts → xuất HTML/PDF → job chuyển completed"
+"Luồng thay thế/ngoại lệ","File evidence thiếu được đọc theo chế độ tolerant; lỗi dựng báo cáo chuyển job sang failed và lưu lỗi, không công bố output chưa hoàn chỉnh"
+"Hậu điều kiện","Báo cáo được gắn đúng session, có đường dẫn do server quản lý và có thể tải theo authorization"

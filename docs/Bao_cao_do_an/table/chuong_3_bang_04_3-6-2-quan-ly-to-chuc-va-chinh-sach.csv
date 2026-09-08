@@ -1,0 +1,6 @@
+﻿"Mã","Yêu cầu"
+"FR-ORG-01","System Admin quản lý tổ chức, trạng thái, hạn mức phiên đồng thời và thời hạn lưu trữ trong phạm vi được cấp."
+"FR-ORG-02","Organization Admin quản lý hồ sơ tổ chức, thành viên, vai trò, lời mời và nhật ký kiểm toán."
+"FR-ORG-03","Người dùng thuộc nhiều tổ chức có thể chuyển tổ chức đang hoạt động một cách an toàn."
+"FR-ORG-04","Chính sách hiệu lực phải được xác định theo thứ tự chính sách cơ sở của nền tảng → tổ chức → kỳ thi; cấp dưới không được làm yếu yêu cầu bắt buộc."
+"FR-ORG-05","System Admin chỉ được đọc bằng chứng khi có quyền ngoại lệ đã được phê duyệt, thuộc đúng tổ chức, còn hiệu lực và chỉ cho phép đọc."

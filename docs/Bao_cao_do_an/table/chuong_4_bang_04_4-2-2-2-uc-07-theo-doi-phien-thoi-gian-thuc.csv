@@ -1,0 +1,6 @@
+﻿"Thuộc tính","Nội dung"
+"Tác nhân","Proctor hoặc Exam Manager được phân công"
+"Tiền điều kiện","Người dùng đã đăng nhập và có exam.monitor; kỳ thi tồn tại trong tenant hiện hành"
+"Luồng chính","Mở dashboard → tải current state qua REST → lấy WebSocket ticket dùng một lần → nhận telemetry/browser event đã kiểm chứng → lọc và mở session detail"
+"Luồng thay thế/ngoại lệ","Ticket hết hạn hoặc đã dùng bị từ chối; khi socket mất kết nối, giao diện phải báo dữ liệu có thể cũ và thực hiện kết nối lại"
+"Hậu điều kiện","Người giám thị quan sát được risk, integrity, kết nối và cảnh báo mà không truy cập phiên ngoài assignment"

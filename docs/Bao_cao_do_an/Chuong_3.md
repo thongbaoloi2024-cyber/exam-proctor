@@ -4,67 +4,61 @@
 
 Chương 2 đã trình bày các kỹ thuật nền tảng. Chương này khảo sát những hướng tiếp cận đang được sử dụng trong giám sát thi trực tuyến, phân tích một dự án mã nguồn mở làm đối chứng và chuyển các khoảng trống tìm được thành yêu cầu cụ thể cho hệ thống.
 
-Phạm vi khảo sát không nhằm khẳng định một sản phẩm “tốt nhất”, vì mỗi giải pháp phục vụ mô hình thi, chính sách và ngân sách khác nhau. Mục tiêu là xác định các năng lực cần thiết, những giới hạn không thể giải quyết chỉ bằng một model CV và vị trí đóng góp của đồ án.
+Phạm vi khảo sát không nhằm khẳng định một sản phẩm là “tốt nhất”, vì mỗi giải pháp phục vụ mô hình thi, chính sách và ngân sách khác nhau. Mục tiêu của chương là xác định các năng lực cần thiết, những giới hạn không thể giải quyết chỉ bằng một mô hình thị giác máy tính và vị trí đóng góp của đồ án.
 
 ## 3.2. Khảo sát nhóm giải pháp thương mại
 
-Các nền tảng thương mại thường cung cấp ba mô hình dịch vụ: giám sát tự động, ghi lại để con người xem sau và giám sát trực tiếp. Chức năng được cấu hình theo kỳ thi, có thể gồm xác minh người dự thi, ghi webcam/microphone/màn hình, hạn chế trình duyệt, phát hiện sự kiện và báo cáo.
+Các nền tảng thương mại thường cung cấp ba mô hình dịch vụ: giám sát tự động, ghi lại để con người xem sau và giám sát trực tiếp. Chức năng được cấu hình theo từng kỳ thi, có thể gồm xác minh người dự thi, ghi hình webcam, microphone hoặc màn hình, hạn chế thao tác trình duyệt, phát hiện sự kiện và tạo báo cáo.
 
 ### 3.2.1. Proctorio
 
-Theo tài liệu sản phẩm chính thức, Proctorio cung cấp các nhóm thiết lập recording, verification và lockdown; có thể ghi video, audio, màn hình hoặc web traffic, xác minh danh tính, ép toàn màn hình, hạn chế tab, clipboard và thao tác khác tùy cấu hình của đơn vị tổ chức. Giải pháp sử dụng browser extension trên máy tính để bàn và chỉ kích hoạt trong phiên thi được cấu hình.
+Theo tài liệu sản phẩm chính thức, Proctorio cung cấp các nhóm thiết lập ghi dữ liệu, xác minh và hạn chế môi trường thi. Tùy cấu hình của đơn vị tổ chức, sản phẩm có thể ghi video, âm thanh, màn hình hoặc lưu lượng web; xác minh danh tính; yêu cầu chế độ toàn màn hình; hạn chế chuyển thẻ, bảng tạm và một số thao tác khác. Giải pháp sử dụng tiện ích mở rộng trên trình duyệt máy tính và chỉ kích hoạt trong phiên thi đã được cấu hình [16], [17].
 
-Điểm đáng chú ý đối với đồ án là cách tách policy của kỳ thi khỏi client. Mỗi kỳ thi có thể yêu cầu những năng lực khác nhau thay vì mọi phiên đều bật toàn bộ quyền. Tuy nhiên, đây là nền tảng đóng; báo cáo công khai không cung cấp đầy đủ logic nội bộ để tái hiện thuật toán hoặc hiệu chỉnh theo nghiên cứu của đồ án.
-
-Nguồn khảo sát: [Proctorio Online Proctoring](https://proctorio.com/products/online-proctoring), [Secure Exam Proctor Extension](https://proctorio.com/support/hc/articles/1752083369562-proctorio-secure-exam-proctor-extension).
+Điểm đáng chú ý đối với đồ án là việc tách chính sách kỳ thi khỏi ứng dụng phía thí sinh. Mỗi kỳ thi có thể yêu cầu những năng lực khác nhau thay vì mọi phiên đều bật toàn bộ quyền. Tuy nhiên, đây là nền tảng đóng; tài liệu công khai không mô tả đầy đủ logic nội bộ để tái hiện thuật toán hoặc hiệu chỉnh theo mục tiêu nghiên cứu của đồ án.
 
 ### 3.2.2. Honorlock
 
-Honorlock cung cấp BrowserGuard để hạn chế hoặc đánh dấu truy cập website, tab, ứng dụng, phím tắt và hành vi thu nhỏ cửa sổ, đồng thời có thể ghi màn hình trong phiên thi. Mô hình này cho thấy giám sát trình duyệt là một nguồn tín hiệu riêng, bổ sung cho webcam và không nên bị đồng nhất với kết quả thị giác máy tính.
-
-Nguồn khảo sát: [Honorlock BrowserGuard](https://honorlock.com/browserguard/).
+Honorlock cung cấp BrowserGuard để hạn chế hoặc đánh dấu việc truy cập trang web, chuyển thẻ, sử dụng ứng dụng, phím tắt và hành vi thu nhỏ cửa sổ; sản phẩm cũng có thể ghi màn hình trong phiên thi [18]. Mô hình này cho thấy giám sát trình duyệt là một nguồn tín hiệu riêng, bổ sung cho webcam và không nên bị đồng nhất với kết quả thị giác máy tính.
 
 ### 3.2.3. ProctorU/Meazure Learning
 
-Nền tảng ProctorU của Meazure Learning cung cấp các mức dịch vụ từ ghi hình và review đến giám sát trực tiếp có can thiệp. Khác biệt chính so với mô hình hoàn toàn tự động là con người tham gia xác minh, theo dõi và xử lý sự cố. Điều này củng cố nguyên tắc của đồ án: thuật toán nên ưu tiên và giải thích bằng chứng; quyết định cuối cùng thuộc về giám thị hoặc đơn vị tổ chức.
-
-Nguồn khảo sát: [ProctorU Proctoring Platform](https://www.meazurelearning.com/exam-technology/proctoru-online-proctoring).
+Nền tảng ProctorU của Meazure Learning cung cấp các mức dịch vụ từ ghi hình để hậu kiểm đến giám sát trực tiếp có can thiệp [19]. Khác biệt chính so với mô hình hoàn toàn tự động là con người tham gia xác minh, theo dõi và xử lý sự cố. Điều này củng cố nguyên tắc của đồ án: thuật toán nên hỗ trợ ưu tiên và giải thích bằng chứng; quyết định cuối cùng thuộc về giám thị hoặc đơn vị tổ chức.
 
 ### 3.2.4. Nhận xét từ nhóm sản phẩm thương mại
 
-Các sản phẩm thương mại cho thấy một hệ thống hoàn chỉnh cần nhiều hơn model phát hiện hành vi. Các năng lực chung gồm policy theo kỳ thi, kiểm tra thiết bị, trình duyệt an toàn, giám sát thời gian thực, review và báo cáo. Tuy nhiên, việc triển khai lại toàn bộ phạm vi của sản phẩm thương mại là không phù hợp với đồ án. Hệ thống đề xuất chọn một tập chức năng có thể kiểm chứng bằng source code, đồng thời công bố rõ giới hạn.
+Các sản phẩm thương mại cho thấy một hệ thống hoàn chỉnh cần nhiều hơn một mô hình phát hiện hành vi. Những năng lực thường gặp gồm chính sách theo kỳ thi, kiểm tra thiết bị, kiểm soát trình duyệt, giám sát thời gian thực, hậu kiểm và báo cáo. Việc tái tạo toàn bộ phạm vi của các sản phẩm thương mại không phù hợp với nguồn lực của đồ án. Vì vậy, hệ thống đề xuất lựa chọn một tập chức năng có thể kiểm chứng bằng mã nguồn và công bố rõ các giới hạn.
 
 ## 3.3. Khảo sát dự án mã nguồn mở đối chứng
 
-Đồ án sử dụng dự án `AarambhTech/exam-cheating-detection` như một nguồn tham khảo và baseline về mặt ý tưởng, không sao chép mã nguồn. Dự án này kết hợp OpenCV, MediaPipe, MTCNN và YOLO để quan sát khuôn mặt, mắt, miệng và vật thể trong webcam.
+Đồ án sử dụng dự án `AarambhTech/exam-cheating-detection` làm nguồn tham khảo và phương pháp cơ sở ở mức ý tưởng, không sao chép mã nguồn [20]. Dự án này kết hợp OpenCV, MediaPipe, MTCNN và YOLO để quan sát khuôn mặt, mắt, miệng và vật thể từ webcam.
 
 Ưu điểm của giải pháp tham khảo là dễ tiếp cận, chạy cục bộ và minh họa được cách ghép nhiều thư viện CV. Qua rà soát mã nguồn và so sánh kỹ thuật, đồ án nhận thấy các hạn chế sau:
 
 - Một số điều kiện được xử lý bằng chuỗi `if-elif`, làm mất thông tin khi nhiều bất thường xảy ra đồng thời.
-- Các ngưỡng dựa trên số frame hoặc khoảng cách pixel phụ thuộc FPS, độ phân giải và khoảng cách camera.
-- Độ mở miệng không được chuẩn hóa đầy đủ; có landmark cần được xác minh lại với API MediaPipe thực tế.
+- Các ngưỡng dựa trên số khung hình hoặc khoảng cách điểm ảnh phụ thuộc vào tốc độ khung hình, độ phân giải và khoảng cách đến camera.
+- Độ mở miệng chưa được chuẩn hóa đầy đủ; một số điểm mốc cần được xác minh lại theo API MediaPipe thực tế.
 - Phần ước lượng hướng nhìn không cho ra yaw/pitch/roll theo mô hình hình học 3D.
-- Không có bước face embedding để kiểm tra lại danh tính trong suốt phiên.
-- Chưa hình thành lớp nền tảng nhiều tổ chức, phân quyền theo kỳ thi, WebSocket dashboard và quy trình evidence/review/report tương đương hệ thống đề xuất.
+- Không có bước tạo véc-tơ đặc trưng khuôn mặt để kiểm tra lại danh tính trong suốt phiên.
+- Chưa có lớp nền tảng nhiều tổ chức, phân quyền theo kỳ thi, bảng điều khiển WebSocket và quy trình quản lý bằng chứng, hậu kiểm, báo cáo tương đương hệ thống đề xuất.
 
-Nguồn dự án: [AarambhTech exam-cheating-detection](https://github.com/AarambhTech/exam-cheating-detection). Phân tích chi tiết từng khác biệt kỹ thuật được lưu trong tài liệu nội bộ `docs/SO_SANH_KY_THUAT_TUAN4.md`.
+Phân tích chi tiết từng khác biệt kỹ thuật được lưu trong tài liệu nội bộ `docs/SO_SANH_KY_THUAT_TUAN4.md` [24].
 
 ## 3.4. So sánh định hướng giải pháp
 
 | Tiêu chí | Sản phẩm thương mại | Dự án mã nguồn mở đối chứng | Hệ thống của đồ án |
 |---|---|---|---|
-| Minh bạch thuật toán | Hạn chế do nền tảng đóng | Có thể đọc source | Source và cấu hình được kiểm soát trong repository |
-| Webcam/CV | Có, tùy sản phẩm và policy | Một số tín hiệu đơn lẻ | Bảy tín hiệu và pipeline dùng chung |
+| Minh bạch thuật toán | Hạn chế do nền tảng đóng | Có thể đọc mã nguồn | Mã nguồn và cấu hình được quản lý trong kho mã nguồn |
+| Webcam/CV | Có, tùy sản phẩm và chính sách | Một số tín hiệu đơn lẻ | Bảy tín hiệu và chuỗi xử lý dùng chung |
 | Xử lý theo thời gian | Không công bố đầy đủ | Chủ yếu ngưỡng/bộ đếm đơn giản | Debounce, cửa sổ trượt, state machine hai cấp |
-| Xác thực trong phiên | Có thể có, chi tiết tùy sản phẩm | Không có embedding xuyên suốt | Enrollment, liveness cơ bản, re-verification định kỳ |
-| Toàn vẹn trình duyệt | Thường có | Không phải trọng tâm | Extension và integrity score tách khỏi risk CV |
-| Nhiều tổ chức và phân quyền | Có | Không | RBAC, tenant scope và assignment theo kỳ thi |
-| Giám sát thời gian thực | Có | Chủ yếu hiển thị cục bộ | WebSocket dashboard theo kỳ thi |
-| Evidence và review | Có | Báo cáo cơ bản | JSONL, snapshot, incident review, report job |
+| Xác thực trong phiên | Có thể có, chi tiết tùy sản phẩm | Không kiểm tra liên tục bằng véc-tơ đặc trưng | Đăng ký khuôn mặt, kiểm tra sự hiện diện sống cơ bản và xác minh lại định kỳ |
+| Toàn vẹn trình duyệt | Thường có | Không phải trọng tâm | Tiện ích mở rộng và điểm toàn vẹn tách khỏi rủi ro CV |
+| Nhiều tổ chức và phân quyền | Có | Không | RBAC, phạm vi tổ chức và nhiệm vụ theo kỳ thi |
+| Giám sát thời gian thực | Có | Chủ yếu hiển thị cục bộ | Bảng điều khiển WebSocket theo kỳ thi |
+| Bằng chứng và hậu kiểm | Có | Báo cáo cơ bản | JSONL, ảnh chụp, hậu kiểm sự cố và tác vụ báo cáo |
 | Khả năng triển khai quy mô lớn | Sản phẩm hoàn chỉnh | Không đặt mục tiêu | Mức đồ án/triển khai có kiểm soát; còn giới hạn |
-| Khả năng kiểm thử và thay đổi thuật toán | Không kiểm soát source | Có nhưng kiến trúc đơn giản | Interface, config tập trung và test nhiều tầng |
+| Khả năng kiểm thử và thay đổi thuật toán | Không kiểm soát mã nguồn | Có nhưng kiến trúc đơn giản | Giao diện lập trình, cấu hình tập trung và kiểm thử nhiều tầng |
 
-Từ bảng so sánh, đồ án không cạnh tranh về quy mô với nền tảng thương mại. Giá trị chính là một kiến trúc có thể giải thích, kiểm thử và nghiên cứu, đồng thời đi xa hơn script webcam đơn máy bằng lớp nền tảng vận hành.
+Từ bảng so sánh, đồ án không đặt mục tiêu cạnh tranh về quy mô với nền tảng thương mại. Giá trị chính nằm ở kiến trúc có thể giải thích, kiểm thử và phục vụ nghiên cứu, đồng thời mở rộng một chương trình webcam đơn máy bằng lớp nền tảng vận hành.
 
 ## 3.5. Xác định tác nhân của hệ thống
 
@@ -72,13 +66,13 @@ Hệ thống có năm nhóm tác nhân chính:
 
 | Tác nhân | Phạm vi trách nhiệm |
 |---|---|
-| System Admin | Quản lý nền tảng, tổ chức, quota, chính sách sàn, vận hành và nhật ký toàn cục; không mặc nhiên xem evidence |
-| Organization Admin | Quản lý hồ sơ, thành viên, lời mời, policy và audit của một tổ chức |
-| Exam Manager | Tạo kỳ thi; với assignment `owner/manager` có thể cấu hình, phân công và vận hành kỳ thi tương ứng |
-| Proctor | Theo dõi dashboard, xem evidence, review sự cố, kết thúc phiên và xuất báo cáo theo assignment |
+| System Admin | Quản lý nền tảng, tổ chức, hạn mức, chính sách cơ sở, vận hành và nhật ký toàn cục; không mặc nhiên được xem bằng chứng |
+| Organization Admin | Quản lý hồ sơ, thành viên, lời mời, chính sách và nhật ký kiểm toán của một tổ chức |
+| Exam Manager | Tạo kỳ thi; với nhiệm vụ `owner/manager` có thể cấu hình, phân công và vận hành kỳ thi tương ứng |
+| Proctor | Theo dõi bảng điều khiển, xem bằng chứng, hậu kiểm sự cố, kết thúc phiên và xuất báo cáo theo nhiệm vụ được giao |
 | Thí sinh | Xác thực/tham gia đúng kỳ thi, cấp quyền cần thiết và gửi dữ liệu của chính phiên |
 
-Một tài khoản có thể thuộc nhiều tổ chức nhưng chỉ thao tác trong active organization. Quyền trên kỳ thi không suy ra từ role toàn tài khoản mà từ `ExamAssignment` của đúng kỳ thi.
+Một tài khoản có thể thuộc nhiều tổ chức nhưng tại một thời điểm chỉ thao tác trong tổ chức đang hoạt động. Quyền trên kỳ thi không được suy ra từ vai trò chung của tài khoản mà từ `ExamAssignment` của đúng kỳ thi.
 
 ## 3.6. Yêu cầu chức năng
 
@@ -96,50 +90,50 @@ Một tài khoản có thể thuộc nhiều tổ chức nhưng chỉ thao tác 
 
 | Mã | Yêu cầu |
 |---|---|
-| FR-ORG-01 | System Admin quản lý tổ chức, trạng thái, quota phiên đồng thời và retention trong phạm vi được cấp. |
-| FR-ORG-02 | Organization Admin quản lý hồ sơ tổ chức, thành viên, role, invitation và audit log. |
-| FR-ORG-03 | Người dùng thuộc nhiều tổ chức có thể chuyển active organization an toàn. |
-| FR-ORG-04 | Policy hiệu lực phải được resolve theo thứ tự sàn nền tảng → tổ chức → kỳ thi; cấp dưới không được làm yếu yêu cầu bắt buộc. |
-| FR-ORG-05 | System Admin chỉ đọc evidence khi có quyền ngoại lệ được phê duyệt, đúng tổ chức, còn hạn và chỉ đọc. |
+| FR-ORG-01 | System Admin quản lý tổ chức, trạng thái, hạn mức phiên đồng thời và thời hạn lưu trữ trong phạm vi được cấp. |
+| FR-ORG-02 | Organization Admin quản lý hồ sơ tổ chức, thành viên, vai trò, lời mời và nhật ký kiểm toán. |
+| FR-ORG-03 | Người dùng thuộc nhiều tổ chức có thể chuyển tổ chức đang hoạt động một cách an toàn. |
+| FR-ORG-04 | Chính sách hiệu lực phải được xác định theo thứ tự chính sách cơ sở của nền tảng → tổ chức → kỳ thi; cấp dưới không được làm yếu yêu cầu bắt buộc. |
+| FR-ORG-05 | System Admin chỉ được đọc bằng chứng khi có quyền ngoại lệ đã được phê duyệt, thuộc đúng tổ chức, còn hiệu lực và chỉ cho phép đọc. |
 
 ### 3.6.3. Quản lý kỳ thi
 
 | Mã | Yêu cầu |
 |---|---|
 | FR-EXAM-01 | Exam Manager tạo kỳ thi và trở thành owner của kỳ thi đó. |
-| FR-EXAM-02 | Kỳ thi hỗ trợ lifecycle `draft`, `scheduled`, `open`, `closed`, `archived` và chỉ cho phép transition hợp lệ. |
+| FR-EXAM-02 | Kỳ thi hỗ trợ vòng đời `draft`, `scheduled`, `open`, `closed`, `archived` và chỉ cho phép chuyển trạng thái hợp lệ. |
 | FR-EXAM-03 | Mã tham gia phải có thời hạn, có thể xoay và không tự thay đổi lifecycle ngoài ý muốn. |
-| FR-EXAM-04 | Owner/manager phân công `owner`, `manager`, `proctor` với trạng thái và thời hạn. |
-| FR-EXAM-05 | Hành động trên giao diện và backend phải dựa trên capability của từng kỳ thi. |
-| FR-EXAM-06 | Cập nhật kỳ thi phải hỗ trợ optimistic locking để phát hiện chỉnh sửa đồng thời. |
-| FR-EXAM-07 | Hệ thống cung cấp readiness checklist từ lịch, policy, mã tham gia, nhân sự và quota. |
+| FR-EXAM-04 | Người sở hữu hoặc quản lý phân công `owner`, `manager`, `proctor` với trạng thái và thời hạn cụ thể. |
+| FR-EXAM-05 | Hành động trên giao diện và máy chủ phải dựa trên năng lực được cấp trong từng kỳ thi. |
+| FR-EXAM-06 | Cập nhật kỳ thi phải hỗ trợ khóa lạc quan để phát hiện chỉnh sửa đồng thời. |
+| FR-EXAM-07 | Hệ thống cung cấp danh sách kiểm tra mức độ sẵn sàng dựa trên lịch, chính sách, mã tham gia, nhân sự và hạn mức. |
 
 ### 3.6.4. Tham gia và giám sát phiên thi
 
 | Mã | Yêu cầu |
 |---|---|
-| FR-SESSION-01 | Thí sinh chỉ tham gia kỳ thi đang cho phép join, bằng mã còn hạn và policy đã resolve. |
-| FR-SESSION-02 | Extension kiểm tra phiên bản, consent và quyền camera/microphone/screen share theo policy trước khi monitor. |
-| FR-CV-01 | Desktop client xử lý webcam thành đủ bảy `SignalResult` theo interface chung. |
-| FR-CV-02 | Enrollment thu nhiều frame, yêu cầu liveness cơ bản nếu được cấu hình và tạo embedding tham chiếu. |
-| FR-CV-03 | Mỗi tín hiệu phải ổn định dữ liệu theo thời gian trước khi thay đổi state. |
-| FR-CV-04 | Risk Fusion Engine tính risk score từ cấu hình, áp dụng hysteresis cấp phiên và chỉ sinh event ở cạnh lên. |
-| FR-BROWSER-01 | Extension ghi nhận focus/tab, fullscreen, clipboard, camera, microphone, screen share và trạng thái monitor. |
-| FR-BROWSER-02 | Backend tự xác định severity và integrity từ browser event theo policy, không tin điểm client tự khai báo. |
+| FR-SESSION-01 | Thí sinh chỉ được tham gia kỳ thi đang mở, bằng mã còn hạn và với chính sách hiệu lực đã được xác định. |
+| FR-SESSION-02 | Tiện ích mở rộng kiểm tra phiên bản, sự đồng ý và quyền camera/microphone/chia sẻ màn hình theo chính sách trước khi giám sát. |
+| FR-CV-01 | Ứng dụng máy tính để bàn xử lý webcam thành đủ bảy `SignalResult` theo giao diện chung. |
+| FR-CV-02 | Bước đăng ký thu thập nhiều khung hình, yêu cầu kiểm tra sự hiện diện sống cơ bản nếu được cấu hình và tạo véc-tơ tham chiếu. |
+| FR-CV-03 | Mỗi tín hiệu phải ổn định dữ liệu theo thời gian trước khi thay đổi trạng thái. |
+| FR-CV-04 | Bộ tổng hợp rủi ro tính `risk_score` từ cấu hình, áp dụng vùng trễ cấp phiên và chỉ sinh sự kiện tại cạnh chuyển vào cảnh báo. |
+| FR-BROWSER-01 | Tiện ích mở rộng ghi nhận trạng thái tập trung/chuyển thẻ, toàn màn hình, bảng tạm, camera, microphone, chia sẻ màn hình và trạng thái giám sát. |
+| FR-BROWSER-02 | Máy chủ tự xác định mức nghiêm trọng và điểm toàn vẹn từ sự kiện trình duyệt theo chính sách, không tin điểm do máy khách tự khai báo. |
 | FR-SESSION-03 | Hệ thống hỗ trợ heartbeat, trạng thái `pending/active/disconnected/ended` và lý do mất kết nối. |
 
-### 3.6.5. Dashboard, evidence và báo cáo
+### 3.6.5. Bảng điều khiển, bằng chứng và báo cáo
 
 | Mã | Yêu cầu |
 |---|---|
 | FR-RT-01 | Dashboard nhận cập nhật phiên theo thời gian thực qua WebSocket trong đúng phạm vi kỳ thi. |
-| FR-RT-02 | Backend kiểm tra schema, đủ bảy tín hiệu, thời gian, risk/state/severity và contribution trước khi chấp nhận dữ liệu CV. |
-| FR-EVID-01 | Hệ thống lưu metadata, signal, transition, risk timeline, browser event, violation và snapshot theo phiên. |
-| FR-EVID-02 | Snapshot phải được giới hạn định dạng/kích thước, kiểm tra nội dung và lưu bằng tên do server sinh. |
-| FR-REVIEW-01 | Giám thị có thể ghi trạng thái và ghi chú review mà không sửa sự kiện máy gốc. |
-| FR-REPORT-01 | Hệ thống sinh báo cáo HTML/PDF từ dữ liệu phiên, kể cả khi một phần log bị thiếu. |
-| FR-REPORT-02 | Report job chạy nền và cho biết trạng thái xử lý/lỗi/kết quả. |
-| FR-RET-01 | Tác vụ retention hỗ trợ dry-run trước khi xóa/ẩn danh dữ liệu hết hạn và phải ghi audit. |
+| FR-RT-02 | Máy chủ kiểm tra lược đồ, sự hiện diện của đủ bảy tín hiệu, thời gian, rủi ro, trạng thái, mức nghiêm trọng và mức đóng góp trước khi chấp nhận dữ liệu CV. |
+| FR-EVID-01 | Hệ thống lưu siêu dữ liệu, tín hiệu, chuyển trạng thái, diễn biến điểm rủi ro, sự kiện trình duyệt, vi phạm và ảnh chụp theo phiên. |
+| FR-EVID-02 | Ảnh chụp phải được giới hạn định dạng và kích thước, kiểm tra nội dung và lưu bằng tên do máy chủ sinh. |
+| FR-REVIEW-01 | Giám thị có thể ghi trạng thái và nhận xét hậu kiểm mà không sửa sự kiện máy gốc. |
+| FR-REPORT-01 | Hệ thống sinh báo cáo HTML/PDF từ dữ liệu phiên, kể cả khi thiếu một phần nhật ký. |
+| FR-REPORT-02 | Tác vụ báo cáo chạy nền và cho biết trạng thái xử lý, lỗi hoặc kết quả. |
+| FR-RET-01 | Tác vụ lưu trữ hỗ trợ chế độ chạy thử trước khi xóa hoặc ẩn danh dữ liệu hết hạn và phải ghi nhật ký kiểm toán. |
 
 ## 3.7. Yêu cầu phi chức năng
 
@@ -150,7 +144,7 @@ Một tài khoản có thể thuộc nhiều tổ chức nhưng chỉ thao tác 
 | NFR-SEC-03 | Bảo mật | Message, ảnh và metadata từ client phải được coi là đầu vào không tin cậy và được kiểm tra chặt. |
 | NFR-SEC-04 | Bảo mật | Giao diện phải hạn chế XSS, clickjacking, MIME sniffing và rò rỉ referrer bằng CSP/security header phù hợp. |
 | NFR-PRIV-01 | Riêng tư | Không truyền video liên tục; chỉ gửi telemetry theo lô và snapshot tại sự kiện cần bằng chứng. |
-| NFR-PRIV-02 | Riêng tư | Không lưu access token/refresh token Google; chỉ lưu claim OIDC tối thiểu và token dạng hash khi có thể. |
+| NFR-PRIV-02 | Riêng tư | Không lưu mã truy cập/mã làm mới của Google; chỉ lưu thuộc tính OIDC tối thiểu và dạng băm của mã xác thực khi có thể. |
 | NFR-REL-01 | Tin cậy | Một detector lỗi tạm thời không được làm crash toàn bộ phiên CV. |
 | NFR-REL-02 | Tin cậy | Client mất mạng phải được đánh dấu disconnected; desktop CV vẫn có khả năng ghi log/báo cáo cục bộ. |
 | NFR-PERF-01 | Hiệu năng | Detector nền dùng chung chỉ chạy một lần cho mỗi frame; YOLO được throttle theo thời gian. |
@@ -165,31 +159,31 @@ Một tài khoản có thể thuộc nhiều tổ chức nhưng chỉ thao tác 
 
 Các ràng buộc chính của đồ án gồm:
 
-- Model CV nền là pretrained; tài nguyên không cho phép huấn luyện toàn bộ model từ đầu.
-- Camera intrinsic không được hiệu chuẩn riêng cho mọi thiết bị, vì vậy PnP sử dụng xấp xỉ camera matrix.
-- Desktop CV và browser extension là hai nhánh client; native bridge hợp nhất hoàn toàn hai nhánh trong cùng session chưa thuộc phiên bản hiện tại.
+- Các mô hình CV nền đã được huấn luyện trước; nguồn lực của đồ án không cho phép huấn luyện toàn bộ mô hình từ đầu.
+- Tham số nội tại của camera không được hiệu chuẩn riêng cho mọi thiết bị, vì vậy PnP sử dụng ma trận camera xấp xỉ.
+- Ứng dụng CV và tiện ích mở rộng là hai nhánh phía máy khách; cầu nối native messaging để hợp nhất hoàn toàn hai nhánh trong cùng một phiên chưa thuộc phiên bản hiện tại.
 - Connection manager WebSocket hoạt động in-process khi không cấu hình Redis; triển khai nhiều worker phải bật Redis lease/pub-sub như cấu hình Docker Compose hoặc dùng message broker tương đương.
-- Dữ liệu sinh tổng hợp dùng để kiểm thử dashboard/report không thay thế bộ video thật trong đánh giá accuracy.
-- Bộ 25 video, ground truth và artifact đánh giá nằm ở môi trường thực nghiệm khác, không nằm trong repository bàn giao hiện tại.
-- Kết quả tự động chỉ là chỉ báo để review, không phải kết luận kỷ luật.
+- Dữ liệu tổng hợp dùng để kiểm thử bảng điều khiển và báo cáo không thay thế video thật trong đánh giá độ chính xác.
+- Bộ 25 video, nhãn tham chiếu và tệp kết quả đánh giá nằm ở môi trường thực nghiệm khác, không có trong kho mã nguồn bàn giao hiện tại.
+- Kết quả tự động chỉ là chỉ báo phục vụ hậu kiểm, không phải kết luận kỷ luật.
 
 ## 3.9. Tiêu chí nghiệm thu và truy vết
 
-Các yêu cầu được coi là hoàn thành khi có implementation và bằng chứng kiểm tra tương ứng. Bảng 3.1 tóm tắt tuyến truy vết ở cấp nhóm.
+Các yêu cầu được coi là hoàn thành khi có phần cài đặt và bằng chứng kiểm tra tương ứng. Bảng 3.1 tóm tắt tuyến truy vết ở cấp nhóm.
 
 | Nhóm yêu cầu | Giải pháp/đóng góp | Thành phần cài đặt | Bằng chứng đánh giá |
 |---|---|---|---|
-| `FR-CV-*`, `NFR-PERF-*` | Pipeline dùng chung và bảy signal | `src/perception`, `src/signals`, `src/orchestrator.py` | Unit test, model smoke test, video integration, benchmark |
-| `FR-CV-04`, `NFR-EXPL-01` | State machine và risk fusion hai cấp | `src/fusion`, `config/fusion.yaml` | Test transition, rising edge, multi-signal, report consistency |
-| `FR-BROWSER-*`, `FR-RT-*` | Extension và WebSocket validation | `extension/`, `backend/routers/ws.py` | Extension test, WebSocket integration và auth test |
-| `FR-AUTH-*`, `FR-ORG-*`, `FR-EXAM-*` | RBAC và tenant/resource scope | `backend/auth.py`, `authorization.py`, `policies.py` | API, MFA, policy, tenant-isolation và assignment test |
-| `FR-EVID-*`, `FR-REPORT-*`, `FR-RET-01` | Dữ liệu lai và chu trình evidence | `session_materializer.py`, `src/reporting`, report worker/retention script | Snapshot, traversal, report và background-job test |
-| Metric CV | Đánh giá trên 25 video | Pipeline/baseline trong môi trường thực nghiệm | Confusion matrix, Precision, Recall, F1 và latency tại Chương 6 |
+| `FR-CV-*`, `NFR-PERF-*` | Chuỗi xử lý dùng chung và bảy tín hiệu | `src/perception`, `src/signals`, `src/orchestrator.py` | Kiểm thử đơn vị, khởi tạo mô hình, tích hợp video và đo hiệu năng |
+| `FR-CV-04`, `NFR-EXPL-01` | Máy trạng thái và tổng hợp rủi ro hai cấp | `src/fusion`, `config/fusion.yaml` | Kiểm thử chuyển trạng thái, cạnh chuyển, nhiều tín hiệu và tính nhất quán báo cáo |
+| `FR-BROWSER-*`, `FR-RT-*` | Tiện ích mở rộng và kiểm tra WebSocket | `extension/`, `backend/routers/ws.py` | Kiểm thử tiện ích, tích hợp WebSocket và xác thực |
+| `FR-AUTH-*`, `FR-ORG-*`, `FR-EXAM-*` | RBAC và phạm vi tổ chức/tài nguyên | `backend/auth.py`, `backend/authorization.py`, `backend/policies.py` | Kiểm thử API, MFA, chính sách, cô lập tổ chức và nhiệm vụ |
+| `FR-EVID-*`, `FR-REPORT-*`, `FR-RET-01` | Dữ liệu lai và vòng đời bằng chứng | `backend/session_materializer.py`, `src/reporting`, `scripts/report_worker.py`, `scripts/cleanup_retention.py` | Kiểm thử ảnh chụp, đường dẫn, báo cáo và tác vụ nền |
+| Chỉ số CV | Đánh giá trên 25 video | Chuỗi xử lý/phương pháp cơ sở trong môi trường thực nghiệm | Ma trận nhầm lẫn, Precision, Recall, F1-score và độ trễ tại Chương 6 |
 
-Chi tiết giải pháp được trình bày trong Chương 4, implementation trong Chương 5 và kết quả trong Chương 6.
+Chi tiết giải pháp được trình bày trong Chương 4, quá trình cài đặt trong Chương 5 và kết quả đánh giá trong Chương 6.
 
 ## 3.10. Kết chương
 
-Chương 3 đã chỉ ra rằng nền tảng thương mại có quy trình vận hành hoàn chỉnh nhưng khó kiểm chứng thuật toán, trong khi dự án mã nguồn mở dễ khảo sát nhưng thường thiếu xử lý theo thời gian, phân quyền và chu trình evidence. Từ đó, chương đã xác định năm tác nhân, các yêu cầu chức năng theo từng miền, yêu cầu phi chức năng, ràng buộc và tuyến truy vết.
+Chương 3 cho thấy các nền tảng thương mại có quy trình vận hành tương đối hoàn chỉnh nhưng khó kiểm chứng thuật toán, trong khi dự án mã nguồn mở thuận lợi cho khảo sát nhưng thường thiếu xử lý theo thời gian, phân quyền và vòng đời quản lý bằng chứng. Từ kết quả khảo sát, chương đã xác định năm tác nhân, các yêu cầu chức năng theo từng miền, yêu cầu phi chức năng, ràng buộc và tuyến truy vết.
 
 Chương 4 tiếp theo trình bày các giải pháp và đóng góp được thiết kế để đáp ứng những yêu cầu này, trong đó mỗi đóng góp được phân tích theo bài toán, giải pháp và kết quả đạt được.

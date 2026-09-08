@@ -21,8 +21,8 @@
 <ellipse cx="790" cy="690" rx="145" ry="42" fill="white" stroke="#8b5cf6" stroke-width="2"/><text x="790" y="678" text-anchor="middle" class="u">Cấp quyền, kiểm tra thiết bị</text><text x="790" y="698" text-anchor="middle" class="u">và nhận trạng thái</text><text x="790" y="718" text-anchor="middle" class="u">đang được giám sát</text>
 <ellipse cx="625" cy="790" rx="170" ry="36" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/><text x="625" y="795" text-anchor="middle" class="u">Ghi nhận CV signal và browser event</text>
 <!-- associations -->
-<path d="M155 190L315 165M155 205L645 165" class="l"/><path d="M155 430L315 290M155 440L645 290M155 455L315 420" class="l"/><path d="M155 720L315 420M155 735L645 420M155 750L315 550" class="l"/>
-<path d="M1110 285L935 550M1110 300L935 550M1110 315L935 550" class="l"/><path d="M1110 675L605 690M1110 690L935 690M1110 705L795 790" class="l"/>
+<path d="M155 190L315 165M155 205L645 165" class="l"/><path d="M155 430L315 290M155 445L645 290" class="l"/><path d="M155 720L315 420M155 735L645 420M155 750L315 550" class="l"/>
+<path d="M1110 285L935 550M1110 310L605 550" class="l"/><path d="M1110 675L605 690M1110 690L935 690M1110 705L795 790" class="l"/>
 <path d="M605 550L645 550" class="d"/><path d="M790 732L705 775M460 732L555 775" class="d"/>
 <text x="650" y="870" text-anchor="middle" class="u">Quyền truy cập thực tế còn được giới hạn theo tổ chức, kỳ thi và capability trên tài nguyên.</text>
 </svg>

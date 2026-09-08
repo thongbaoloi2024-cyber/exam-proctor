@@ -1,0 +1,7 @@
+﻿"Đóng góp","Nhóm yêu cầu chính"
+"Kiến trúc ứng dụng CV–tiện ích–máy chủ","FR-SESSION-*, FR-RT-*, NFR-PRIV-*, NFR-PORT-01"
+"Tầng nhận thức và bảy tín hiệu","FR-CV-01..03, NFR-PERF-01, NFR-REL-01"
+"Bộ tổng hợp rủi ro hai cấp","FR-CV-04, NFR-MAIN-01, NFR-EXPL-01"
+"RBAC và chính sách phân tầng","FR-AUTH-*, FR-ORG-*, FR-EXAM-*, NFR-SEC-01"
+"WebSocket và kiểm chứng dữ liệu giám sát","FR-RT-*, FR-BROWSER-02, NFR-SEC-02..03, NFR-PERF-02"
+"Bằng chứng, hậu kiểm, báo cáo và lưu trữ","FR-EVID-*, FR-REVIEW-01, FR-REPORT-*, FR-RET-01"

@@ -1,0 +1,7 @@
+﻿"Phân hệ","Kết quả chính","Hạn chế cần công bố"
+"Desktop CV","Đủ vòng đời, bảy signal, fusion, local log và report","FPS và độ ổn định phụ thuộc thiết bị/camera"
+"Browser Extension","Có setup, policy, consent, preflight và browser event","Node không mô phỏng đầy đủ browser permission/service worker"
+"Backend nền tảng","Đủ auth, tenant/RBAC, exam/session, evidence, review, report","Chưa thay thế pentest và kiểm thử tải production"
+"Dashboard realtime","Có initial state, ticket WebSocket và fan-out cập nhật","Cần thử nghiệm nhiều proctor/nhiều process trên hạ tầng thật"
+"Lưu trữ và báo cáo","SQL current state kết hợp JSONL/snapshot, report chạy nền","Cần đo dung lượng, retention và khôi phục dữ liệu dài hạn"
+"Khả năng truy vết","Có request/audit, session ID, event ID, review và report job","Cần chuẩn hóa observability tập trung khi triển khai phân tán"

@@ -1,0 +1,31 @@
+%%{init: {"theme": "neutral", "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 35, "rankSpacing": 55}}}%%
+flowchart TB
+    F["Khung hình BGR"] --> PRE["Tiền xử lý<br/>resize, BGR → RGB"]
+
+    subgraph P["Tầng nhận thức dùng chung"]
+        PRE --> MTCNN["MTCNN<br/>face boxes và số khuôn mặt"]
+        PRE --> MESH["MediaPipe FaceMesh<br/>landmark khuôn mặt"]
+        PRE --> YOLO["YOLOv8n-COCO<br/>cell phone, book<br/>throttle theo thời gian"]
+        MTCNN --> PR["PerceptionResult"]
+        MESH --> PR
+        YOLO --> PR
+    end
+
+    subgraph S["Bảy bộ trích xuất tín hiệu"]
+        PR --> S1["FACE_PRESENCE"]
+        PR --> S2["MULTI_FACE"]
+        PR --> S3["EYE_STATE"]
+        PR --> S4["MOUTH_STATE"]
+        PR --> S5["OBJECT_PRESENCE"]
+        PR --> S6["HEAD_POSE"]
+        PR --> S7["IDENTITY"]
+    end
+
+    S1 --> SR["Danh sách SignalResult<br/>name, value, confidence, threshold, metadata"]
+    S2 --> SR
+    S3 --> SR
+    S4 --> SR
+    S5 --> SR
+    S6 --> SR
+    S7 --> SR
+    SR --> RF["Risk Fusion Engine"]

@@ -1,0 +1,11 @@
+%%{init: {"theme": "neutral", "state": {"useMaxWidth": true}}}%%
+stateDiagram-v2
+    direction LR
+    [*] --> NORMAL
+    NORMAL --> SUSPICIOUS: r ≥ r_enter_susp
+    SUSPICIOUS --> NORMAL: r ≤ r_exit_susp
+    SUSPICIOUS --> ALERT: r ≥ r_enter_alert
+    ALERT --> SUSPICIOUS: r ≤ r_exit_alert
+    NORMAL --> NORMAL: chưa đủ bằng chứng
+    SUSPICIOUS --> SUSPICIOUS: trong vùng đệm
+    ALERT --> ALERT: bằng chứng vẫn còn
