@@ -25,7 +25,7 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 echo Starting backend at http://127.0.0.1:8000 ...
-".venv\Scripts\python.exe" -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+".venv\Scripts\python.exe" -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --env-file .env
 set "EXIT_CODE=%ERRORLEVEL%"
 
 exit /b %EXIT_CODE%

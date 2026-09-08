@@ -74,7 +74,7 @@ function renderPolicy(policy) {
   }));
   const driftSeconds = Math.abs(Date.now() - Date.parse(policy.server_time)) / 1000;
   setPreflight("version", `Extension ${DATT.VERSION} (yêu cầu ≥ ${policy.min_extension_version})`, DATT.compareVersions(DATT.VERSION, policy.min_extension_version) >= 0 ? "ok" : "error", "Cập nhật extension nếu chưa đạt phiên bản tối thiểu");
-  setPreflight("network", "Kết nối backend", "ok");
+  setPreflight("network", "Kết nối máy chủ", "ok");
   setPreflight("clock", "Đồng hồ thiết bị", driftSeconds <= 120 ? "ok" : "error", driftSeconds > 120 ? "Bật đồng bộ ngày giờ tự động" : "");
   setPreflight("permissions", "Quyền truy cập trang thi", "pending", "Sẽ yêu cầu khi tham gia");
   setPreflight("media", "Camera và microphone", policy.require_camera || policy.require_microphone ? "pending" : "ok", "Sẽ kiểm tra khi tham gia");
