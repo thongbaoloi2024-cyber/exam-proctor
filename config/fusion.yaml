@@ -86,7 +86,7 @@ signals:
 # theo dung quyet dinh da chot o docs/KE_HOACH_CHI_TIET_TUAN12.md muc 1
 # ("khong doi ten file, chi la file cau hinh trung tam duy nhat").
 camera:
-  source: 0
+  source: "demo/demo_2.mp4"
   window_name: "He thong Giam sat Thi bang CV"
 
 paths:
@@ -114,19 +114,19 @@ report:
 # hoac chi muon chay demo cuc bo don gian. Bat len (true) khi muon giam thi
 # theo doi qua dashboard.
 backend:
-  enabled: false
+  enabled: true
   base_url: "http://localhost:8000"
   ws_url: "ws://localhost:8000"
   # Gui telemetry theo lo thay vi commit DB moi frame.
   telemetry_interval_sec: 1.0
 
 session:
-  T_enter: 5.0
+  T_enter: 4.0
   T_exit: 2.5
   # Nguong severity (Tuan 10) - suy ra tu risk_score tai thoi diem sinh
   # ViolationEvent. severity_medium_min = T_enter (vua vuot nguong phien la
   # it nhat MEDIUM); severity_high_min = 2 x T_enter (VD 2 signal trong so
   # cao cung ALERT, hoac 1 signal trong so cao ALERT + nhieu signal phu) -
   # xem giai thich chi tiet o docstring RiskFusionEngine._severity.
-  severity_medium_min: 5.0
-  severity_high_min: 10.0
+  severity_medium_min: 4.0
+  severity_high_min: 8.0

@@ -181,6 +181,35 @@ class RiskFusionEngine:
         cv2.imwrite(str(path), frame_bgr)
         return str(path)
 
+    def _build_event(
+        self,
+        risk_score: float,
+        now: float,
+        frame_bgr: Optional[np.ndarray],
+        capture_source: str,
+        minimum_severity: Optional[str] = None,
+    ) -> ViolationEvent:
+        contributing = self._contributing_signals()
+        event_id = str(uuid.uuid4())
+        severity = self._severity(risk_score)
+        if minimum_severity == "MEDIUM" and severity == "LOW":
+            severity = "MEDIUM"
+        return ViolationEvent(
+            event_id=event_id,
+            session_id=self._session_id,
+            video_time_sec=round(now - self._session_start_ts, 3),
+            timestamp=datetime.fromtimestamp(now, tz=timezone.utc).astimezone().isoformat(timespec="milliseconds"),
+            risk_score=round(risk_score, 3),
+            severity=severity,
+            primary_violation=self._primary_violation(contributing),
+            contributing_signals=contributing,
+            snapshot_path=self._save_snapshot(event_id, frame_bgr),
+            metadata={
+                "fusion_config_version": self._fusion_config_version,
+                "capture_source": capture_source,
+            },
+        )
+
     def update(
         self,
         results: Iterable[SignalResult],
@@ -188,13 +217,13 @@ class RiskFusionEngine:
     ) -> Optional[ViolationEvent]:
         """Nạp `SignalResult` của 1 frame (cập nhật TOÀN BỘ per-signal state
         machine bên trong `tracker`), tính `risk_score`, cập nhật hysteresis
-        phiên, và trả `ViolationEvent` nếu đây là rising edge SESSION_NORMAL
-        -> SESSION_ALERT (None nếu không có event nào sinh ra)."""
+        phiên, và trả `ViolationEvent` khi phiên vào ALERT hoặc một signal
+        vừa vào ALERT (None nếu không có event nào sinh ra)."""
         results = list(results)
         for result in results:
             self._last_results[result.signal_name] = result
 
-        self._tracker.update(results)
+        signal_transitions = self._tracker.update(results)
         risk_score = self._risk_score()
         self._last_risk_score = risk_score
 
@@ -213,29 +242,29 @@ class RiskFusionEngine:
                 session_state=session_state.value,
             )
 
-        if transition is None or transition.to_state != SessionState.SESSION_ALERT.value:
-            return None
+        if transition is not None and transition.to_state == SessionState.SESSION_ALERT.value:
+            # Session-level event remains the authoritative aggregate alert.
+            return self._build_event(
+                risk_score=risk_score,
+                now=now,
+                frame_bgr=frame_bgr,
+                capture_source="session_alert",
+            )
 
-        contributing = self._contributing_signals()
-        event_id = str(uuid.uuid4())
-        event = ViolationEvent(
-            event_id=event_id,
-            session_id=self._session_id,
-            video_time_sec=round(now - self._session_start_ts, 3),
-            # fromtimestamp(..., tz=utc).astimezone() thay vi fromtimestamp(now)
-            # tran (naive) roi moi .astimezone(): ban naive goi thang localtime()
-            # cua he dieu hanh tren epoch truyen vao, tren Windows ham nay bao
-            # loi OSError voi epoch nho/gan 1970 (VD cac gia tri float nho dung
-            # trong unit test) sau khi tru lech mui gio am - duong tren tranh
-            # goi localtime() truc tiep tren epoch, chi convert qua object
-            # datetime co san nen khong con van de nay (van dung timestamp
-            # epoch that tu time.time() o production).
-            timestamp=datetime.fromtimestamp(now, tz=timezone.utc).astimezone().isoformat(timespec="milliseconds"),
-            risk_score=round(risk_score, 3),
-            severity=self._severity(risk_score),
-            primary_violation=self._primary_violation(contributing),
-            contributing_signals=contributing,
-            snapshot_path=self._save_snapshot(event_id, frame_bgr),
-            metadata={"fusion_config_version": self._fusion_config_version},
+        # Preserve evidence when one signal is clearly ALERT but the
+        # aggregate score has not reached T_enter yet. Multiple signals that
+        # enter ALERT in the same frame are grouped into one snapshot/event.
+        signal_alert_transition = any(
+            item.scope == "signal" and item.to_state == SignalState.ALERT.value
+            for item in signal_transitions
         )
-        return event
+        if signal_alert_transition and session_state is SessionState.SESSION_NORMAL:
+            return self._build_event(
+                risk_score=risk_score,
+                now=now,
+                frame_bgr=frame_bgr,
+                capture_source="signal_alert",
+                minimum_severity="MEDIUM",
+            )
+
+        return None

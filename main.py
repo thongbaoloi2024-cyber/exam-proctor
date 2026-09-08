@@ -37,6 +37,27 @@ def _mouse_callback(event: int, x: int, y: int, flags: int, controller: AppContr
     controller.handle_mouse(event, x, y)
 
 
+def _read_frame_for_state(
+    source: FrameSource,
+    state: AppState,
+    is_file_source: bool,
+    paused_frame,
+):
+    """Read the next frame, keeping a file source still while the user logs in.
+
+    A webcam must keep refreshing on the IDLE screen, but a demo clip should
+    not be consumed while the candidate is typing their name and join code.
+    ``paused_frame`` is intentionally passed in and returned so this behavior
+    is easy to exercise without opening an OpenCV window.
+    """
+    if is_file_source and state == AppState.IDLE:
+        if paused_frame is None:
+            paused_frame = source.read()
+        return paused_frame, paused_frame
+
+    return source.read(), None
+
+
 def main() -> None:
     config = AppConfig.from_yaml(FUSION_CONFIG_PATH)
     signals = build_signals_from_config(FUSION_CONFIG_PATH)
@@ -49,8 +70,12 @@ def main() -> None:
     print(f"Mo webcam (source={config.camera.source})... bam 'Bat dau' de vao phien giam sat.")
     try:
         with FrameSource(source=config.camera.source) as source:
+            is_file_source = isinstance(config.camera.source, str)
+            paused_frame = None
             while True:
-                raw_frame = source.read()
+                raw_frame, paused_frame = _read_frame_for_state(
+                    source, controller.state, is_file_source, paused_frame,
+                )
                 if raw_frame is None:
                     print("Khong doc duoc frame tu webcam - dung lai.")
                     break
@@ -58,7 +83,7 @@ def main() -> None:
                 display = controller.step(raw_frame)
                 cv2.imshow(config.camera.window_name, display)
 
-                key = cv2.waitKey(1) & 0xFF
+                key = cv2.waitKeyEx(1)
                 controller.handle_key(key)
 
                 if controller.state == AppState.ENDED:
