@@ -240,6 +240,7 @@ function appendViolationRow(tbody, violation) {
     snapshotCell.appendChild(empty);
   }
 
+  const noteCell = document.createElement("td");
   const reviewCell = document.createElement("td");
   const eventId = String(violation.event_id || "");
   if (eventId) {
@@ -258,18 +259,25 @@ function appendViolationRow(tbody, violation) {
     }));
     reviewStatus.value = current?.status || "new";
     const note = document.createElement("input");
+    note.type = "text";
     note.placeholder = "Ghi chú";
     note.value = current?.note || "";
-    const save = document.createElement("button");
-    save.type = "button";
-    save.textContent = "Lưu";
-    save.addEventListener("click", () => saveIncidentReview(eventId, reviewStatus.value, note.value));
-    reviewCell.append(reviewStatus, note, save);
+    noteCell.appendChild(note);
+    reviewStatus.addEventListener("change", async () => {
+      reviewStatus.disabled = true;
+      try {
+        await saveIncidentReview(eventId, reviewStatus.value, note.value);
+      } finally {
+        reviewStatus.disabled = false;
+      }
+    });
+    reviewCell.appendChild(reviewStatus);
   } else {
+    noteCell.textContent = "–";
     reviewCell.textContent = "–";
   }
 
-  row.append(timeCell, severityCell, typeCell, snapshotCell, reviewCell);
+  row.append(timeCell, severityCell, typeCell, snapshotCell, noteCell, reviewCell);
   tbody.appendChild(row);
 }
 
@@ -285,7 +293,7 @@ function renderViolations() {
   tbody.replaceChildren();
   if (!violationData.length) {
     TableUI.hidePagination("violations-pagination");
-    return showTableMessage(tbody, "Không có vi phạm nào được ghi nhận.", 5);
+    return showTableMessage(tbody, "Không có vi phạm nào được ghi nhận.", 6);
   }
   const sorted = TableUI.sortItems(violationData, violationTableState, VIOLATION_SORT_COLUMNS);
   const pageData = TableUI.paginate(sorted, violationTableState);

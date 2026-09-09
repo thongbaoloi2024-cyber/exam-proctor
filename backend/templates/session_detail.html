@@ -1,19 +1,24 @@
-{% extends "base.html" %}
-{% block title %}Chi tiết phiên · Giám Thị Số{% endblock %}
-{% block container_class %}workspace-container{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}Chi tiết phiên · Giám Thị Số{%
+endblock %} {% block container_class %}workspace-container{% endblock %} {%
+block content %}
 <section
   class="card"
   id="session-detail-root"
   data-exam-id="{{ exam_id }}"
   data-session-id="{{ session_id }}"
 >
-  <p><a href="/ui/exams/{{ exam_id }}/detail">&larr; Quay lại bảng giám sát</a></p>
+  <p>
+    <a href="/ui/exams/{{ exam_id }}/detail">&larr; Quay lại bảng giám sát</a>
+  </p>
   <h1 id="student-name-heading">Chi tiết phiên</h1>
   <p id="session-summary" class="muted">Đang tải...</p>
   <div class="report-job-actions">
-    <button type="button" id="report-html-button" class="secondary">Tạo báo cáo HTML</button>
-    <button type="button" id="report-pdf-button" class="secondary">Tạo báo cáo PDF</button>
+    <button type="button" id="report-html-button" class="secondary">
+      Tạo báo cáo HTML
+    </button>
+    <button type="button" id="report-pdf-button" class="secondary">
+      Tạo báo cáo PDF
+    </button>
     <span id="report-job-status" class="muted" aria-live="polite"></span>
   </div>
   <h2>Điểm rủi ro theo thời gian</h2>
@@ -26,38 +31,100 @@
     </div>
   </div>
   <div class="section-heading-row">
-    <div><h2>Dòng thời gian tổng hợp</h2><p class="muted">Phân tích hình ảnh và sự kiện trình duyệt trên cùng trục thời gian.</p></div>
-    <label>Mức độ<select id="timeline-severity-filter"><option value="">Tất cả</option><option value="HIGH">Nghiêm trọng</option><option value="MEDIUM">Cảnh báo</option><option value="LOW">Thông tin</option></select></label>
+    <div>
+      <h2>Bảng tổng hợp</h2>
+      <p class="muted">
+        Phân tích hình ảnh và sự kiện trình duyệt trên cùng thời gian.
+      </p>
+    </div>
+    <label
+      >Mức độ<select id="timeline-severity-filter">
+        <option value="">Tất cả</option>
+        <option value="HIGH">Nghiêm trọng</option>
+        <option value="MEDIUM">Cảnh báo</option>
+        <option value="LOW">Thông tin</option>
+      </select></label
+    >
   </div>
   <div class="table-scroll">
     <table id="unified-timeline-table" class="data-table workspace-table">
-      <thead><tr><th data-sort-key="time">Thời điểm (s)</th><th data-sort-key="source">Nguồn</th><th data-sort-key="severity" data-sort-default="descending">Mức độ</th><th data-sort-key="type">Sự kiện</th><th data-sort-key="detail">Chi tiết</th></tr></thead>
-      <tbody><tr><td colspan="5" class="muted">Đang tải...</td></tr></tbody>
+      <thead>
+        <tr>
+          <th data-sort-key="time">Thời điểm (s)</th>
+          <th data-sort-key="source">Nguồn</th>
+          <th data-sort-key="severity" data-sort-default="descending">
+            Mức độ
+          </th>
+          <th data-sort-key="type">Sự kiện</th>
+          <th data-sort-key="detail">Chi tiết</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="5" class="muted">Đang tải...</td>
+        </tr>
+      </tbody>
     </table>
   </div>
-  <nav id="unified-timeline-pagination" class="pagination hidden" aria-label="Phân trang dòng thời gian tổng hợp"></nav>
-  <h2>Dòng thời gian vi phạm</h2>
+  <nav
+    id="unified-timeline-pagination"
+    class="pagination hidden"
+    aria-label="Phân trang dòng thời gian tổng hợp"
+  ></nav>
+  <h2>Phát hiện vi phạm</h2>
   <div class="table-scroll">
     <table id="violations-table" class="data-table workspace-table">
-      <thead><tr><th data-sort-key="time">Thời điểm (s)</th><th data-sort-key="severity" data-sort-default="descending">Mức độ</th><th data-sort-key="type">Loại vi phạm chính</th><th>Ảnh chụp</th><th>Duyệt sự cố</th></tr></thead>
+      <thead>
+        <tr>
+          <th data-sort-key="time">Thời điểm (s)</th>
+          <th data-sort-key="severity" data-sort-default="descending">
+            Mức độ
+          </th>
+          <th data-sort-key="type">Loại vi phạm chính</th>
+          <th>Ảnh chụp</th>
+          <th>Ghi chú</th>
+          <th>Duyệt sự cố</th>
+        </tr>
+      </thead>
       <tbody>
-        <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
+        <tr class="loading-row">
+          <td colspan="6">Đang tải...</td>
+        </tr>
       </tbody>
     </table>
   </div>
-  <nav id="violations-pagination" class="pagination hidden" aria-label="Phân trang vi phạm"></nav>
-  <h2>Sự kiện toàn vẹn trình duyệt</h2>
+  <nav
+    id="violations-pagination"
+    class="pagination hidden"
+    aria-label="Phân trang vi phạm"
+  ></nav>
+  <h2>Sự kiện trình duyệt</h2>
   <div class="table-scroll">
     <table id="browser-events-table" class="data-table workspace-table">
-      <thead><tr><th data-sort-key="time">Thời điểm (s)</th><th data-sort-key="severity" data-sort-default="descending">Mức độ</th><th data-sort-key="type">Sự kiện</th><th data-sort-key="detail">Chi tiết</th><th>Ảnh</th></tr></thead>
+      <thead>
+        <tr>
+          <th data-sort-key="time">Thời điểm (s)</th>
+          <th data-sort-key="severity" data-sort-default="descending">
+            Mức độ
+          </th>
+          <th data-sort-key="type">Sự kiện</th>
+          <th data-sort-key="detail">Chi tiết</th>
+          <th>Ảnh</th>
+        </tr>
+      </thead>
       <tbody>
-        <tr class="loading-row"><td colspan="5">Đang tải...</td></tr>
+        <tr class="loading-row">
+          <td colspan="5">Đang tải...</td>
+        </tr>
       </tbody>
     </table>
   </div>
-  <nav id="browser-events-pagination" class="pagination hidden" aria-label="Phân trang sự kiện trình duyệt"></nav>
+  <nav
+    id="browser-events-pagination"
+    class="pagination hidden"
+    aria-label="Phân trang sự kiện trình duyệt"
+  ></nav>
 </section>
-{% endblock %}
-{% block scripts %}
-<script src="/static/session_detail.js?v=20260812-table-sort-1"></script>
+{% endblock %} {% block scripts %}
+<script src="/static/session_detail.js?v=20260909-incident-review-columns-1"></script>
 {% endblock %}

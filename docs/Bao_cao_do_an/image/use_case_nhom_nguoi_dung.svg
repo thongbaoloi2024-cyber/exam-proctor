@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 980">
+<defs><style>.title{font:700 28px Segoe UI,Arial;fill:#0f172a}.sub{font:700 18px Segoe UI,Arial;fill:#4c1d95}.uc{font:14px Segoe UI,Arial;fill:#1e293b}.label{font:700 14px Segoe UI,Arial;fill:#0f172a}.small{font:12px Segoe UI,Arial;fill:#475569}.line{stroke:#64748b;stroke-width:1.7;fill:none}.dep{stroke:#7c3aed;stroke-width:1.5;stroke-dasharray:7 5;fill:none}.actor{stroke:#334155;stroke-width:2.2;fill:none}</style></defs>
+<rect width="1500" height="980" fill="#f8fafc"/>
+<text x="750" y="38" text-anchor="middle" class="title">SƠ ĐỒ USE CASE — NHÓM NGƯỜI DÙNG VÀ CHỨC NĂNG CHI PHỐI</text>
+<rect x="275" y="70" width="950" height="820" rx="24" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="750" y="104" text-anchor="middle" class="sub">HỆ THỐNG GIÁM SÁT THI TRỰC TUYẾN</text>
+<!-- actors -->
+<g transform="translate(120 140)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="label" stroke="none">Quản trị hệ thống</text></g>
+<g transform="translate(105 350)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="label" stroke="none">Quản trị tổ chức</text></g>
+<g transform="translate(120 650)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="label" stroke="none">Quản lý kỳ thi</text></g>
+<g transform="translate(1300 280)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="label" stroke="none">Giám thị</text></g>
+<g transform="translate(1300 650)" class="actor"><circle cx="35" cy="18" r="15"/><path d="M35 33V83M5 53H65M35 83L10 120M35 83L60 120"/><text x="35" y="145" text-anchor="middle" class="label" stroke="none">Thí sinh</text></g>
+<!-- use cases -->
+<g fill="white" stroke="#8b5cf6" stroke-width="2">
+<ellipse cx="520" cy="170" rx="160" ry="42"/><ellipse cx="900" cy="170" rx="160" ry="42"/>
+<ellipse cx="520" cy="300" rx="160" ry="42"/><ellipse cx="900" cy="300" rx="160" ry="42"/>
+<ellipse cx="520" cy="440" rx="160" ry="42"/><ellipse cx="900" cy="440" rx="160" ry="42"/>
+<ellipse cx="520" cy="580" rx="160" ry="42"/><ellipse cx="900" cy="580" rx="160" ry="42"/>
+<ellipse cx="520" cy="720" rx="160" ry="42"/><ellipse cx="900" cy="720" rx="160" ry="42"/>
+<ellipse cx="710" cy="830" rx="190" ry="38" fill="#ede9fe"/>
+</g>
+<g text-anchor="middle" class="uc">
+<text x="520" y="166"><tspan>UC-01 Quản trị nền tảng</tspan><tspan x="520" dy="19">chính sách, tổ chức, nhật ký</tspan></text>
+<text x="900" y="166"><tspan>Xem nhật ký kiểm toán</tspan><tspan x="900" dy="19">và trạng thái nền tảng</tspan></text>
+<text x="520" y="296"><tspan>UC-02 Quản trị tổ chức</tspan><tspan x="520" dy="19">thành viên, quyền, lời mời</tspan></text>
+<text x="900" y="296"><tspan>Cấu hình chính sách</tspan><tspan x="900" dy="19">cấp tổ chức</tspan></text>
+<text x="520" y="436"><tspan>UC-03 Tạo và cấu hình</tspan><tspan x="520" dy="19">kỳ thi</tspan></text>
+<text x="900" y="436"><tspan>UC-04 Kiểm tra sẵn sàng và</tspan><tspan x="900" dy="19">phân công giám thị</tspan></text>
+<text x="520" y="576"><tspan>UC-07 Theo dõi phiên</tspan><tspan x="520" dy="19">thời gian thực</tspan></text>
+<text x="900" y="576"><tspan>UC-08 Hậu kiểm minh chứng</tspan><tspan x="900" dy="19">và ghi chú sự cố</tspan></text>
+<text x="520" y="716"><tspan>UC-05 Tham gia và</tspan><tspan x="520" dy="19">xác thực thí sinh</tspan></text>
+<text x="900" y="716"><tspan>UC-06 Khởi tạo giám sát</tspan><tspan x="900" dy="19">và kiểm tra thiết bị</tspan></text>
+<text x="710" y="826"><tspan>UC-09 Kết thúc phiên</tspan><tspan x="710" dy="18">→ UC-10 Sinh và tải báo cáo</tspan></text>
+</g>
+<!-- actor associations -->
+<path d="M190 190L360 170M190 205L740 170M175 400L360 300M175 415L740 300" class="line"/>
+<path d="M190 700L360 440M190 715L360 580M190 730L360 720" class="line"/>
+<path d="M1300 345L1060 580M1300 365L680 580M1300 720L1060 580M1300 740L1060 720" class="line"/>
+<!-- dependencies -->
+<path d="M680 170L740 170M680 300L740 300M680 440L740 440M680 580L740 580M680 720L740 720M680 760L610 810M900 762L810 810" class="dep"/>
+<text x="750" y="930" text-anchor="middle" class="small">Nét liền: tác nhân thực hiện | Nét đứt: phụ thuộc/bao hàm | Quyền bị giới hạn theo tổ chức, kỳ thi và quyền chức năng.</text>
+</svg>
