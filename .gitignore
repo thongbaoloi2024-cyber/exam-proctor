@@ -64,3 +64,4 @@ backend/tests/*
 !backend/tests/test_report_jobs.py
 !backend/tests/test_system_admin.py
 *.err
+demo/
