@@ -1,0 +1,1069 @@
+% This template is created by SV Bùi Vân Anh, và Thầy Nguyễn Tiến Hòa từ phòng Lab xử lý tín hiệu băng gốc hệ thống 5G. Chúng tôi rất vui nếu được nhắc đến trong lời cảm ơn.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{article} % Tạo một bản báo cáo
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc} % Để sử dụng Tiếng Việt
+\usepackage[fontsize=13pt]{scrextend} % Set fontsize=13pt
+%\usepackage[paperheight=29.7cm,paperwidth=21cm,right=2cm,left=3cm,top=2cm,bottom=2.5cm]{geometry}% Chuẩn A4, căn lề phải, trái, trên, dưới.
+\usepackage[paperheight=29.7cm,paperwidth=21cm,right=2.5cm,left=3.5cm,top=2.5cm,bottom=2.5cm]{geometry}% Chuẩn A4, căn lề phải, trái, trên, dưới.
+\usepackage{parskip}
+\usepackage[vietnamese]{babel}
+\usepackage{caption}
+\usepackage{mathptmx} % Time New Roman
+\DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n}
+\usepackage{graphicx} % Thư viện chèn ảnh
+\usepackage{float} % Set vị trí chèn ảnh
+\usepackage{tikz} % Thư viện tạo khung bìa
+\usetikzlibrary{calc} % Thư viện tikz
+\usepackage{indentfirst} % Thư viện thụt đầu dòng
+\renewcommand{\baselinestretch}{1.5} % Giãn dòng 1.6
+\setlength{\parskip}{6pt} % Spacing after
+\setlength{\parindent}{1cm} % Set khoảng cách thụt đầu dòng mỗi đoạn
+\usepackage{titlesec} % Thư viện để set up các kiểu chữ
+\setcounter{secnumdepth}{4} % 4 Heading
+\titlespacing*{\section}{0pt}{0pt}{30pt} % Heading 1
+\titleformat*{\section}{\fontsize{16pt}{0pt}\selectfont \bfseries \centering}
+
+\titlespacing*{\subsection}{0pt}{10pt}{0pt} % Heading 2
+\titleformat*{\subsection}{\fontsize{14pt}{0pt}\selectfont \bfseries}
+
+\titlespacing*{\subsubsection}{0pt}{10pt}{0pt} % Heading 3
+\titleformat*{\subsubsection}{\fontsize{13pt}{0pt}\selectfont \bfseries \itshape}
+
+\titlespacing*{\paragraph}{0pt}{10pt}{0pt} % Heading 4
+\titleformat*{\paragraph}{\fontsize{13pt}{0pt}\selectfont \itshape}
+
+%\renewcommand{\figurename}{\fontsize{12pt}{0pt}\selectfont \bfseries Hình}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+\usepackage[font=bf]{caption}
+\captionsetup[figure]{labelsep=space}
+
+\renewcommand{\tablename}{\fontsize{12pt}{0pt}\selectfont \bfseries Table}
+\renewcommand{\thetable}{\thesection.\arabic{table}}
+\captionsetup[table]{labelsep=space}
+
+\usepackage{tabularx}
+\newcolumntype{s}{>{\hsize=.3\hsize}X}
+\newcolumntype{y}{>{\hsize=.4\hsize}X}
+\newcolumntype{d}{>{\hsize=.1\hsize}X}
+\newcolumntype{a}{>{\hsize=1.1\hsize}X}
+\newcolumntype{g}{>{\hsize=5\hsize}X}
+\renewcommand{\tabularxcolumn}[1]{>{\small}m{#1}}
+
+\renewcommand{\theequation}{\thesection.\arabic{equation}} % Thay đổi đánh số phương trình mặc định
+\newtheorem{theorem}{Định lý}[section]
+\newtheorem{defn}[theorem]{Định nghĩa}
+\newtheorem{corollary}[theorem]{Hệ quả}
+\newtheorem{lemma}[theorem]{Bổ đề}
+
+\usepackage{lipsum} % Thư viện tạo chữ linh tinh.
+\renewcommand{\contentsname}{TABLE OF CONTENTS}
+\renewcommand{\listfigurename}{LIST OF FIGURES}
+\renewcommand{\listtablename}{LIST OF TABLES}
+\renewcommand{\refname}{REFERENCES}
+
+\usepackage[unicode,colorlinks=true,linkcolor=black]{hyperref}
+\usepackage{colortbl}
+\definecolor{LightCyan}{rgb}{0.88,1,1}
+\usepackage{forloop}
+\newcounter{loopcntr}
+\newcommand{\rpt}[2][1]{\forloop{loopcntr}{0}{\value{loopcntr}<#1}{#2}}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm,algcompatible,amsmath}
+\usepackage{placeins}
+\usepackage{amsmath,amssymb}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{algpseudocode}
+\usepackage[vietnamese]{babel}
+% \usepackage[backend=biber, style=apa]{biblatex}
+% \usepackage{hyperref}
+% \usepackage[colorlinks=true,linkcolor=black]{hyperref}
+
+\begin{document}
+
+% \input{Bia} % Bìa  án.
+
+% \input{DanhGia} % Đánh giá quyển  án tốt nghiệp cho giảng viên hướng dẫn và cán bộ phản biện.
+% \input{danhgia}
+
+
+% \input{LoiNoiDau} % Lời nói đầu.
+
+% \input{LoiCamDoan} % Lời cam đoan.
+
+ % Tạo mục lục tự động
+ \renewcommand{\contentsname}{MỤC LỤC}
+
+\addtocontents{toc}{\protect\thispagestyle{empty}}
+\tableofcontents 
+\thispagestyle{empty}
+\cleardoublepage
+
+\input{Abbreviations} % Danh mục ký hiệu và chữ viết tắt
+
+%Tạo danh mục hình vẽ.
+\renewcommand{\listtablename}{DANH MỤC HÌNH}
+{\let\oldnumberline\numberline
+\renewcommand{\numberline}{Hình~\oldnumberline}
+\listoffigures} 
+\phantomsection\addcontentsline{toc}{section}{\numberline {} DANH MỤC HÌNH}
+\newpage
+
+ %Tạo danh mục bảng biểu.
+ \renewcommand{\listtablename}{DANH SÁCH BẢNG}
+{\let\oldnumberline\numberline
+\renewcommand{\numberline}{Table~\oldnumberline}
+\listoftables}
+\phantomsection\addcontentsline{toc}{section}{\numberline {} DANH SÁCH BẢNG}
+\newpage
+
+\input{Abstract} % Tóm tắt  án 
+
+
+\pagenumbering{arabic} % Đánh số thứ tự 1,2,3...
+\section*{CHƯƠNG 1.  CƠ SỞ LÝ LUẬN VÀ THỰC TIỄN}
+\addcontentsline{toc}{section}{\numberline{}CHƯƠNG 1. CƠ SỞ LÝ LUẬN VÀ THỰC TIỄN}
+\setcounter{section}{1}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+Trong phần này, tôi sẽ trình bày tổng quan về hệ thống IoT, công nghệ sạc không dây, giao tiếp ngữ nghĩa, thuật toán học sâu tăng cường cùng các kiến thức liên quan để hiểu rõ hơn về cách thức hoạt động của hệ thống.
+\subsection{Hệ thống IoT}
+Internet of Things \cite{iot_kn} là một hệ thống được xây dựng dựa trên sự kết nối của các thiết bị điện tử và cơ khí với internet và với nhau, cho phép chúng trao đổi dữ liệu và thông tin mà không cần sự can thiệp của con người. IoT là một trong những xu hướng công nghệ quan trọng nhất của thế kỷ 21 và đã thay đổi cách chúng ta tương tác với thế giới xung quanh.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Images/iot.png}
+    \caption[Hệ thống IoT \cite{iot}]{\bfseries \fontsize{12pt}{0pt}\selectfont Hệ thống IoT \cite{iot}}
+    \label{fig:noron}
+\end{figure}
+
+\subsubsection{Một số khái niệm liên quan tới hệ thống IoT}
+\begin{itemize}
+\item Thiết bị IoT (IoT Devices) \cite{iot_device}: đây là các thiết bị nhúng thông minh có khả năng thu thập dữ liệu, truyền thông, và thực hiện các chức năng khác. Các thiết bị này có thể là cảm biến, máy tính nhúng, đèn động cơ, thiết bị y tế, xe hơi kết nối, và nhiều loại thiết bị khác.
+
+\item Kết nối Internet: các thiết bị IoT phải có khả năng kết nối với internet, thông qua các giao thức mạng như Wi-Fi, 3G, 4G, 5G, LoRa, Sigfox, và nhiều loại giao thức khác.
+
+\item Thu thập dữ liệu: thiết bị IoT có thể thu thập dữ liệu từ môi trường xung quanh hoặc từ các cảm biến được tích hợp. Dữ liệu này có thể là nhiệt độ, độ ẩm, áp suất, hình ảnh, âm thanh, vị trí GPS, và nhiều thông tin khác.
+
+\item Truyền thông dữ liệu: dữ liệu thu thập từ các thiết bị IoT được truyền đến các trạm cơ sở hoặc đến các thiết bị khác qua internet. Truyền thông dữ liệu có thể diễn ra qua mạng có dây hoặc không dây.
+
+\item Xử lý và phân tích dữ liệu: tại các trạm cơ sở hoặc trên các máy chủ điện toán đám mây, dữ liệu từ các thiết bị IoT được xử lý và phân tích để tạo ra thông tin có ý nghĩa. Việc này có thể sử dụng các thuật toán trí tuệ nhân tạo (AI) và học máy.
+
+\item Tương tác và điều khiển: dựa trên thông tin từ dữ liệu IoT, người dùng hoặc hệ thống có thể tương tác với các thiết bị IoT và thậm chí điều khiển chúng từ xa. Ví dụ, bạn có thể điều khiển nhiệt độ trong nhà thông qua điện thoại di động của mình.
+
+\item Ứng dụng đa dạng: IoT có nhiều ứng dụng trong nhiều lĩnh vực, bao gồm quản lý năng lượng, y tế, nông nghiệp, giao thông, chăm sóc sức khỏe, và quản lý tự động.
+
+\item An ninh và quyền riêng tư: bảo mật và quyền riêng tư là những vấn đề quan trọng trong hệ thống IoT. Cần phải đảm bảo rằng dữ liệu không bị xâm nhập và sử dụng không đúng mục đích.
+
+\item Quy mô lớn: hệ thống IoT có thể có quy mô lớn, với hàng tỷ thiết bị được kết nối trên toàn cầu, tạo ra một mạng lưới phức tạp của thông tin và dịch vụ.
+
+\item Tiềm năng tương lai: IoT được dự đoán sẽ tiếp tục phát triển và có tác động sâu rộng đối với xã hội và kinh tế trong tương lai. Các ứng dụng mới và các khả năng sáng tạo vẫn đang được khám phá.
+
+\end{itemize}
+
+\subsubsection{Mục tiêu ra đời của hệ thống IoT}
+Các hệ thống IoT ra đời nhằm tạo ra một mạng lưới kết nối các thiết bị và đối tượng thông qua internet để cung cấp các lợi ích và giải pháp cho con người và xã hội với một số mục tiêu chính sau:
+\begin{itemize}
+\item Tối ưu hóa quản lý tài nguyên: IoT giúp quản lý tài nguyên như năng lượng, nước, và nguyên liệu một cách thông minh hơn. Các thiết bị có khả năng thu thập dữ liệu và tự động điều chỉnh để tiết kiệm tài nguyên và giảm lãng phí.
+\item Cải thiện hiệu suất và tiện ích: hệ thống IoT cung cấp thông tin và dịch vụ cải thiện hiệu suất và tiện ích cho con người. Ví dụ, trong ngành công nghiệp, nó có thể tối ưu hóa dòng sản xuất, trong y tế, nó có thể cải thiện chăm sóc sức khỏe.
+\item Tăng cường an toàn và bảo mật: IoT có thể cải thiện an toàn và bảo mật bằng cách cung cấp khả năng theo dõi và kiểm soát từ xa. Ví dụ, trong lĩnh vực giao thông, nó có thể cảnh báo về tai nạn giao thông và ngăn chặn hậu quả.
+\item Khám phá ứng dụng mới: IoT tạo ra cơ hội cho việc phát triển các ứng dụng mới mà trước đây không có. Ví dụ, trong nông nghiệp, nó có thể được sử dụng để theo dõi và quản lý nông trại từ xa.
+\item Tạo ra môi trường thông minh: IoT có thể giúp tạo ra các đô thị thông minh (smart cities) và các môi trường thông minh khác, nơi các dịch vụ công cộng và hạ tầng được tối ưu hóa để cải thiện chất lượng cuộc sống của người dân.
+\item Tích hợp và kết nối đa dạng: IoT kết nối các loại thiết bị và đối tượng khác nhau, từ cảm biến đến xe hơi, từ thiết bị y tế đến hệ thống sản xuất. Mục tiêu là tạo ra một môi trường kết nối toàn diện.
+\item Tiết kiệm thời gian và công sức: IoT giúp tự động hóa các tác vụ và quá trình, giúp con người tiết kiệm thời gian và công sức. Ví dụ, hệ thống nhà thông minh có thể điều khiển ánh sáng, nhiệt độ, và bảo mật mà không cần can thiệp của người dùng.
+\item Dịch vụ và trải nghiệm tùy chỉnh: IoT cho phép tạo ra các dịch vụ và trải nghiệm tùy chỉnh dựa trên thông tin cá nhân và ưu cầu của người dùng.
+\item Giảm tác động môi trường: hệ thống IoT có thể giúp giảm tác động môi trường bằng cách quản lý tài nguyên và quy trình sản xuất một cách thông minh và bền vững hơn.
+\item Tạo ra nền kinh tế mới: IoT tạo ra nền kinh tế mới dựa trên dịch vụ và công nghệ thông tin, tạo ra cơ hội cho sự đổi mới và sáng tạo.
+
+\end{itemize}
+
+\subsubsection{Thực trạng hiện nay của các hệ thống IoT}
+
+Hiện nay, các hệ thống IoT đang phát triển và thúc đẩy sự kết nối thông minh trong nhiều lĩnh vực. Dưới đây là một số thực trạng chính của các hệ thống IoT:
+
+\begin{itemize}
+\item Sự tăng trưởng nhanh chóng: IoT đang trải qua sự tăng trưởng nhanh chóng. Số lượng thiết bị IoT được kết nối đang gia tăng theo tỷ lệ hình học và dự kiến sẽ tiếp tục tăng trong tương lai.
+\item Đa dạng ứng dụng: IoT đã được triển khai rộng rãi trong nhiều lĩnh vực, bao gồm quản lý năng lượng, y tế, công nghiệp, nông nghiệp, giao thông, nhà thông minh, và nhiều lĩnh vực khác. Sự đa dạng này cho thấy tiềm năng và linh hoạt của công nghệ IoT.
+\item Dự án smart cities: nhiều thành phố trên khắp thế giới đã triển khai các dự án "đô thị thông minh" sử dụng IoT để cải thiện quản lý đô thị, giao thông, an ninh, và các dịch vụ công cộng.
+\item Ứng dụng y tế và chăm sóc sức khỏe: IoT được sử dụng trong việc theo dõi sức khỏe cá nhân, quản lý bệnh mãn tính, và cung cấp dịch vụ y tế từ xa. Các thiết bị y tế thông minh và các ứng dụng sức khỏe liên quan đang trở nên phổ biến.
+\item Năng lượng thông minh: IoT được áp dụng rộng rãi trong quản lý năng lượng, từ điều khiển thông minh của hệ thống điện đến tối ưu hóa việc sử dụng năng lượng trong các công trình xây dựng.
+\item Challenges về bảo mật và quyền riêng tư: một trong những thách thức lớn nhất của IoT là vấn đề bảo mật và quyền riêng tư. Vì các thiết bị IoT thu thập và truyền dữ liệu liên tục, việc bảo vệ thông tin cá nhân và đảm bảo tính bảo mật là mối quan tâm hàng đầu.
+\item Tiêu chuẩn và tương thích: các tiêu chuẩn và giao thức IoT vẫn đang trong quá trình phát triển và định hình. Vấn đề về tương thích giữa các thiết bị và hệ thống cũng đang được quan tâm.
+\item Khả năng mở rộng và quản lý dữ liệu: với số lượng lớn dữ liệu được tạo ra bởi các thiết bị IoT, việc quản lý, lưu trữ, và phân tích dữ liệu đòi hỏi khả năng mở rộng và hạ tầng lưu trữ mạnh mẽ.
+\item Sự đổi mới liên tục: các công nghệ liên quan đến IoT, như trí tuệ nhân tạo (AI), học máy, và xử lý dữ liệu lớn (big data), đang liên tục phát triển và được tích hợp để cung cấp các giải pháp thông minh và sáng tạo.
+\item Ước lượng tác động xã hội và kinh tế: IoT đã và đang có tác động mạnh đến cả xã hội và kinh tế, tạo ra cơ hội mới và thay đổi cách con người tương tác với thế giới xung quanh.
+
+\end{itemize}
+
+\subsubsection{Một số cách phân loại hệ thống IoT phổ biến}
+
+Hệ thống IoT có thể được phân loại dựa trên một số tiêu chí khác nhau, bao gồm:
+\begin{itemize}
+    \item Dựa trên ứng dụng và lĩnh vực sử dụng:
+    \begin{itemize}
+\item IoT công nghiệp (Industrial IoT - IIoT): được sử dụng trong môi trường công nghiệp để tối ưu hóa sản xuất, quản lý chuỗi cung ứng, và bảo trì thiết bị.
+\item IoT y tế (IoT Healthcare): liên quan đến các thiết bị y tế thông minh, theo dõi sức khỏe cá nhân và dịch vụ chăm sóc sức khỏe từ xa.
+\item IoT thành phố thông minh (Smart City IoT): sử dụng để cải thiện quản lý giao thông, năng lượng, môi trường, an ninh và dịch vụ công cộng trong các đô thị.
+\item IoT nông nghiệp (IoT Agriculture): sử dụng để theo dõi và tối ưu hóa quản lý nông trại, chăm sóc cây trồng, và sử dụng tài nguyên nông nghiệp.
+\item IoT nhà thông minh (Smart Home IoT): liên quan đến các thiết bị nhà thông minh như đèn, nhiệt độ, an ninh và giải trí trong gia đình.
+\item IoT xe hơi (IoT Automotive): sử dụng để cải thiện tính an toàn, quản lý động cơ, và cung cấp các tính năng tự hành trong ô tô.
+
+    \end{itemize}
+    \item  Dựa trên quy mô và khoảng cách kết nối:
+\begin{itemize}
+\item IoT cục bộ (Local IoT): các thiết bị IoT trong phạm vi gần, thường trong một mạng LAN hoặc PAN (Personal Area Network).
+\item IoT diện rộng (Wide Area IoT): kết nối các thiết bị IoT ở xa, thường thông qua mạng diện rộng như 3G, 4G, 5G hoặc các mạng truyền thông IoT đặc biệt như LoRa và Sigfox.
+\end{itemize}
+
+
+\item Dựa trên loại thiết bị IoT:
+\begin{itemize}
+\item Cảm biến (Sensors): thiết bị IoT chuyên để thu thập thông tin về môi trường xung quanh, ví dụ: cảm biến nhiệt độ, độ ẩm, ánh sáng.
+\item Thiết bị điều khiển (Actuators): thiết bị IoT có khả năng thực hiện các hành động dựa trên thông tin được thu thập, ví dụ: bật/tắt đèn, điều chỉnh nhiệt độ.
+\end{itemize}
+
+\item Dựa trên quản lý dữ liệu và phân tích:
+\begin{itemize}
+\item IoT trong thời gian thực (Real-time IoT): dữ liệu từ thiết bị IoT được xử lý và đưa ra quyết định ngay lập tức.
+\item IoT trong thời gian gần thực (Near-real-time IoT): dữ liệu được xử lý một cách gần thời gian thực, thường được lưu trữ và phân tích sau cùng.
+\end{itemize}
+\end{itemize}
+
+\subsection{Công nghệ sạc không dây}
+
+Công nghệ sạc không dây (Wireless Charging) là một phương pháp sạc các thiết bị điện tử mà không cần sử dụng dây cáp truyền thống để kết nối thiết bị với nguồn điện. Thay vì sử dụng cổng USB hoặc cổng sạc, công nghệ sạc không dây cho phép thiết bị sạc được đặt lên hoặc gần nguồn sạc, thường là một máy sạc hoặc một bề mặt sạc đặc biệt.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Images/wireless_charger_system.jpg}
+    \caption[Hệ thống sạc không dây \cite{driving}]{\bfseries \fontsize{12pt}{0pt}\selectfont Hệ thống sạc không dây \cite{driving}}
+    \label{fig:noron}
+\end{figure}
+
+\subsubsection{Nguyên tắc hoạt động của công nghệ sạc không dây}
+Dựa trên truyền tải năng lượng từ nguồn sạc đến thiết bị cần sạc mà không cần sử dụng dây cáp truyền thống. Các hệ thống sạc không dây thường sử dụng một trong các nguyên tắc hoạt động sau đây:
+\begin{itemize}
+    \item Cảm ứng từ (Electromagnetic Induction)
+        \begin{itemize}
+            \item Nguyên tắc cảm ứng từ là cơ bản nhất trong công nghệ sạc không dây.
+            \item Một cuộn dây dẫn của nguồn sạc tạo ra một trường từ, thường là trường từ biến đổi (transformer) được cấu thành từ hai cuộn dây quấn chặt vào nhau.
+            \item Thiết bị cần sạc cũng có một cuộn dây dẫn, và khi đặt gần cuộn dây dẫn của nguồn sạc, trường từ từ nguồn sạc tạo ra dẫn đến tạo ra một dòng điện trong cuộn dây dẫn của thiết bị cần sạc.
+            \item Dòng điện này sau đó được biến đổi thành điện áp sạc và sử dụng để sạc thiết bị.
+    
+        \end{itemize}
+    \item Kết nối cảm ứng đồng tần (Resonant Inductive Coupling):
+        \begin{itemize}
+            \item Nguyên tắc này là một biến thể của cảm ứng từ.
+            \item Nguồn sạc và thiết bị cần sạc có thể đặt ở xa nhau hơn so với cảm ứng từ thông thường.
+            \item Một nguồn tạo ra một sóng RF (radio frequency) ở tần số cố định và thiết bị cần sạc có một anten đặc biệt để thu sóng RF này.
+            \item Khi nguồn sạc và thiết bị cần sạc hoàn thành đồng tần, năng lượng được truyền từ nguồn sạc đến thiết bị cần sạc.
+
+        \end{itemize}
+    \item Sạc Radio Frequency (Radio Frequency (RF) Charging):
+        \begin{itemize}
+            \item RF charging sử dụng sóng radio để truyền tải năng lượng.
+            \item Nguồn sạc tạo ra sóng RF ở một tần số cố định, và thiết bị cần sạc có một anten để thu sóng RF.
+            \item Khi sóng RF được thu vào thiết bị cần sạc, nó được biến đổi thành điện năng và sử dụng để sạc thiết bị.
+        \end{itemize}
+    \item Sạc từ xa (Over-the-Air Charging):
+        \begin{itemize}
+            \item Sạc từ xa là một phát triển mới trong công nghệ sạc không dây.
+            \item Nó cho phép thiết bị cần sạc nhận năng lượng từ một nguồn sạc ở xa mà không cần tiếp xúc vật lý hoặc đặt gần nguồn sạc.
+            \item Công nghệ sạc từ xa thường sử dụng sóng điện từ, chẳng hạn như sóng millimeter wave hoặc sóng siêu cao tần (microwave), để truyền tải năng lượng.
+        \end{itemize}
+\end{itemize}
+
+Các hệ thống sạc không dây thường phụ thuộc vào sự tương tác giữa các cuộn dây dẫn, anten, hoặc sóng điện từ để truyền tải năng lượng từ nguồn sạc đến thiết bị cần sạc. Quá trình này được điều chỉnh bởi các tiêu chuẩn và giao thức đảm bảo rằng việc sạc diễn ra hiệu quả và an toàn.
+
+\subsubsection{Tiêu chuẩn và giao thức công nghệ sạc không dây}
+
+Trong công nghệ sạc không dây, có một số tiêu chuẩn và giao thức quan trọng giúp đảm bảo tính tương thích giữa các thiết bị và nguồn sạc không dây từ các nhà sản xuất khác nhau. Dưới đây là một số tiêu chuẩn và giao thức quan trọng trong lĩnh vực này:
+\begin{itemize}
+\item Tiêu Chuẩn Qi (Qi Standard):
+\begin{itemize}
+    \item Qi là một trong những tiêu chuẩn sạc không dây phổ biến nhất, được phát triển bởi Wireless Power Consortium (WPC).
+\item Nó sử dụng nguyên tắc cảm ứng từ để truyền tải năng lượng từ nguồn sạc đến thiết bị cần sạc.
+\item Tiêu chuẩn Qi định rõ quy tắc về cách đặt thiết bị lên nguồn sạc, cách truyền tải năng lượng, và cách thiết bị tương thích với nhau.
+\item Nó phổ biến trong việc sạc điện thoại di động và các thiết bị tiêu dùng khác.
+\end{itemize}
+\item Tiêu Chuẩn AirFuel (Trước đây là Alliance for Wireless Power - A4WP):
+\begin{itemize}
+    \item AirFuel Alliance là một tổ chức quốc tế phát triển các tiêu chuẩn sạc không dây.
+\item Tiêu chuẩn AirFuel bao gồm công nghệ Resonant inductive coupling cho phạm vi sạc rộng hơn và sạc từ xa.
+\item AirFuel cũng đề cập đến việc sạc qua bề mặt (surface-based charging) và sạc không dây đa năng (multi-mode wireless charging).
+\end{itemize}
+\item Tiêu Chuẩn IEEE 802.11 (Wi-Fi):
+\begin{itemize}
+    \item Tiêu chuẩn IEEE 802.11, thường được gọi là Wi-Fi, được sử dụng cho truyền dữ liệu không dây.
+\item Một phần của tiêu chuẩn này, IEEE 802.11af, đang được phát triển để hỗ trợ sạc không dây sử dụng Wi-Fi.
+\item Wi-Fi sạc không dây sẽ cho phép sạc các thiết bị thông qua tín hiệu Wi-Fi hiện có trong mạng.
+\end{itemize}
+\item Bluetooth Wireless Charging:
+    \begin{itemize}
+        \item Bluetooth SIG, tổ chức quản lý tiêu chuẩn Bluetooth, đang nghiên cứu và phát triển tiêu chuẩn cho sạc không dây thông qua kết nối Bluetooth.
+    \item Sạc Bluetooth có thể được sử dụng để sạc các thiết bị như tai nghe không dây và các thiết bị IoT khác.
+    \end{itemize}
+\item NFC (Near Field Communication):
+    \begin{itemize}
+        \item NFC là một công nghệ giao tiếp ngắn khoảng cách được sử dụng rộng rãi trong thiết bị di động.
+    \item NFC cũng có thể được sử dụng để truyền tải năng lượng cho các thiết bị IoT nhỏ.
+    \end{itemize}
+\end{itemize}
+
+Lựa chọn tiêu chuẩn và giao thức thích hợp phụ thuộc vào mục đích sử dụng và yêu cầu của thiết bị và ứng dụng cụ thể. Sự tiêu chuẩn hóa giúp đảm bảo tính tương thích và an toàn trong quá trình sạc không dây.
+
+\subsubsection{Phạm vi và hiệu suất sạc của công nghệ sạc không dây}
+
+Phạm vi và hiệu suất sạc của công nghệ sạc không dây có thể khác nhau tùy thuộc vào loại công nghệ sạc và tiêu chuẩn cụ thể. Dưới đây là một cái nhìn tổng quan về phạm vi và hiệu suất sạc của các công nghệ sạc không dây phổ biến:
+\begin{itemize}
+    \item  Công nghệ Qi (Cảm ứng từ):	
+\begin{itemize}
+    \item Phạm vi: các thiết bị cần sạc phải được đặt trực tiếp lên nguồn sạc Qi, thường có một phạm vi khoảng 4-40 mm. Khoảng cách này có thể thay đổi tùy theo sản phẩm cụ thể và tiêu chuẩn Qi sử dụng.
+\item Hiệu suất sạc: hiệu suất sạc Qi thường khá cao, với khả năng sạc nhanh hơn so với một số tiêu chuẩn khác. Tốc độ sạc có thể đạt đến 15Watt cho các thiết bị tương thích.
+\end{itemize}
+    \item  Công nghệ AirFuel (Kết nối cảm ứng đồng tần):
+\begin{itemize}
+    \item Phạm vi: tiêu chuẩn AirFuel cho phép phạm vi hoạt động lớn hơn so với Qi, có thể lên đến vài mét. Điều này tạo ra khả năng sạc từ xa và qua bề mặt.
+\item Hiệu suất sạc: hiệu suất sạc của AirFuel có thể tùy chỉnh, tùy thuộc vào cách thiết lập và thiết bị. Nó có thể đạt được tốc độ sạc nhanh.
+    \item  Công nghệ radio Frequency (Sạc Radio Frequency):
+\item Phạm Vi: RF charging cũng cho phép phạm vi hoạt động lớn hơn so với Qi và có khả năng sạc từ xa.
+\item Hiệu suất sạc: hiệu suất sạc RF có thể biến đổi tùy thuộc vào tần số và công suất của sóng RF. Nó có thể đạt được hiệu suất tốt trong các ứng dụng cụ thể.
+\end{itemize}
+    \item  Công nghệ sạc từ xa (Over-the-Air Charging):
+\begin{itemize}
+    \item Phạm vi: sạc từ xa cho phép sạc ở khoảng cách xa hơn, có thể lên đến vài mét hoặc thậm chí trong phạm vi phòng.
+\item Hiệu suất sạc: hiệu suất sạc từ xa có thể thấp hơn so với các công nghệ sạc gần hơn, nhưng đang trong quá trình phát triển để cải thiện hiệu suất.
+\end{itemize}
+
+\end{itemize}
+
+Mức hiệu suất sạc và phạm vi hoạt động thực tế có thể thay đổi dựa trên các yếu tố như môi trường, khả năng kỹ thuật của thiết bị, và cấu hình của hệ thống sạc. Khi lựa chọn công nghệ sạc không dây, người dùng cần xem xét yêu cầu cụ thể của ứng dụng và thiết bị để chọn loại công nghệ phù hợp.
+
+\subsubsection{Ứng dụng}
+
+Công nghệ sạc không dây đã có nhiều ứng dụng quan trọng trong nhiều lĩnh vực khác nhau. Dưới đây là một số ứng dụng chính của công nghệ sạc không dây:
+
+\begin{itemize}
+\item Sạc điện thoại di động: ứng dụng phổ biến nhất của công nghệ sạc không dây là sạc điện thoại di động. Nó giúp loại bỏ sự rối rắm của dây cáp và tạo ra môi trường sạc tiện lợi cho người dùng. Điện thoại di động và các thiết bị khác như tai nghe không dây thường được trang bị công nghệ sạc không dây.
+\item Sạc đồng hồ thông minh: đồng hồ thông minh (smartwatches) thường sử dụng công nghệ sạc không dây để nạp pin. Điều này giúp người dùng dễ dàng đặt đồng hồ lên nguồn sạc mà không cần gỡ dây cáp.
+\item Sạc đèn led và thiết bị điện gia dụng: các đèn LED và các thiết bị điện gia dụng khác có thể sử dụng công nghệ sạc không dây để tạo ra mô hình sạc không dây. Điều này giúp giảm việc thay pin và cung cấp tính tiện lợi.
+\item Sạc xe điện: công nghệ sạc không dây đang được nghiên cứu và phát triển để ứng dụng trong việc sạc xe điện. Điều này có tiềm năng giúp giảm thời gian và công sức cần thiết để sạc xe điện và cải thiện tiện ích sử dụng xe điện.
+\item Sạc thiết bị y tế: trong lĩnh vực y tế, công nghệ sạc không dây có thể được sử dụng để sạc các thiết bị y tế như bơm tiêm, máy theo dõi sức khỏe, và các thiết bị y tế di động. Điều này giúp duy trì hoạt động của các thiết bị y tế quan trọng mà không cần ngắt kết nối.
+\item Sạc thiết bị IoT: Trong lĩnh vực IoT, các thiết bị như cảm biến, bộ điều khiển, và thiết bị thu thập dữ liệu có thể sử dụng công nghệ sạc không dây để duy trì hoạt động liên tục và tiết kiệm năng lượng.
+\item Sạc thiết bị điện tử trong công nghiệp: trong các ứng dụng công nghiệp, công nghệ sạc không dây có thể được sử dụng để sạc các thiết bị điện tử trong môi trường công nghiệp, như máy tính công nghiệp, robot, và thiết bị kiểm tra.
+\item Sạc trong các không gian công cộng: một số quán cafe, sân bay, và khách sạn đã triển khai hệ thống sạc không dây trong các không gian công cộng để cung cấp dịch vụ sạc tiện lợi cho khách hàng.
+\item Sạc các thiết bị điện tử cá nhân khác: công nghệ sạc không dây có thể được sử dụng để sạc nhiều thiết bị điện tử cá nhân khác như máy tính xách tay, tablet, và tai nghe không dây.
+\end{itemize}
+
+Các ứng dụng này chỉ là một phần nhỏ của các cách mà công nghệ sạc không dây có thể được áp dụng. Sự tiện lợi của việc loại bỏ dây cáp và tính năng tự động khi đặt thiết bị lên nguồn sạc đã tạo ra nhiều cơ hội ứng dụng trong nhiều lĩnh vực khác nhau.
+
+\subsection{Giao tiếp ngữ nghĩa}
+
+Giao tiếp ngữ nghĩa (Semantic communication) \cite{9663101} là một lĩnh vực nghiên cứu trong khoa học máy tính và trí tuệ nhân tạo (AI) tập trung vào việc hiểu và tạo ra thông tin có ý nghĩa giữa các máy tính hoặc giữa con người và máy tính. Trong semantic communication, thông điệp được biểu diễn bằng cách sử dụng ngôn ngữ hoặc biểu đồ thông tin có ý nghĩa, giúp cho các hệ thống hoặc máy tính có khả năng hiểu và xử lý thông tin một cách hợp lý. Mục tiêu chính của semantic communication là đảm bảo rằng thông tin được truyền tải một cách chính xác và có ý nghĩa, giúp máy tính hiểu được nội dung của thông điệp và thực hiện các tác vụ phản hồi hoặc xử lý dữ liệu dựa trên nội dung đó.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Images/semantic.pdf}
+    \caption[Giao tiếp ngữ nghĩa \cite{9663101}]{\bfseries \fontsize{12pt}{0pt}\selectfont Giao tiếp ngữ nghĩa \cite{9663101}}
+    \label{fig:noron}
+\end{figure}
+
+\subsubsection{Ngôn ngữ và ý nghĩa}
+
+Trong Semantic Communication, ngôn ngữ và ý nghĩa là hai khái niệm cơ bản và đặc biệt quan trọng, vì chúng liên quan trực tiếp đến cách chúng ta truyền đạt thông điệp và tạo ra hiểu biết trong giao tiếp. Dưới đây là một sự trình bày chi tiết về mối quan hệ giữa ngôn ngữ và ý nghĩa:
+
+\begin{itemize}
+    \item Ngôn ngữ là phương tiện giao tiếp: ngôn ngữ là hệ thống biểu đạt sử dụng các từ, ngữ pháp, và cấu trúc để truyền đạt ý nghĩa và thông tin. Nó là công cụ cơ bản cho giao tiếp và tương tác xã hội giữa con người.
+\item Ngôn ngữ gắn liền với ý nghĩa: mỗi từ và câu trong ngôn ngữ mang theo một hoặc nhiều ý nghĩa. Ví dụ, từ "mèo" trong tiếng Anh biểu thị một loài động vật nhưng cũng có thể được sử dụng trong các biểu đạt về tư duy hay tính cách. 
+\item Ngữ nghĩa và ngữ âm: ngữ nghĩa là mối quan hệ giữa các từ và ý nghĩa của chúng. Trong khi đó, ngữ âm liên quan đến cách các từ và âm thanh được sắp xếp để tạo thành từng từ và câu. Mối quan hệ giữa ngữ nghĩa và ngữ âm cũng đóng vai trò quan trọng trong việc diễn đạt ý nghĩa.
+\item Ý nghĩa phụ thuộc vào ngữ cảnh: ý nghĩa của một từ hoặc câu thường phụ thuộc vào ngữ cảnh. Ngữ cảnh bao gồm ngữ cảnh văn bản (câu trước và câu sau), ngữ cảnh xã hội (vị trí và tình huống giao tiếp), và ngữ cảnh kiến thức (kiến thức của người nghe và người gửi). Ví dụ, từ "bàn" có thể có ý nghĩa là một cái bàn, một cuộc họp, hoặc một cuộc thi, tùy thuộc vào ngữ cảnh.
+\item Đa Nghĩa và Mơ hóa: Nhiều từ và cụm từ trong ngôn ngữ có thể có nhiều ý nghĩa khác nhau, điều này gọi là đa nghĩa. Một số từ cũng có thể mơ hóa, tức là chúng trở nên không rõ ràng hoặc không xác định trong ngữ cảnh cụ thể.
+\item Ngôn ngữ và sự truyền đạt cảm xúc: ngôn ngữ không chỉ truyền đạt thông tin mà còn có khả năng truyền đạt cảm xúc. Cách chúng ta sắp xếp và sử dụng từ vựng có thể tạo ra một tác động cảm xúc đối với người nghe. Ví dụ, sử dụng từ "yêu" thay vì "thích" có thể thể hiện tình cảm sâu sắc hơn.
+\item Ngôn ngữ máy tính và Semantic Communication: trong lĩnh vực công nghệ, Semantic Communication cũng đặc biệt quan trọng. Các hệ thống xử lý ngôn ngữ tự nhiên và trí tuệ nhân tạo được phát triển để hiểu và tạo ra ngôn ngữ theo cách gần giống con người, nhằm cải thiện trải nghiệm người dùng và hiệu quả truyền đạt thông tin.
+\end{itemize}
+
+Như vậy, ngôn ngữ và ý nghĩa là hai khía cạnh không thể tách rời trong Semantic Communication. Ngôn ngữ là công cụ chính để truyền đạt ý nghĩa, và ý nghĩa phụ thuộc vào cách ngôn ngữ được sử dụng trong ngữ cảnh cụ thể. Sự hiểu biết về mối quan hệ giữa chúng rất quan trọng để đảm bảo giao tiếp hiệu quả và hiểu biết chính xác trong mọi tình huống.
+
+
+\subsubsection{Khả năng hiểu và gửi thông điệp}
+
+Trong Semantic Communication, khả năng hiểu và gửi thông điệp là những yếu tố quan trọng đối với việc truyền đạt ý nghĩa một cách hiệu quả. Khả năng này bao gồm cả khả năng của người nghe (người tiếp nhận thông điệp) và khả năng của người gửi (người truyền thông điệp) để tạo ra sự hiểu biết và truyền đạt thông điệp một cách chính xác. Dưới đây là một số điểm quan trọng về phần này:
+\begin{itemize}
+\item Người Nghe (Audience):
+\begin{itemize}
+    \item Ngữ cảnh và kiến thức: khả năng hiểu thông điệp của người nghe phụ thuộc mạnh mẽ vào ngữ cảnh và kiến thức của họ. Người nghe phải hiểu rõ ngữ cảnh văn bản, ngữ cảnh xã hội, và kiến thức liên quan đến chủ đề để có thể tạo ra hiểu biết chính xác.
+\item Ngôn ngữ và văn hóa: sự hiểu biết về ngôn ngữ và văn hóa của người nghe là quan trọng. Ngôn ngữ có thể thay đổi theo vùng miền, và các yếu tố văn hóa như giá trị, tôn giáo, và truyền thống có thể ảnh hưởng đến cách người nghe hiểu thông điệp.
+\end{itemize}
+
+\item Người Gửi (Sender):
+\begin{itemize}
+    
+\item Sự lựa chọn từ vựng: người gửi phải lựa chọn từ vựng phù hợp để truyền đạt ý nghĩa. Sự chọn lựa sai từ có thể dẫn đến hiểu lầm hoặc không hiểu thông điệp.
+\item Cấu trúc câu: sắp xếp câu và cấu trúc thông điệp có thể ảnh hưởng đến việc người nghe hiểu thông điệp. Câu chuyện có một cấu trúc thường dễ hiểu hơn so với việc xếp liên tiếp các sự kiện mà không có liên kết logic.
+\item Cơ động trong giao tiếp: khả năng thích nghi và điều chỉnh thông điệp dựa trên phản hồi của người nghe rất quan trọng. Điều này giúp người gửi tạo ra giao tiếp tương tác và hiệu quả hơn.
+\end{itemize}
+
+\item Sự giao tiếp hiệu quả:
+\begin{itemize}
+    \item Rõ ràng và ngắn gọn: thông điệp nên được trình bày một cách rõ ràng và ngắn gọn. Sự đơn giản giúp giảm nguy cơ hiểu lầm và làm cho thông điệp dễ tiếp thu hơn.
+\item Sử dụng hình ảnh và ví dụ: sử dụng hình ảnh, ví dụ, hoặc biểu đồ có thể làm cho thông điệp trở nên trực quan và dễ hiểu hơn.
+\item Lắng nghe và tương tác: giao tiếp không chỉ là việc truyền đạt thông điệp mà còn bao gồm lắng nghe phản hồi và tương tác với người nghe. Điều này giúp người gửi hiểu được cách thông điệp của họ được tiếp nhận và có thể điều chỉnh nếu cần.
+\end{itemize}
+
+\item Công nghệ và giao tiếp: công nghệ đang chơi một vai trò ngày càng quan trọng trong việc giao tiếp. Trong thế giới số hóa, chúng ta sử dụng email, tin nhắn văn bản, truyền thông xã hội, và nhiều công cụ trực tuyến khác để truyền đạt thông điệp. Khả năng giao tiếp hiệu quả qua các nền tảng này cũng cần được xem xét.
+
+\item Tính nhân đạo và tính xã hội của giao tiếp: giao tiếp không chỉ về việc truyền tải thông tin mà còn về việc xây dựng mối quan hệ và tương tác xã hội. Sự tôn trọng, lắng nghe, và sẵn sàng để hiểu người khác đóng vai trò quan trọng trong khả năng giao tiếp hiệu quả.
+\end{itemize}
+
+Tóm lại, khả năng hiểu và gửi thông điệp là trung tâm của Semantic Communication. Để giao tiếp hiệu quả, cả người gửi và người nghe đều cần có kiến thức, sự nhạy bén, và sự linh hoạt trong việc truyền đạt và hiểu thông điệp. Điều này đòi hỏi sự tỉ mỉ trong việc lựa chọn từ vựng, cấu trúc câu, và khả năng tương tác một cách nhân đạo và xã hội.
+
+\subsubsection{Khách quan và tương đối}
+
+Khái niệm về khách quan và tương đối trong Semantic Communication liên quan đến cách mà ý nghĩa và thông điệp có thể thay đổi dựa trên ngữ cảnh và quan điểm của người tham gia trong giao tiếp. Dưới đây là một số điểm quan trọng về phần này:
+
+\begin{itemize}
+    \item Khách quan đề cập đến ý nghĩa và thông điệp không phụ thuộc vào quan điểm cá nhân của bất kỳ ai. Trong mô hình này, thông điệp được xem xét như một thực tế tách biệt, và ngôn ngữ được coi là một công cụ để mô tả thế giới một cách khách quan. Ví dụ về khách quan: khi một người nói "nhiệt độ ngoài trời là 25 độ C," điều này được coi là một tuyên bố khách quan vì nhiệt độ có thể được đo lường và xác định mà không phụ thuộc vào quan điểm cá nhân.
+
+    \item Tương đối đề cập đến ý nghĩa và thông điệp có thể thay đổi dựa trên ngữ cảnh và quan điểm của người tham gia trong giao tiếp. Trong mô hình này, thông điệp được xem xét như một xây dựng xã hội, và ý nghĩa của nó có thể biến đổi theo thời gian và vị trí. Ví dụ về tương đối: khi ai đó nói "hôm nay rất nóng," ý nghĩa của câu này có thể thay đổi tùy theo ngữ cảnh. Nhiệt độ 25 độ C có thể được coi là nóng trong một ngày mùa hè ở một nơi, nhưng có thể bình thường trong một nơi khác với mùa đông lạnh giá.
+
+\item Thách thức của tương đối:
+\begin{itemize}
+    \item Tương đối tạo ra thách thức trong giao tiếp, vì người gửi và người nghe có thể có những quan điểm khác nhau về cùng một thông điệp. Điều này có thể dẫn đến hiểu lầm hoặc xung đột trong trường hợp không thống nhất về quan điểm.
+\item Sự hiểu biết về tương đối là quan trọng trong việc tránh gây hiểu lầm và tạo sự linh hoạt trong giao tiếp. Người gửi cần hiểu rằng người nghe có thể có quan điểm khác và cố gắng thể hiện ý nghĩa của mình một cách rõ ràng.
+\end{itemize}
+
+\item Ví dụ về tương đối trong văn hóa và ngôn ngữ: ngôn ngữ và văn hóa có mối quan hệ mạnh mẽ với tương đối. Một từ hoặc biểu đạt có thể có ý nghĩa khác nhau trong các văn hóa khác nhau. Ví dụ, khái niệm về "thời gian" có thể được đánh giá khác nhau trong các văn hóa có nhìn nhận khác về sự điều tiết thời gian và mục tiêu cuộc sống.
+
+\item Sự linh hoạt trong giao tiếp: để thành công trong Semantic Communication, sự linh hoạt trong việc xem xét khả năng tương đối của thông điệp là cần thiết. Điều này có thể đòi hỏi sự mở cửa tư duy và sẵn sàng để hiểu và chấp nhận các quan điểm khác nhau.
+\end{itemize}
+
+Tóm lại, khái niệm về khách quan và tương đối trong Semantic Communication giúp chúng ta thấu hiểu cách ý nghĩa và thông điệp có thể thay đổi dựa trên ngữ cảnh và quan điểm. Điều này làm nổi bật tính phong phú và đa dạng của ngôn ngữ và giao tiếp con người, đồng thời đặt ra thách thức và cơ hội trong việc truyền đạt ý nghĩa một cách chính xác và hiệu quả.
+
+\subsubsection{Sự phức tạp của tư duy ngôn ngữ}
+Sự phức tạp của tư duy ngôn ngữ là một khía cạnh quan trọng của Semantic Communication và đề cập đến cách mà tư duy của con người được ảnh hưởng và phát triển thông qua sử dụng ngôn ngữ. Dưới đây là những điểm quan trọng về sự phức tạp của tư duy ngôn ngữ:
+
+\begin{itemize}
+
+\item Ngôn ngữ là công cụ tư duy: ngôn ngữ không chỉ là một phương tiện để truyền đạt thông tin, mà còn là một công cụ quan trọng trong việc hình thành và thể hiện tư duy của con người. Ngôn ngữ giúp chúng ta tư duy, suy nghĩ, và giải quyết vấn đề một cách hiệu quả.
+\item Tư duy ngôn ngữ và tư duy hình tượng: tư duy ngôn ngữ và tư duy hình tượng là hai khía cạnh chính của tư duy con người. Tư duy ngôn ngữ liên quan đến sử dụng từ vựng, ngữ pháp và cấu trúc ngôn ngữ để biểu đạt ý nghĩa. Trong khi đó, tư duy hình tượng liên quan đến sử dụng hình ảnh, biểu đồ, và sơ đồ để tư duy và truyền đạt ý nghĩa.
+\item Sự linh hoạt của tư duy ngôn ngữ: tư duy ngôn ngữ có khả năng thích ứng và linh hoạt. Chúng ta có thể sử dụng ngôn ngữ để mô tả nhiều loại ý nghĩa và tình huống khác nhau. Tư duy ngôn ngữ cho phép chúng ta tạo ra mô hình tư duy cho cả những điều vô thực và trừu tượng.
+\item Khả năng tạo ra và phân tích thông tin: tư duy ngôn ngữ giúp chúng ta tạo ra, diễn giải và phân tích thông tin. Chúng ta có thể xây dựng các câu chuyện, luận đồng, và lý thuyết bằng cách sử dụng ngôn ngữ. Điều này giúp chúng ta hiểu và chia sẻ kiến thức, kinh nghiệm và suy nghĩ của mình với người khác.
+\item Sự phụ thuộc vào ngữ cảnh: tư duy ngôn ngữ phụ thuộc mạnh vào ngữ cảnh. Một từ hoặc câu có thể mang nhiều ý nghĩa khác nhau tùy thuộc vào ngữ cảnh và ngữ điệu. Việc hiểu rõ ngữ cảnh là quan trọng để tránh hiểu lầm trong giao tiếp.
+\item Sự phát triển qua thời gian: tư duy ngôn ngữ phát triển qua thời gian và bị ảnh hưởng bởi môi trường xã hội, văn hóa, và giáo dục. Trẻ em học cách sử dụng ngôn ngữ và phát triển tư duy ngôn ngữ thông qua tương tác với người lớn và môi trường xung quanh.
+\item Tư duy ngôn ngữ và sáng tạo: tư duy ngôn ngữ thường đi kèm với khả năng sáng tạo. Chúng ta có thể sáng tạo ra các tác phẩm văn học, thơ, âm nhạc, và nghệ thuật bằng cách sử dụng ngôn ngữ để biểu đạt ý nghĩa và cảm xúc.
+
+\end{itemize}
+
+	Sự phức tạp của tư duy ngôn ngữ là một đề tài rất quan trọng trong nghiên cứu về ngôn ngữ học và tâm lý học, và nó thể hiện sự độc đáo và phong phú của khả năng tư duy của con người thông qua ngôn ngữ. Sự hiểu biết sâu rộng về tư duy ngôn ngữ giúp cải thiện khả năng giao tiếp, tư duy logic, và sáng tạo của con người.
+
+
+\subsubsection{Những nghiên cứu và phát triển gần đây}
+
+Dưới đây là một số điểm nổi bật về những nghiên cứu và phát triển gần đây trong Semantic Communication:
+
+\begin{itemize}
+
+\item Xử lý ngôn ngữ tự nhiên (NLP) và AI: Các nghiên cứu trong lĩnh vực xử lý ngôn ngữ tự nhiên và trí tuệ nhân tạo đã đạt được những bước tiến lớn. Sự phát triển của các mô hình học máy mạnh mẽ như BERT và GPT-3 đã làm tăng khả năng hiểu và tạo ra ngôn ngữ tự nhiên giống con người.
+\item Giao tiếp ngôn ngữ máy tính (NLC): Nghiên cứu về giao tiếp ngôn ngữ máy tính đã phát triển vượt bậc, cho phép máy tính hiểu và tạo ra ngôn ngữ tự nhiên. Các ứng dụng như chatbot thông minh, trợ lý ảo và hệ thống trả lời tự động dựa trên AI đã trở nên phổ biến hơn.
+\item Giao tiếp ngôn ngữ và tương tác con người-máy tính (HCI): các nghiên cứu trong lĩnh vực tương tác Con người-Máy tính (HCI) đang tập trung vào cách tối ưu hóa trải nghiệm người dùng trong giao tiếp ngôn ngữ với máy tính. Điều này bao gồm việc thiết kế giao diện người dùng thân thiện hơn và khả năng tương tác tự nhiên hơn.
+\item Giao tiếp đa ngôn ngữ và đa văn hóa: với sự toàn cầu hóa ngày càng tăng, nghiên cứu về giao tiếp đa ngôn ngữ và đa văn hóa đã trở nên quan trọng. Các hệ thống ngôn ngữ tự nhiên ngày càng phải hỗ trợ nhiều ngôn ngữ và văn hóa khác nhau.
+\item Ứng dụng trong lĩnh vực y tế và giáo dục: Semantic Communication đang được áp dụng rộng rãi trong lĩnh vực y tế để hỗ trợ chẩn đoán và điều trị, cũng như trong giáo dục để cung cấp nền tảng học tập cá nhân hóa và hiệu quả hơn.
+\item An toàn và bảo mật trong Semantic Communication: Với việc sử dụng ngày càng phổ biến của hệ thống trí tuệ nhân tạo trong giao tiếp, nghiên cứu về an toàn và bảo mật đã trở nên quan trọng hơn bao giờ hết để đảm bảo thông tin cá nhân và dữ liệu quan trọng được bảo vệ.
+\item Ngôn ngữ và thị giác: Kết hợp giữa xử lý ngôn ngữ tự nhiên và thị giác máy tính đã dẫn đến những tiến bộ trong việc hiểu và tạo ra ý nghĩa từ cả văn bản và hình ảnh.
+\item Hệ thống thông minh và tự động hóa: Các nghiên cứu về hệ thống thông minh và tự động hóa trong Semantic Communication đang tạo ra những ứng dụng mới trong các lĩnh vực như tự động dự đoán và lập kế hoạch.
+\end{itemize}
+
+Những tiến bộ trong Semantic Communication này đang thúc đẩy sự phát triển và ứng dụng rộng rãi của ngôn ngữ tự nhiên và trí tuệ nhân tạo trong nhiều lĩnh vực khác nhau, từ công nghiệp đến y tế và giáo dục, và có tiềm năng biến đổi cách chúng ta tương tác với máy tính và với nhau.
+
+
+\subsubsection{Ứng dụng trong công nghiệp và công nghệ}
+
+Giao tiếp ngữ nghĩa có nhiều ứng dụng quan trọng trong cả lĩnh vực công nghiệp và công nghệ. Dưới đây, chúng ta sẽ xem xét một số ví dụ cụ thể về cách mà nguyên tắc và khái niệm của giao tiếp ngữ nghĩa được áp dụng trong các lĩnh vực này:
+
+\begin{itemize}
+
+\item Truyền thông và Quảng cáo: Trong lĩnh vực truyền thông và quảng cáo, Semantic Communication đóng vai trò quan trọng trong việc tạo ra các thông điệp có ý nghĩa và ảnh hưởng đối với khách hàng. Quảng cáo phải sử dụng từ vựng, hình ảnh, và biểu đạt để truyền đạt một thông điệp mà người tiêu dùng có thể hiểu và kết nối một cách sâu sắc với sản phẩm hoặc dịch vụ.
+\item Công nghệ Thông tin và Xử lý ngôn ngữ tự nhiên (NLP): Semantic Communication đóng vai trò quan trọng trong lĩnh vực xử lý ngôn ngữ tự nhiên (NLP). Công nghệ NLP sử dụng các nguyên tắc của giao tiếp ngữ nghĩa để phân tích và hiểu thông điệp ngôn ngữ tự nhiên, giúp máy tính hiểu và tạo ra ngôn ngữ như con người. Ứng dụng của NLP bao gồm chatbots, dịch thuật tự động, và phân tích ý kiến trên mạng xã hội.
+\item Trải nghiệm người dùng (UX): Trong thiết kế sản phẩm và trải nghiệm người dùng, giao tiếp ngữ nghĩa đóng vai trò quan trọng trong việc tạo ra giao diện người dùng dễ sử dụng và hiệu quả. Sự hiểu biết về cách người dùng sử dụng ngôn ngữ để tương tác với sản phẩm có thể cải thiện trải nghiệm của họ.
+\item Hệ thống trí tuệ nhân tạo (AI): Công nghệ AI sử dụng giao tiếp ngữ nghĩa để tạo ra các hệ thống thông minh có khả năng hiểu và tương tác với con người. Ví dụ, trí tuệ nhân tạo có thể được sử dụng trong hệ thống hỗ trợ quyết định, chăm sóc sức khỏe, hoặc trong lĩnh vực tự động hóa công nghiệp.
+\item Công nghiệp 4.0 và IoT (Internet of Things): Trong Công nghiệp 4.0, Semantic Communication có thể giúp cho các thiết bị kết nối thông qua IoT hiểu và tương tác với nhau theo cách có ý nghĩa. Điều này có thể giúp cải thiện hiệu suất và quản lý trong môi trường sản xuất và tự động hóa.
+\item Phân tích dữ liệu và Kho dữ liệu lớn (Big Data): Trong lĩnh vực phân tích dữ liệu, Semantic Communication có thể giúp trong việc hiểu và rút trích ý nghĩa từ dữ liệu lớn và đa dạng. Việc này có thể áp dụng trong nghiên cứu thị trường, dự đoán xu hướng, và quản lý dữ liệu doanh nghiệp.
+\item Truyền thông Xã hội và Truyền thông trực tuyến: Trong môi trường truyền thông xã hội và trực tuyến, Semantic Communication đóng vai trò quan trọng trong việc hiểu và phản hồi trực tiếp đến ý kiến và phản hồi của người dùng. Nó cũng có thể áp dụng trong việc kiểm soát thông tin giả mạo và quản lý dữ liệu trực tuyến.
+
+\end{itemize}
+
+Những ứng dụng này chỉ là một phần nhỏ của cách giao tiếp ngữ nghĩa đã và đang thay đổi cách chúng ta tương tác với công nghiệp và công nghệ. Sự hiểu biết về ý nghĩa và cách truyền đạt thông điệp trong giao tiếp đóng vai trò quan trọng trong việc phát triển và tối ưu hóa các ứng dụng và dịch vụ trong thế giới hiện đại.
+
+\subsection{Mô hình Transformer về Mối Quan Hệ cho Việc Tạo Ra Biểu Đồ Khung Cảnh }
+
+Tạo Ra Biểu Đồ Khung Cảnh (Scene Graph Generation - SGG) là một lĩnh vực quan trọng trong thị giác máy tính và trí tuệ nhân tạo, tập trung vào việc tạo ra biểu đồ khung cảnh từ dữ liệu hình ảnh. Biểu đồ khung cảnh, còn được gọi là scene graph, là một biểu đồ biểu thị mối quan hệ giữa các đối tượng trong một hình ảnh và cách chúng tương tác với nhau. Mỗi đối tượng được đại diện bởi một nút trong biểu đồ, và các mối quan hệ giữa chúng được biểu thị bằng các cạnh.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Images/scene_graph_generation.png}
+    \caption[Tạo đồ thị cảnh \cite{Tian2021SceneGG}]{\bfseries \fontsize{12pt}{0pt}\selectfont Tạo đồ thị cảnh \cite{Tian2021SceneGG}}
+    \label{fig:noron}
+\end{figure}
+
+Mục tiêu chính của SGG là trích xuất thông tin chi tiết về các đối tượng trong hình ảnh và cách chúng liên kết với nhau. Điều này rất hữu ích trong nhiều ứng dụng thực tế như nhận diện vật thể, tự động phân tích hình ảnh y tế, và tạo ra các hệ thống thông minh liên quan đến thị giác máy tính.
+
+SGG thường bắt đầu với việc phát hiện và định vị các đối tượng trong hình ảnh, sau đó xác định các mối quan hệ giữa chúng. Các mối quan hệ này có thể là vị trí không gian (ví dụ: "ở phía trên," "ở bên trái của"), mối quan hệ chức năng (ví dụ: "là một phần của," "được sở hữu bởi"), hoặc bất kỳ mối quan hệ nào phản ánh sự tương tác giữa các đối tượng.
+
+SGG đang đối mặt với nhiều thách thức, bao gồm độ phức tạp của việc tạo ra biểu đồ khung cảnh từ dữ liệu hình ảnh, khả năng xử lý các trường hợp phức tạp và đa dạng trong thế giới thực, cũng như việc đảm bảo tính đáng tin cậy của thông tin trích xuất. Tuy nhiên, với sự tiến bộ trong trí tuệ nhân tạo và thị giác máy tính, SGG đang trở thành một lĩnh vực quan trọng trong nghiên cứu và có tiềm năng lớn trong các ứng dụng thực tế.
+
+\subsubsection{Transformer trong Machine Learning}
+
+Transformer \cite{vaswani2023attention} là một kiến trúc mạng nơ-ron đột phá đã được giới thiệu trong bài báo năm 2017 có tựa đề "Attention Is All You Need \cite{vaswani2023attention}" bởi Vaswani et al. Transformer đã thay đổi cách chúng ta xử lý dữ liệu trong Machine Learning và có một tầm ảnh hưởng lớn trong lĩnh vực xử lý ngôn ngữ tự nhiên (NLP) và thị giác máy tính.
+
+Transformer là một kiến trúc mạng nơ-ron đặc biệt được thiết kế để xử lý dữ liệu dạng tuần tự, như văn bản, chuỗi thời gian, hoặc dãy các biểu đồ. Điểm đặc biệt của Transformer là sự sử dụng cơ chế chú ý (attention mechanism) để xử lý các phần tử trong dữ liệu đầu vào. Cơ chế chú ý cho phép mạng tập trung vào các phần quan trọng của dữ liệu và bỏ qua các phần không cần thiết.
+
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=1.0\textwidth]{Images/iot_system.png}
+%     \caption[Tạo đồ thị cảnh \cite{vaswani2023attention}]{\bfseries \fontsize{12pt}{0pt}\selectfont Tạo đồ thị cảnh \cite{vaswani2023attention}}
+%     \label{fig:TransED}
+% \end{figure}
+
+Cơ chế chú ý là trái tim của Transformer. Nó cho phép mạng tập trung vào các phần tử quan trọng trong dữ liệu đầu vào bằng cách tính toán trọng số cho mỗi phần tử dựa trên tương quan của nó với các phần tử khác. Quá trình này cho phép Transformer "đánh giá" sự quan trọng của từng phần tử và tổng hợp thông tin từ toàn bộ dữ liệu.
+
+Transformer đã thay đổi cách chúng ta xử lý văn bản trong NLP. Trước đây, các mô hình dựa trên RNN và CNN thường được sử dụng, nhưng chúng có nhược điểm về hiệu suất và tính tương tác dài hạn. Transformer đã giải quyết những vấn đề này bằng cách sử dụng self-attention layers để hiểu các mối quan hệ xa hơn trong văn bản.
+
+Transformer không chỉ được sử dụng trong NLP mà còn có ứng dụng trong nhiều lĩnh vực khác của Machine Learning. Ví dụ, trong thị giác máy tính, các biến thể của Transformer như Vision Transformer (ViT) đã chứng minh khả năng xuất sắc trong việc xử lý hình ảnh. Nó đã thúc đẩy sự phát triển của các mô hình tự học sâu trong nhiều lĩnh vực.
+
+Hiện nay, Transformer vẫn là một lĩnh vực đang phát triển và nghiên cứu mạnh mẽ. Các biến thể và ứng dụng của nó ngày càng đa dạng. Có tiềm năng để cải thiện hiệu suất của các ứng dụng trong thực tế và đóng góp vào sự phát triển của trí tuệ nhân tạo. Transformer là một trong những tiến bộ quan trọng và thú vị nhất trong lĩnh vực Machine Learning và có thể tạo ra nhiều cơ hội mới trong tương lai.
+
+\subsubsection{Mối quan hệ giữa Transformer và Scene Graph Generation}
+
+Tạo ra biểu đồ khung cảnh (scene graph) từ hình ảnh là một thách thức lớn trong lĩnh vực thị giác máy tính. Để thực hiện nhiệm vụ này, mối quan hệ giữa mô hình Transformer và Scene Graph Generation đã trở thành một phần quan trọng của nghiên cứu và phát triển.
+
+Mô hình Transformer, ban đầu được thiết kế cho xử lý ngôn ngữ tự nhiên, đã chứng minh khả năng xuất sắc trong việc xử lý dữ liệu trực quan. Điều quan trọng là Transformer có khả năng tìm hiểu và xử lý thông tin từ các vùng không gian rộng và phức tạp trong hình ảnh. Điều này làm cho nó trở thành một lựa chọn tự nhiên cho việc trích xuất thông tin từ hình ảnh và dự đoán mối quan hệ giữa các đối tượng trong không gian tridimensional.
+
+Một trong những ứng dụng phổ biến của Transformer trong Scene Graph Generation là trong việc phát hiện đối tượng. Transformer có thể được sử dụng để phát hiện các đối tượng có trong hình ảnh và trích xuất thông tin về chúng. Nó có khả năng tạo ra các biểu đồ khung cảnh bằng cách biểu diễn mối quan hệ giữa các đối tượng dưới dạng các cặp (đối tượng 1, đối tượng 2). Việc này giúp cải thiện sự hiểu biết về ngữ cảnh trong hình ảnh.
+
+Ngoài ra, mô hình Transformer cũng có thể được sử dụng để xác định mối quan hệ giữa các đối tượng trong hình ảnh. Điều này có thể giúp tạo ra các biểu đồ khung cảnh phức tạp hơn, bao gồm các mối quan hệ phức tạp như "đứng trên," "nằm bên cạnh," hoặc "đang giữ." Transformer có khả năng học và biểu diễn mối quan hệ này một cách hiệu quả.
+
+Tóm lại, mối quan hệ giữa mô hình Transformer và Scene Graph Generation là một sự kết hợp mạnh mẽ để giải quyết các vấn đề phức tạp trong thị giác máy tính. Transformer cung cấp khả năng biểu diễn và xử lý thông tin từ hình ảnh, trong khi Scene Graph Generation giúp tạo ra biểu đồ khung cảnh chứa thông tin về các đối tượng và mối quan hệ giữa chúng, làm nền tảng cho nhiều ứng dụng thực tế quan trọng như nhận diện vật thể và phân tích hình ảnh.
+
+\subsubsection{Transformer về Mối quan hệ cho Việc Tạo Đồ thị Cảnh}
+
+"Relation Transformer for Scene Graph Generation" (RelTR) là một mô hình trong lĩnh vực thị giác máy tính và trí tuệ nhân tạo, được thiết kế để tạo ra biểu đồ khung cảnh (scene graph) từ hình ảnh. Đây là một phần quan trọng của nghiên cứu về xử lý hình ảnh và nhận diện đối tượng trong hình ảnh.
+
+Mô hình này lấy cảm hứng từ mô hình Detection Transformer, một mô hình được phát triển để xuất sắc trong việc phát hiện đối tượng trong hình ảnh. Mục tiêu của "Relation Transformer for Scene Graph Generation" là dự đoán các mối quan hệ giữa các đối tượng trong hình ảnh và xây dựng biểu đồ khung cảnh phản ánh sự tương tác giữa chúng.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.1\textwidth]{Images/RelTR_.png}
+    \caption[Transformer về Mối quan hệ cho Việc Tạo Đồ thị Cảnh \cite{cong2023reltr}]{\bfseries \fontsize{12pt}{0pt}\selectfont Transformer về Mối quan hệ cho Việc Tạo Đồ thị Cảnh \cite{cong2023reltr}}
+    \label{fig:RelTR}
+\end{figure}
+
+Mô hình này có kiến trúc bộ mã hóa-bộ giải mã, trong đó bộ mã hóa dùng để suy luận về ngữ cảnh từ các đặc trưng hình ảnh, còn bộ giải mã được sử dụng để dự đoán các bộ ba chủ-động-từ (subject-predicate-object). Đặc biệt, mô hình này sử dụng các cơ chế chú ý khác nhau với các truy vấn chủ-động kết hợp để tạo ra các bộ ba.
+
+Một điểm đặc biệt của mô hình này là việc sử dụng hàm mất mát (loss function) dự đoán tập hợp, cho phép mô hình dự đoán trực tiếp một tập hợp các bộ ba chủ-động-từ thay vì đánh dấu tất cả các mối quan hệ có thể. Điều này giúp cải thiện khả năng hiệu suất và tốc độ dự đoán của mô hình.
+
+"Relation Transformer for Scene Graph Generation" đã được kiểm tra trên các tập dữ liệu thử nghiệm như Visual Genome và Open Images V6 và đã cho thấy hiệu suất ưu việt cùng với khả năng dự đoán nhanh chóng. Mô hình này có tiềm năng ứng dụng rộng rãi trong các lĩnh vực như nhận diện vật thể trong hình ảnh, phân tích hình ảnh y tế, và nhiều ứng dụng khác đòi hỏi việc xử lý thông tin từ hình ảnh và tạo ra biểu đồ khung cảnh phức tạp.
+
+\subsection{Học tăng cường sâu}
+
+Học Tăng cường Sâu (Deep Reinforcement Learning - DRL) \cite{DRLoverview} là một kỹ thuật học máy tiên tiến kết hợp giữa học tăng cường và mạng nơ-ron sâu nhằm thực hiện quyết định thông minh trong môi trường phức tạp. DRL cung cấp một khung thể hiện mạnh mẽ để huấn luyện các tác nhân tương tác với môi trường, học các chính sách tối ưu và đạt được mục tiêu cụ thể.
+
+Dưới đây là các thành phần quan trọng của học tăng cường sâu:
+\begin{itemize}
+
+\item Agent (Tác nhân): Đây là thực thể hoặc chương trình máy tính có khả năng thực hiện các hành động trong môi trường để đạt được mục tiêu. Agent phải có khả năng học từ kinh nghiệm để cải thiện hiệu suất của mình.
+\item Môi trường: Môi trường là không gian trong đó agent hoạt động và tương tác. Môi trường có thể là bất kỳ thứ gì, từ trò chơi máy tính đến thế giới thực như robot điều khiển. Môi trường trả về thông tin về trạng thái hiện tại và thưởng (reward) sau mỗi hành động của agent.
+\item Trạng thái (State): Trạng thái là biểu thị của môi trường tại một thời điểm cụ thể. Agent sử dụng thông tin về trạng thái để đưa ra quyết định về hành động tiếp theo.
+\item Hành động (Action): Hành động là những gì agent thực hiện để tương tác với môi trường. Mỗi trạng thái có một tập hợp các hành động có thể thực hiện.
+\item Hàm thưởng (Reward Function): Hàm thưởng là cách môi trường đánh giá hiệu suất của agent sau mỗi hành động. Nó cung cấp cho agent thông tin về việc làm tốt hoặc xấu. Mục tiêu của agent là tối đa hóa tổng thưởng lãnh được qua thời gian.
+\item Chính sách (Policy): Chính sách là chiến lược hoặc quy tắc mà agent sử dụng để chọn hành động tại mỗi trạng thái. Mục tiêu của học tăng cường là tìm ra chính sách tối ưu, tức là chính sách mang lại tổng thưởng lớn nhất.
+\item Giá trị (Value): Giá trị của một trạng thái hoặc cặp trạng thái-hành động là một ước tính của lợi ích mà agent có thể mong đợi từ việc bắt đầu từ trạng thái đó hoặc thực hiện một hành động cụ thể trong trạng thái đó.
+\end{itemize}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Images/Reinforcement-Learning.png}
+    \caption[Mối quan hệ của các thuật ngữ trong học tăng cường \cite{Reinforcement_Learning}]{\bfseries \fontsize{12pt}{0pt}\selectfont Mối quan hệ của các thuật ngữ trong học tăng cường \cite{Reinforcement_Learning}}
+    \label{fig:Reinforcement_Learning}
+\end{figure}
+
+Học tăng cường sâu được thực hiện thông qua quá trình lặp lại, trong đó agent thực hiện hành động, nhận được thưởng, cập nhật chính sách và giá trị dự đoán dựa trên kinh nghiệm thu thập được.Nó có tiềm năng thay đổi nhiều ngành công nghiệp và thúc đẩy sự tiến bộ trong trí tuệ nhân tạo. Nghiên cứu và đổi mới liên tục mở ra tiềm năng toàn diện của DRL và mở đường cho các hệ thống thông minh có khả năng tự học và ra quyết định tự động. Với hệ thống IoT là một giải pháp hoàn toàn phù hợp.
+
+
+\subsection{Đề xuất ý tưởng}
+Trong đề tài này, tôi nghiên cứu về hệ thống IoT trong điều kiện bị hạn chế về tài nguyên và bị  giới hạn bởi thời gian yêu cầu. Mục tiêu của nghiên cứu là nhằm giải quyết vấn đề tối ưu hóa thông tin được truyền của các thiết bị IoT trong khi bị giới hạn bởi năng lượng, băng thông, và khả năng tính toán của chúng. Để đạt được mục tiêu này, tôi đề xuất sử dụng DRL và kỹ thuật SemCom trong hệ thống này. 
+
+\subsection{Đóng góp của đồ án}
+\begin{itemize}
+\item Đồ án giải quyết vấn đề tối ưu hóa thông tin được truyền của các thiết bị IoT nhằm tìm kiếm mô hình tối ưu đảm bảo sự hiệu quả của hệ thống IoT mang lại.
+\item Đồ án khai thác khả năng tự học và ra quyết định tự động của DRL phù hợp với hệ thống IoT.
+\end{itemize}
+
+\newpage
+
+% \section*{CHAPTER 2.  LITERATURE REVIEW}
+% \addcontentsline{toc}{section}{\numberline{}CHAPTER 2.  LITERATURE REVIEW}
+% \setcounter{section}{2}
+% \setcounter{figure}{0}
+% \setcounter{table}{0}
+
+
+
+
+
+
+
+
+
+\newpage
+\section*{CHƯƠNG 2. MÔ HÌNH HỆ THỐNG VÀ CỤ THỂ HÓA VẤN ĐỀ}
+\addcontentsline{toc}{section}{\numberline{}CHƯƠNG 2. MÔ HÌNH HỆ THỐNG VÀ CỤ THỂ HÓA VẤN ĐỀ}
+\setcounter{section}{2}
+\setcounter{subsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+Trong chương này tôi trình bày cụ thể về một hệ thống IoT sạc không dây có khả năng SemCom như minh họa trong Hình. \ref{fig:model_system} .
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\textwidth]{Images/model_system.png}
+    \caption[Mô hình hệ thống IoT SemCom]{\bfseries \fontsize{12pt}{0pt}\selectfont Mô hình hệ thống IoT SemCom}
+    \label{fig:model_system}
+\end{figure}
+
+Trong một bước thời gian có thời gian kéo dài T, mô hình hệ thống bao gồm một tập hợp $\mathcal{N}$ gồm N thiết bị IoT và một trạm cơ sở. Trong mỗi khung thời gian, mỗi thiết bị IoT thực hiện 4 bước:
+
+\begin{itemize}
+    \item Đầu tiên, thiết bị IoT thực hiện thu thập năng lượng từ trạm cơ sở trong khoảng thời gian $t_{i}^{\rm{harv}}$.
+
+    \item Thứ hai, sau khi được sạc năng lượng, thiết bị IoT thực hiện việc thu thập thông tin bằng cách chụp hình ảnh về điều kiện xung quanh của môi trường trong thời gian $t_{i}^{\rm{sens}}$.
+
+    \item Thứ ba, thiết bị IoT trích xuất đồ thị đồ họa từ các hình ảnh bằng cách sử dụng kỹ thuật SemCom với khoảng thời gian $t^{\rm{extract}}_{i}$.
+
+    \item  Thứ tư, sau khi trích xuất, thiết bị IoT thực hiện truyền các đồ thị đồ họa đến một trạm cơ sở với thời gian $t_i^{\rm{trans}}$.
+\end{itemize}
+
+\subsection{Thu thập năng lượng tại thiết bị IoT}
+
+Tôi ký hiệu $t_i^{\mathrm{harv}}$ là thời gian thu thập năng lượng của thiết bị IoT $i$. Các thiết bị IoT thu thập năng lượng từ tín hiệu được truyền từ các trạm cơ sở ở hướng downlink, từ sự nhiễu từ các thiết bị IoT ở hướng uplink và từ tín hiệu nhiễu thêm. Tuy nhiên, năng lượng thu thập từ tín hiệu nhiễu thêm và từ sự nhiễu từ các thiết bị uplink thường rất nhỏ so với năng lượng thu thập từ các trạm cơ sở ở hướng downlink. Do đó, tôi bỏ qua năng lượng thu thập từ tín hiệu nhiễu thêm và từ sự nhiễu từ các thiết bị uplink. Cụ thể, năng lượng thu thập tại thiết bị IoT được biểu thị như sau:
+\begin{equation}
+P^{\rm{harv}}_i=\xi P  h_{i} d_{i}^{-\alpha},    
+\end{equation}
+trong đó $\xi\in\left[0,1\right]$ là hiệu suất chuyển đổi năng lượng, $P$ là công suất truyền của trạm cơ sở ở hướng downlink, $h_i$ và $d_i$ lần lượt là hệ số truyền và khoảng cách giữa trạm cơ sở và thiết bị IoT $i$, và $\alpha$ đại diện cho mũ mất mát đường truyền. Tôi sẽ có thu thập năng lượng trong khoảng thời gian $t_i^{\mathrm{harv}}$ như sau:
+\begin{equation}
+    e_i^{\rm{harv}} = P^{\rm{harv}}_i  t_i^{\rm{harv}}
+\end{equation}
+Sau khi thu thập được năng lượng $e_i^{\mathrm{harv}}$, các thiết bị IoT sử dụng năng lượng thu thập để thu thập dữ liệu, trích xuất đồ thị đồ họa và truyền các hình ảnh đến trạm cơ sở.
+
+Năng lượng của thiết bị IoT thứ $i$ còn lại cho đến khi bắt đầu thu thập tiếp theo $e_{i,0}^\prime$ sẽ được định nghĩa như sau:
+\begin{equation}
+e^{'}_{i, 0} = \min(e_{i,0} + e_i^{\rm{harv}}, E_i) - e_i^{\rm{sens}} - e_i^{\rm{extract}} - e_i^{\rm{trans}}
+\end{equation}
+trong đó $e_i^{\mathrm{sens}}$ là năng lượng để thu thập dữ liệu, $e_i^{\mathrm{extract}}$ là năng lượng để trích xuất đồ thị đồ hoạ, $e^{\mathrm{trans}}$ là năng lượng để truyền các hình ảnh đến trạm cơ sở và $E_i$ là khả năng lưu trữ năng lượng của thiết bị và cần đảm bảo rằng $e_{i,0}^\prime\geq0$.
+
+\subsection{Thu thập hình ảnh}
+
+Tôi ký hiệu $t_i^{\mathrm{sens}}$ là thời gian thu thập hình ảnh. Tôi ký hiệu $\lambda_i$ là tốc độ thu thập (hình ảnh/giây) của thiết bị IoT $i$. Vì vậy, trong $t_i^{\mathrm{sens}}$ giây, thiết bị IoT $i$ thu thập $\lambda_it_i^{\mathrm{sens}}$ hình ảnh. Các thiết bị IoT truyền tải các đồ thị đồ cảnh thay vì các hình ảnh gốc đến trạm cơ sở. Kỹ thuật SemCom sẽ được trình bày thêm trong phần tiếp theo.
+Để xác định năng lượng thu thập của các thiết bị IoT, tôi tận dụng mô hình tiêu thụ năng lượng trong  ~\cite{thammawichai2017optimizing}. Tôi ký hiệu $e_i^{\mathrm{sens}}$ là năng lượng thu thập trong $t_i^{\mathrm{sens}}$ và $\epsilon_0^{\mathrm{sens}}$ là năng lượng tiêu thụ để thu thập một bit. Ở đây, mỗi hình ảnh có kích thước là L bit. Năng lượng tiêu thụ của thiết bị IoT i được tính bởi  ~\cite{thammawichai2017optimizing}:
+\begin{equation}
+e^{\rm{sens}}_i =  \lambda_i t^{\rm{sens}}_i L \epsilon^{\rm{sens}}_0.
+\end{equation}
+
+\subsection{Giao tiếp ngữ nghĩa}
+Trong công việc này, tôi tận dụng kỹ thuật SemCom, cụ thể là RelTR, được đề xuất trong ~\cite{cong2022reltr} để tạo ra các biểu đồ đồ thị. Ở đây, mỗi đồ thị đại diện cho các mối quan hệ giữa các chủ thể và đối tượng trong hình ảnh. Mối quan hệ giữa các chủ thể và đối tượng được thể hiện bằng các bộ ba, mỗi bộ ba có $<\texttt{subject}$-$\texttt{predicative}$-$\texttt{object}>$. Ở đây, $\texttt{predicative}$ đề cập đến cách đối tượng liên quan đến đối tượng. Quá trình tạo ra một đồ thị từ hình ảnh gốc bằng kỹ thuật RelTR được trình bày rõ ràng trong ~\cite{cong2022reltr}. Ý tưởng chính của RelTR như sau. Đầu tiên, một mạng nơ-ron tích chập (CNN) kết hợp với một bộ mã hóa đặc trưng và bộ giải mã thực thể được sử dụng để tạo ra ngữ cảnh đặc trưng và biểu diễn thực thể của hình ảnh. Sau đó, cơ chế chú ý ~\cite{vaswani2017attention} với bộ giải mã bộ ba được sử dụng để tạo ra biểu diễn chủ thể, biểu diễn đối tượng, các mối quan hệ giữa các chủ thể và đối tượng, và ngữ cảnh giữa các bộ ba. Các biểu diễn chủ thể này và biểu diễn đối tượng cuối cùng được đưa vào mạng nơ-ron tiến hóa feedforward (FFNN) để tạo ra tọa độ hộp giới hạn của các chủ thể và đối tượng.
+Tôi ký hiệu $Q_i$ là kích thước trong bit của đồ thị đồ họa của hình ảnh được chụp bởi thiết bị IoT $i$. Đồ thị đồ họa này được tạo thành từ các bộ ba được tạo ra từ RelTR, và do đó kích thước của nó phụ thuộc vào số lượng bộ ba được tạo ra từ RelTR. Cụ thể, ngữ cảnh tại khung thời gian t có thể bao gồm nhiều chủ thể, đối tượng và bộ ba hơn so với một ngữ cảnh tại khung thời gian $t+1$. Kết quả là, đồ thị được tạo ra tại t phức tạp hơn và có kích thước lớn hơn so với đồ thị được tạo ra tại $t+1$. Tôi ký hiệu $M^{\mathrm{sub}}$ và $M^{\mathrm{obj}}$ lần lượt là số lượng chủ thể và đối tượng. Ngoài ra, tôi ký hiệu $M^{\mathrm{pred}}$  là số lượng mệnh đề. Do đó, số lượng bộ ba có thể có, ký hiệu là $M^{\mathrm{trip}}$ , được xác định bởi:
+\begin{equation}
+M^{\rm{trip}}=M^{\rm{sub}} \times M^{\rm{obj}} \times M^{\rm{pred}}.
+\end{equation}
+Hơn nữa, Tôi ký hiệu $m^{\mathrm{trip}}\left(t\right)$  là số lượng bộ ba được tạo ra bởi RelTR tại thời điểm t. Sau đó, Tôi có $0\le m^{\mathrm{trip}}\left(t\right)\le M^{\mathrm{trip}}$. Vì ngữ cảnh xuất hiện ngẫu nhiên, giá trị của $m^{\mathrm{trip}}\left(t\right)$  thường là ngẫu nhiên.
+
+Ngoài ngữ cảnh, $Q_i$  phụ thuộc vào các thông số cấu hình của mô hình RelTR. Trong bài báo này, tôi xem xét một tham số được gọi là ngưỡng tin cậy, ký hiệu là$ \gamma_i $. Thực chất, đây là giá trị của một hàm điều kiện được thiết kế tại đầu ra của mô hình RelTR để lọc ra các bộ ba có xác suất phát hiện đúng cao hơn $\gamma_i$. Nói cách khác, tất cả các bộ ba có xác suất phát hiện đúng cao hơn$ \gamma_i $được lựa chọn để tạo thành đồ thị đồ họa của hình ảnh. Cụ thể, nếu tôi đặt $\gamma_i=0.3$, thì chỉ có các bộ ba có xác suất phát hiện đúng cao hơn 0.3 được chọn để tạo thành đồ thị đồ họa của hình ảnh gốc. Do đó,$ \gamma_i $được coi là một tham số bộ lọc của RelTR. Khi$ \gamma_i $cao, đồ thị đồ họa chỉ bao gồm các bộ ba có xác suất dự đoán đúng rất cao. Do đó, đồ thị đồ họa rất tự tin và có kích thước nhỏ. Tuy nhiên, đồ thị đồ họa thiếu và bỏ lỡ các bộ ba có xác suất dự đoán đúng thấp hơn $\gamma_i$, có thể quan trọng. Do đó, với giá trị cao của $\gamma_i$, đồ thị đồ họa không phản ánh đầy đủ ngữ cảnh ban đầu. Khi $ \gamma_i $ tăng, số lượng bộ ba và kích thước đồ thị đồ họa giảm. Nói chung, giá trị của$ \gamma_i $có thể từ 0 đến 1. Khi $\gamma_i=\ 0$, thậm chí các bộ ba có xác suất dự đoán đúng thấp cũng được chọn để tạo thành đồ thị đồ họa. Trong khi đó, khi $\gamma_i=1$ không có bộ ba nào có xác suất dự đoán đúng thỏa mãn điều kiện, tức là đồ thị đồ họa không có bộ ba nào để truyền. Do đó, tôi có $\gamma\in\left[\gamma_{min},\gamma_{max}\right]$, trong đó $\gamma_{min}$ và $\gamma_{max}$ là các giá trị tối thiểu và tối đa của ngưỡng tin cậy $\gamma_i,\forall i \in \mathcal{N}$.
+
+Chúng ta sẽ có kích thước của đồ thị đồ họa cho hình ảnh $j$ với một giá trị cụ thể của $\gamma_i $ được xác định bởi:
+\begin{equation}
+Q_{i, j} (\gamma_{i})= \sum_{c^{\rm{trip}}_{i,j,k} \in \mathcal{G}_{i,j}} ||c^{\rm{trip}}_{i,j,k}||x_{i,j,k}(\gamma_i),
+\end{equation}
+
+ở đó $\left|\left|c_{i,j,k}^{\mathrm{trip}}\right|\right|$ đại diện cho kích thước trong bit của bộ ba $c_{i,j,k}^{\mathrm{trip}}\in\mathcal{G}_{i,j}$, và $x_{i,j,k}\left(\gamma_i\right)$ tham chiếu đến biến quyết định nhị phân phụ thuộc vào giá trị của $\gamma_i$. Cụ thể, $x_{i,j,k}\left(\gamma_i\right)=1$ nếu ưu tiên của$ G_k$ là $p_{i,j,k}^{\mathrm{trip}}\geqx_{i,j,k}\left(\gamma_i\right)$ và $x_{i,j,k}\left(\gamma_i\right)=0$ trong trường hợp ngược lại.
+
+Tóm lại, kích thước của đồ thị đồ họa bởi RelTR của thiết bị IoT $i$ như sau:
+\begin{equation}
+Q_{i}= \sum_{j=1}^{N_{\rm{img}}} Q_{i, j}(\gamma_{i})
+\end{equation}
+Tôi giới thiệu biến số mới, tỷ lệ trích xuất $\rho_{i,j}$, được định nghĩa như sau:
+\begin{equation}
+\rho_{i,j}=\frac{{Q}_{i,j}\left(\mathcal{\gamma}_{i}\right)}{{Q}_{i,j}\left(\mathcal{\gamma}^{'}\right)}
+\end{equation}
+
+Tất nhiên, với $\gamma^\prime=0$, giá trị của $\rho_{i,j}$ nằm trong khoảng (0,1]. Trong phần tiếp theo, Tôi sử dụng biến số để thay thế $Q_{i,j}$ với mục đích hiểu rõ hơn về tỷ lệ trích xuất.
+Tôi ký hiệu $t_{i,j}^{\mathrm{comp}}$ là thời gian tính toán đồ thị xác suất hướng của hình ảnh j được chụp bởi thiết bị IoT $i$, và $t_{i,j}^{\mathrm{select}}$ là thời gian để chọn thông tin với tỷ lệ trích xuất $\rho_{i,j}$ từ đồ thị xác suất hướng. Sau đó, độ trễ gây ra bởi việc tạo ra các đồ thị đồ họa của $N_{\mathrm{img}}=\lambda_it_i^{\mathrm{sens}}$ hình ảnh, được ký hiệu là $t_{i,j}^{\mathrm{extract}}$, được xác định bởi:
+\begin{equation}
+t^{\rm{extract}}_{i}= \sum_j^{N_{\rm{img}}} (t^{\rm{comp}}_{i, j} + t^{\rm{select}}_{i, j})
+\end{equation}
+Để truyền thông tin một cách hiệu quả, một tập hợp trích xuất $\mathcal{O}_{i,j}$ chứa thông tin ngữ nghĩa được chọn tại thiết bị IoT $i$ với mục đích truyền dữ liệu. Đối với mỗi thiết bị IoT $i$, thời gian tính toán để trích xuất thông tin ngữ nghĩa từ dữ liệu $\mathcal{D}_{i,j}$ được cho bởi:
+\begin{equation}
+t^{\rm{extract}}_{i, j}=\frac{r^{\rm{CPU}}_{i, j}\left(\mathcal{D}_{i,j}, \mathcal{O}_{i,j}\right)}{f_{i}}
+\end{equation}
+
+Với $r^{\rm{CPU}}_{i, j}\left(\mathcal{D}_{i,j}, \mathcal{O}_{i,j}\right)$ đại diện cho số lượng chu kỳ CPU cần thiết để tính toán $\mathcal{O}_{i,j}$ từ $\mathcal{D}_{i,j}$, trong khi $f_i$ biểu thị khả năng tính toán của thiết bị IoT $i$.
+
+Năng lượng tính toán cục bộ có thể được biểu thị bằng:
+\begin{equation}
+e^{\rm{extract}}_{i,j}=\kappa r^{\rm{CPU}}_{i, j}\left(\mathcal{D}_{i,j}, \mathcal{O}_{i,j}\right) f_{i}^{2},
+\end{equation}
+ở đó $\kappa$ là hệ số không đổi để đo điện dung chuyển mạch hiệu dụng.
+
+Đối với hàm tính toán $r_{i,j}^{\mathrm{CPU}}\left(\mathcal{D}_{i,j},\rho_{i,j}\right)$ là số chu kỳ CPU cần thiết để tính toán thông tin với tỷ lệ trích xuất $\rho_{i,j}$ từ $\mathcal{D}_{i,j},\ \ r_{i,j}^{\mathrm{CPU}}\left(\mathcal{D}_{i,j},\rho_{i,j}\right)$ bao gồm hai phần. Phần đầu tiên là tính toán đồ thị xác suất hướng, có thể được mô hình hóa như một hàm chỉ liên quan đến kích thước của $\mathcal{D}_{i,j}$, tức là $s\left(\mathcal{D}_{i,j}\right)$. Phần thứ hai là việc chọn thông tin với tỷ lệ trích xuất $\rho_{i,j}$ từ đồ thị xác suất hướng. Vì $\rho_{i,j}=0$ hoặc $\rho_{i,j}=1$, kế hoạch lựa chọn là một cách đơn giản, dẫn đến số chu kỳ tính toán thấp nhất. Do đó, việc tính toán của phần thứ hai trước tăng rồi giảm với tỷ lệ trích xuất $\rho_{i,j}$. Như một ví dụ, hàm tính toán $r_{i,j}^{\mathrm{CPU}}\left(\mathcal{D}_{i,j},\rho_{i,j}\right)$ có thể được biểu thị như sau:
+\begin{equation}
+r^{\rm{CPU}}_{i, j}\left(\mathcal{D}_{i,j}, \rho_{i,j}\right)=s\left(\mathcal{D}_{i,j}\right)+C_{j 1}\left(\rho_{i,j}-C_{j2}\right)^{C_{j3}}
+\end{equation}
+
+ở đó $s(D_{i,j}) = \epsilon D_{i, j}$ với $\epsilon=3000$, $C_{j 1}>0, C_{j 2} \in(0,1)$, và $C_{j 3}>0$  là các tham số hằng số và các tham số này có thể được lấy từ các mô phỏng.
+
+\subsection{Độ trễ truyền thông}
+
+Các thiết bị IoT truyền đồ thị đồ cảnh của nó đến trạm cơ sở để được xử lý tiếp. Tôi ký hiệu $\mathcal{C}=[c_1,\ldots,c_K]$ là tập hợp các kênh có sẵn của trạm cơ sở(BS), và băng thông của kênh $c_k$ là $W$. Tôi ký hiệu $[\alpha_{1,1},\ldots,\alpha_{K,N}]$ là vector các kênh được gán cho thiết bị IoT. Ở đó, $\alpha_{k,i}$ tham chiếu đến kênh k được gán cho thiết bị IoT $i$. Mỗi người dùng được gán tối đa một kênh, và do đó tôi có điều kiện sau đây:
+\begin{equation}
+\sum_{k=1}^{K}\alpha_{k,i}\leq 1.
+\end{equation}
+
+Sau đó, tốc độ truyền dữ liệu, được ký hiệu bởi $R_i$, tính bằng bit/giây đạt được bởi thiết bị IoT $i$ là:
+\begin{equation}
+        R_{i} = W\log_2 \Big{(}1+ \frac{p^{\rm{trans}}_{i}h_{i}}{W\sigma^2} \Big{)},
+\end{equation}
+
+ở đó $p_i^{\mathrm{trans}}$ là công suất truyền của thiết bị IoT $i$, $h_i$ là kênh phai nhỏ tỷ lệ giữa thiết bị và trạm cơ sở, $\sigma^2={10}^{-17}$ là phương sai của tín hiệu nhiễu. Tôi ký hiệu $t_i^{\mathrm{trans}}$ là độ trễ gây ra bởi việc truyền thông từ thiết bị IoT $i$ đến trạm cơ sở. Sau đó, $t_i^{\mathrm{trans}}$ được xác định bởi:
+\begin{equation}
+t^{\rm{trans}}_{i}=\frac{Q_{i}}{R_{i}},
+\end{equation}
+
+Sau khi truyền, thiết bị IoT $i$ sẽ tiêu thụ một lượng năng lượng đáng kể:
+\begin{equation}
+    e_i^{\rm{trans}} = p^{\rm{trans}}_{i} t_i^{\rm{trans}}
+\end{equation}
+
+\newpage
+\section*{CHƯƠNG 3. XÂY DỰNG VẤN ĐỀ VÀ HƯỚNG GIẢI QUYẾT}
+\addcontentsline{toc}{section}{\numberline{}CHƯƠNG 3. XÂY DỰNG VẤN ĐỀ VÀ HƯỚNG GIẢI QUYẾT}
+\setcounter{section}{3}
+\setcounter{subsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\setcounter{equation}{0}
+Tôi nhằm mục tiêu tối đa hóa tổng tỷ lệ trích xuất của toàn bộ hệ thống, xem xét thời gian hoàn thành, độ chính xác của việc truyền thông thông tin, hạn chế về khả năng tính toán, phân bổ công suất, và giới hạn năng lượng lưu trữ. Toán học, vấn đề tối đa hóa tổng tỷ lệ trích xuất đã được đặt ra như sau:
+
+\begin{subequations}\label{extrac_rate_opt_pro}
+	\begin{align}
+	\label{op1}
+       \max_{{\gamma}_{i},{\alpha}_{k, i}, p_i^{\rm{trans}}} & \sum_{i=1}^{N} \sum_{j=1}^{N_{img}}  \rho_{i,j}\\
+        \text{s.t.   } &
+         t^{\rm{select}}_i + t^{\rm{trans}}_i \leq T - (t^{\rm{harv}}_i + t^{\rm{sens}}_i + t^{\rm{comp}}_i) ,
+        \forall i \in \mathcal{N} \label{time_cons}\\
+        &
+         e^{\rm{select}}_i + e^{\rm{trans}}_i \leq e_i - e^{\rm{sens}}_i  - e^{\rm{comp}}_i, \forall i \in \mathcal{N} \label{energy_cons}\\
+         &
+        0 \leq {\gamma}_{i} < 1, \forall i \in \mathcal{N} \label{energy_cons}\\
+         &
+        {\alpha}_{k, i} \in \{0, 1\}, \forall i \in \mathcal{N} \label{energy_cons}\\
+        &
+        0 \leq p_i^{\rm{trans}} \leq P_i, \forall i \in \mathcal{N} \label{powertrans_cons}
+	\end{align}
+\end{subequations}
+
+trong đó $e_i$ là lượng năng lượng còn lại sau khi thiết bị IoT $i$ thực hiện việc trích xuất, nó sẽ được tính theo công thức sau:
+
+\begin{equation}
+\label{c_1}
+e_i = \min(e_{i, 0} + e_i^{\rm{harv}}, E_i) - e_i^{\rm{sens}} - e_i^{\rm{comp}},
+\end{equation}
+
+và $\mathrm{T}$ là thời gian truyền thông tối đa của hệ thống.
+
+Vấn đề tổng tỷ lệ trích xuất có thể được công thức hóa dưới dạng một vấn đề tối ưu ngẫu nhiên được định nghĩa là $<{\mathcal{S}}, {\mathcal{A}}, {\mathcal{ P}}, {\mathcal{R}} >$, trong đó ${\mathcal{S}}$, ${\mathcal{A}}$, ${\mathcal{P}}$ và ${\mathcal {R}}$ là không gian trạng thái, không gian hành động, hàm xác suất chuyển trạng thái và hàm thưởng của thiết bị IoT, tương ứng. Hướng giải quyết của tôi đề xuất ở đây là sử dụng thuật toán Deep Q-Learning (DQN).
+
+\subsection{Không gian trạng thái}
+Không gian trạng thái của thiết bị IoT là sự kết hợp của các không gian trạng thái của ${N}$ thiết bị IoT, được biểu thị bằng $\mathcal{S} = \prod_{i=1}^{N}\mathcal{S}_i$ , trong đó $\prod S_i$ là tích Descartes, và $\mathcal{S}_{i} $là không gian trạng thái của thiết bị IoT $i$. $\mathcal{S}_{i}$ được định nghĩa như sau:
+
+\begin{equation}
+\label{c_2}
+    \mathcal{S}_i=\big{\{} \left ( e_i, f_i, ||\mathcal{G}_{i}||, \Delta t_i \right )\big{\}}, 
+\end{equation}
+
+trong đó $||\mathcal{G}_{i}||$ là tổng số triplet đầu ra của hình ảnh đầu vào trong khoảng thời gian $t_i^{\rm{sens}}$, được tính bằng công thức sau:
+
+\begin{equation}
+\label{c_3}
+||\mathcal{G}_{i}|| = \sum_{i=1}^{N}\sum_{j=1}^{N_{img}} ||c^{\rm{trip}}_{i,j}||
+\end{equation}
+
+và $\Delta t_i$  là lượng thời gian còn lại để chọn và gửi các triplet đến BS, được tính như sau:
+
+\begin{equation}
+\label{c_4}
+\Delta t_i = T - (t^{\rm{harv}}_i + t^{\rm{sens}}_i + t^{\rm{comp}}_i )
+\end{equation}
+
+\subsection{Không gian hành động}
+Ở mỗi bước lặp, thiết bị IoT sẽ có một lượng năng lượng được lưu trữ, sau đó thiết bị IoT phải quyết định cách chia khoảng thời gian để truyền thông tin một cách hiệu quả nhất. Không gian hành động của thiết bị IoT được định nghĩa như sau:
+
+\begin{align}
+    \mathcal{A} =&\big{\{}( {\gamma}_{1},{\alpha}_{k, 1}, p_1^{\rm{trans}}, \ldots,  {\gamma}_{n},{\alpha}_{k, n}, p_n^{\rm{trans}})\\
+    & 0 \leq {\gamma}_{n} < 1,  {\alpha}_{k, i} \leq 1,0 \leq p_i^{\rm{trans}} \leq P_i,n =(1,\ldots,N) \big{\}},
+    \notag
+\end{align}
+
+trong đó $P_i$ là công suất truyền tối đa cho phép của thiết bị IoT $i$.
+
+\subsection{Chuyển trạng thái}
+
+Chuyển trạng thái của thiết bị IoT từ trạng thái hiện tại s sang trạng thái tiếp theo $s^\prime$ được xác định dựa trên sự chuyển đổi năng lượng của tất cả các thiết bị IoT.
+
+\begin{equation}
+    \mathcal{S}^{'}_i=\big{\{}  ( e_i^{'}, f_i^{'},||\mathcal{G}_{i}^{'}||, \Delta t_i^{'}  )\big{\}}, 
+\end{equation}
+
+trong đó $e_i^{'}, ||\mathcal{G}_{i}^{'}||, \Delta t_i^{'}$ sẽ có các giá trị biến tương ứng với các công thức \ref{c_1} \ref{c_2} \ref{c_4}. Đối với sự chuyển đổi trạng thái CPU của thiết bị IoT $i$, $f_i^{'}$ là ngẫu nhiên theo phân phối Gaussian như sau $f_i^{'} = \mathcal{N}( \mu_{f_i^{'}}, \sigma^2_{f_i^{'}})$, trong đó $\mu_{f_i^{'}}$ và $\sigma^2_{f_i^{'}}$ là giá trị trung bình và phương sai của $f_i^{'}$.
+
+
+\subsection{Phần thưởng}
+Phần thưởng của thiết bị IoT được định nghĩa dưới dạng một hàm của trạng thái $s\in\mathcal{S}$ và hành động $a\in\mathcal{A}$ như sau:
+
+\begin{align}
+\mathcal{R}\left ( s,a \right ) &= 
+  \begin{cases}
+    k_0 N N_{img} \left(1- \exp(-k_1 \frac{\sum_{i=1}^{N} \sum_{j=1}^{N_{img}}  \rho_{i,j}}{N}) \right) \\ + k_2\frac{\sum_{i=1}^{N} (t_i^{\rm{select}} + t_i^{\rm{trans}})}{\Delta t_{i}}  \hphantom{-\sqrt{-}}  \text{Satisfied } \\
+    -k_3(e^{'}_{i,0} - E_{i0})^2 - k_4(\Delta t_i - t_i^{\rm{select}} - t_i^{\rm{trans}})^2 \\ - k_5 \text{ if } e^{'}_{i,0} < E_{i0}, \Delta t_i < t_i^{\rm{select}}  + t_i^{\rm{trans}}\\
+    -2k_0   \text{ Otherwise}.
+  \end{cases}
+  \label{value_func}
+\end{align}
+
+trong đó $k_0,k_1,k_2,k_3,k_4$ và $k_5$ là các tham số hằng số và các tham số này có thể được xác định thông qua các mô phỏng, $E_{i0}$ là năng lượng tối thiểu để duy trì hoạt động của thiết bị IoT $i$.
+
+\subsection{Thuật toán Deep Q-Learning}
+
+Để giải quyết vấn đề đưa ra, tôi đã sử dụng hai cơ chế quan trọng: "trải nghiệm lặp lại" và "mạng Q cố định". Dưới đây là mô tả cụ thể của cả hai cơ chế:
+
+\begin{itemize}
+	\item Trải nghiệm lặp lại: tôi triển khai một bộ nhớ tái trải nghiệm, thường được gọi là "bể nhớ" ($\mathcal{D}$), để lưu trữ các trải nghiệm trước đó. Thay vì huấn luyện mạng nơ-ron Q (DNN) dựa trên các cặp trạng thái-hành động ngay khi chúng xảy ra, thuật toán chọn ngẫu nhiên mẫu từ bể nhớ này để huấn luyện DNN. Các ước tính $\mathcal{Q}$ được tạo ra bởi DNN sau đó được sử dụng để tạo ra các trải nghiệm mới, sau đó được lưu trữ lại trong bể nhớ $\mathcal{D}$. Việc này cho phép mạng nơ-ron được huấn luyện hiệu quả hơn bằng cách sử dụng cả trải nghiệm cũ và mới. Hơn nữa, việc sử dụng trải nghiệm lặp lại giúp làm cho các chuyển tiếp trở nên độc lập và phân phối đồng nhất hơn, loại bỏ các tương quan giữa các quan sát.
+
+	\item Mạng Q cố định: Giá trị $\mathcal{Q}$ thay đổi trong quá trình huấn luyện, và điều này có thể gây ra sự bất ổn nếu chúng ta sử dụng một tập hợp giá trị thay đổi liên tục để cập nhật mạng Q chính. Để khắc phục vấn đề này, thuật toán DQN triển khai một "mạng Q mục tiêu" để cập nhật thường xuyên, nhưng chậm dần so với mạng Q chính. Bằng cách này, sự tương quan giữa các giá trị $\mathcal{Q}$ mục tiêu và các ước tính của chúng giảm đáng kể, làm cho thuật toán ổn định hơn.
+
+\end{itemize}
+
+Cuối cùng, thuật toán Deep Q-Learning kết hợp cả hai cơ chế này để tối ưu hóa quyết định. Hình vẽ \ref{fig:dqn} \ref{fig:dqn_follow} trong tài liệu mô tả sơ đồ khối và sơ đồ luồng của thuật toán Deep Q-Learning.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.1\textwidth]{Images/DQN.png}
+    \caption{Sơ đồ khối thuật toán DQN}
+    \label{fig:dqn}
+\end{figure}
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.1\textwidth]{Images/DDQN_algorithm_flow.pdf}
+    \caption{Sơ đồ luồng thuật toán DQN}
+    \label{fig:dqn_follow}
+\end{figure}
+
+Trong Hình \ref{fig:dqn_follow} quá trình huấn luyện DQN diễn ra qua nhiều tập (episode) khác nhau. Trong mỗi tập, BS thực hiện một hành động và học từ các quan sát về chiến lược để thực hiện hành động đã chọn. Điều này đặt ra một thách thức quan trọng cho BS: cân nhắc giữa việc khám phá không gian trạng thái mới và sử dụng kiến thức hiện có.
+Trong mỗi tập, dựa trên trạng thái hiện tại, thuật toán lựa chọn một hành động từ không gian hành động sẵn có bằng cách sử dụng chính sách quan sát và thuật toán $\epsilon-Greedy$, trong đó $\epsilon$ nằm trong khoảng từ 0 đến 1. 
+
+\begin{algorithm}[!ht]
+\caption{Thuật toán DQN}
+\begin{algorithmic}[1]
+\STATE \textbf{Khởi tạo:} khởi tạo bộ nhớ lưu trữ kinh nghiệm $\mathcal{D}$
+    \STATE \textbf{Khởi tạo:} khởi tạo mạng Q với trọng số ngẫu nhiên $\theta$
+    \FOR{Số vòng học = 1 đến M}
+        \FOR{t = 1 đến T}
+            \STATE Xem xét trạng thái $s_t$, với xác suất $\epsilon$ chọn hành động ngẫu nhiên $a_t$.
+            \STATE Thực thi hành động $a_t$ và quan sát phần thưởng $r_t$ và trạng thái tiếp theo $s_{t+1}$. 
+            \STATE Thay thế $s_t \gets s_{t+1}$
+            \STATE Lưu trữ chuyển tiếp $e =(s_t,a_t,r_t,s_{t+1})$ trong $\mathcal{D}$
+            \STATE Chọn $N_b$ kinh nghiệm ngẫu nhiên $e_i =(s_i,a_i,r_i,s_{i+1})$ từ bộ nhớ lưu trữ $\mathcal{D}$.
+            \STATE Thực hiện giá trị $\mathcal{Q}$:
+            \STATE $y_i = r_i+ \gamma \underset{a_{i+1} \in \mathbf{\mathcal{A}} }{\mathop{\mathrm{max}}}Q(s_{i+1},a_{i+1}|\theta^-)$
+            \STATE Thực hiện bước giảm gradient trên $(y_i-Q(s_i, a_i| \theta))^2$ đối với các tham số mạng $\theta$.
+        \ENDFOR
+    \ENDFOR.
+\end{algorithmic}
+\label{Algo1}
+\end{algorithm}
+
+
+
+Ban đầu, thuật toán \ref{Algo1} khởi đầu với một chính sách ngẫu nhiên, tức $\epsilon$ có giá trị cao nhất, thường là 1.0. Sau đó, giá trị $\epsilon$ dần giảm xuống trong quá trình huấn luyện, ví dụ như 0.1. Điều này có nghĩa là BS sẽ bắt đầu với việc thực hiện các hành động ngẫu nhiên như một cách khám phá môi trường, sau đó chuyển dần sang việc thực hiện các hành động dựa trên kiến thức đã tích luỹ. 
+Sau khi thực hiện hành động, BS quan sát kết quả, bao gồm trạng thái tiếp theo và phần thưởng nhận được. Các chuyển tiếp này sau đó được lưu trữ trong bộ nhớ tái trải nghiệm (replay memory) để sử dụng trong quá trình huấn luyện trong các tập hợp sau. Quá trình này giúp thuật toán DQN học từ kinh nghiệm trước đó và điều chỉnh chính sách quyết định để tối ưu hóa hiệu suất của BS trong môi trường tương tác.
+Trong quá trình huấn luyện, mạng Neural DNN nhận trạng thái hiện tại của các thiết bị IoT làm đầu vào, mỗi thiết bị IoT bao gồm thông tin về năng lượng lưu trữ sau quá trình sạc, khả năng tính toán, tổng số triplet từ đầu ra của thuật toán Semcom và lượng thời gian còn lại để thực hiện lựa chọn thông tin rồi gửi về BS. Mạng DNN sẽ dự đoán và đưa ra hành động tối ưu dựa trên giá trị $\mathcal{Q}$ mà nó đã học. Trong quá trình này, bộ nhớ ghi lại trải nghiệm $\mathcal{D}$ với một dung lượng giới hạn D. Trọng số của mạng Q, được ký hiệu là $\theta$, được khởi tạo ngẫu nhiên tại dòng 1 và 2 trong thuật toán.
+
+Trong mỗi vòng lặp huấn luyện, thuật toán thực hiện việc chọn hành động dựa trên chính sách $\epsilon-Greedy$. Với xác suất $\epsilon$, BS có thể chọn một hành động ngẫu nhiên (dòng 5). Sau đó, BS thực hiện hành động đã chọn và thu nhận phần thưởng $r_t$ cùng với trạng thái tiếp theo $s_{t+1}$ (dòng 6). Các bộ giá trị $\left(s_t,a_t,r_t,s_{t+1}\right)$ sau đó được lưu trữ trong bộ nhớ đệm để sử dụng trong quá trình huấn luyện ở các vòng lặp sau.
+Bước tiếp theo của thuật toán liên quan đến việc chọn một mini-batch ngẫu nhiên $N_b$ các bộ giá trị $\left(s_t,a_t,r_t,s_{t+1}\right)$ từ bộ nhớ đệm để tính toán giá trị $\mathcal{Q}$ (dòng 10). Giá trị mục tiêu $y_i$ tại mỗi bước thời gian trong mini-batch được tính toán dựa trên công thức sau:
+
+\begin{equation}
+y_i = r_i+ \gamma \underset{a_{i+1} \in \mathbf{\mathcal{A} }}{\mathop{\mathrm{max}}}Q(s_{i+1},a_{i+1}|\theta)
+\end{equation}
+
+
+Trong quá trình học, các mẫu được chọn ngẫu nhiên từ bộ nhớ tái sử dụng được đưa vào mạng Neural. Thuật toán sau đó cập nhật mạng Neural bằng cách giảm thiểu hàm mất mát:
+\begin{equation}\label{lostDQN}
+\begin{split}
+    L_i(\theta_i) &= \mathbb{E}_{(s_i,a_i,r_i, s_{i+1}) \sim U(\mathcal{D})} \Big[\Big(r_i+\gamma \underset{a_{i+1} \in \mathbf{\mathcal{A} }}{\mathop{\mathrm{max}}}Q(s_{i+1},a_{i+1}|\theta_i^-)-Q(s_{i},a_{i}|\theta_i)\Big)^2\Big]
+\end{split}
+\end{equation}
+Trong đó, $\gamma$ là hệ số chiết khấu, $\theta_i$ là các tham số của mạng Q tại vòng học i, và $\theta_i^-$ là các tham số mục tiêu của mạng. Tôi tính đạo hàm để giảm độ dốc của hàm mất mát trong dòng 11 như sau:
+
+\begin{equation}\label{Eq11}
+\begin{split}
+    \triangledown_{\theta}L_i(\theta_i) &= \mathbb{E}_{(s_i,a_i,r_i, s_{i+1})} \Big[\Big(r_i+
+    \gamma \underset{a_{i+1} \in \mathbf{\mathcal{A} }}{\mathop{\mathrm{max}}}Q(s_{i+1},a_{i+1}|\theta_i^-)-\triangledown_{\theta}Q(s_{i},a_{i}|\theta_i) Q(s_{i},a_{i}|\theta_i)\Big)\Big]
+\end{split}
+\end{equation}
+
+
+Trong quá trình huấn luyện, chúng ta có thể tính độ dốc của phương trình ~\eqref{Eq11} có thể được tính bằng việc sử dụng thuật toán Stochastic Gradient Descent (SGD). Nói chung, hàm mất mát trong phương trình ~\eqref{lostDQN} được tính bằng cách tổng hợp qua các ví dụ huấn luyện từ một số hàm mất mát của các ví dụ. Ngoài ra, độ mất mát của xác suất điều kiện âm của dữ liệu huấn luyện có thể được biểu diễn như sau\begin{equation}\label{Eq12}
+    J(\theta) = \mathbb{E}_{{s_i,a_i,s_{i+1}} \sim \mathcal{D}}L(\theta)= \frac{1}{\mathcal{D}}\sum^{|\mathcal{D}|}_{i = 1}L(s_i,a_i,r_i,s_{i+1}|\theta)
+\end{equation}
+
+Nếu kích thước của bộ nhớ lưu trữ tăng lên, thời gian để huấn luyện một bước gradient đơn lẻ trở nên cực kỳ lâu. Bằng cách thực hiện SGD \cite{SGD}, chúng ta có thể lấy ngẫu nhiên một mini-batch $N_b$ trải nghiệm từ $\mathcal{D}$ ở mỗi bước của thuật toán DQL của chúng ta.Thông thường, $N_b$ có thể được thiết lập từ một đến vài trăm trải nghiệm để giảm đáng kể thời gian huấn luyện. Ước lượng của gradient sử dụng SGD với kích thước $mini-batch\ N_b$ có thể được tính toán như sau:
+
+\begin{equation}
+    g = \frac{1}{N_b}\sum^{N_b}_{i=1}L(\theta)
+\end{equation}
+Sau đó, SGD sẽ cập nhật giá trị trọng số của mạng như sau:
+\begin{equation}
+    \theta \gets \theta - \lambda g,
+\end{equation}
+trong đó $\lambda$ là tốc độ học của thuật toán DQN.
+
+\newpage
+\section*{CHƯƠNG 4. THIẾT LẬP THÔNG SỐ VÀ ĐÁNH GIÁ KẾT QUẢ}
+\addcontentsline{toc}{section}{\numberline{}CHƯƠNG 4. THIẾT LẬP THÔNG SỐ VÀ ĐÁNH GIÁ KẾT QUẢ}
+\setcounter{section}{4}
+\setcounter{subsection}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+Trong phần này tôi thiết lập các tham số và trình bày kết quả mô phỏng để đánh giá hiệu năng của thuật toán DQN với thuật toán ngẫu nhiên ở dạng đồ thị.
+
+\subsection{Thiết lập thông số}
+Đầu tiên chúng tôi xem xét đến số lượng thiết bị IoT N có sẵn có thể kết nối với BS. Số lượng thiết bị IoT tối đa $N_{max}^{IoT}=3$, trong thực tế số lượng thiết bị IoT có thể nhiều hơn hàng chục thậm chí hàng trăm nếu vùng kết nối đủ lớn. Tuy nhiên trên mô phỏng tối đa giớ hạn số thiết bị IoT xuống thấp để phù hợp với tài nguyên máy tính có sẵn dùng để mô phỏng. Tương tự số lượng kênh truyền cũng được giới hạn $N_{max}^{channel}=4$ để phù hợp với tài nguyên.
+
+Sau đó các thông số mô phỏng được thiết lập trong bảng ~\ref{Table:parameter}
+
+\begin{table}[htbp!]
+    \centering
+    \caption{Thông số mô phỏng}
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    Thông số & Giá trị & Thông số & Giá trị\\
+    \hline
+    $T$ & $500$ ms & $d_i$ & $10-20$ m \\
+    ${N}$& 3 &  $t_i^{\mathrm{harv}}$& $1-2$ s \\
+    $\xi$ & $0.8$ &
+    $t_i^{\mathrm{sens}}$ & $1$ \\
+    $P$ & $40$ dBm & $e_{i,0}$ & $1-3$ J\\
+    $h_i$ & $\mathcal{N}\left(0,1\right)$ & $E_i$ & $10-13$ J\\
+    $\epsilon_0^{\mathrm{sens}}$ & $50$ nJ/bit & $\lambda_i$ & $2$ images/s\\
+    $\rho_{i,j}$ & [0.3, 0.4, 0.5] & $\kappa$ & ${10}^{-28}$\\
+    $\alpha_{k,i}$ & ${0, 1}$ & $E_{i0}$ & $\sim U\left[2,6\right]$\\
+    $f_i$ & $\sim\left[5,10\right]$Ghz& &\\
+    % $\nu$ & 1.0 & $P^{\max}$ & $23$ dBm\\
+    \hline
+    \end{tabular}
+    \label{Table:parameter}
+\end{table}
+
+Mạng lưới thần kinh sâu sử dụng các tham số này cho thuật toán DRL. Mạng DNN được thiết lập với một đầu vào, ba lớp ẩn và một lớp đầu ra. Kích thước lớp đầu vào và đầu ra lần lượt là $4^N$ và $N^{n\alpha} \times N^{np} \times N^{n\gamma}$. Đối với lớp ẩn kích thước là 512.
+
+\subsection{Kết quả mô phỏng và đánh giá}
+    Kết quả mô phỏng bao gồm: so sánh hiệu quả giữa thuật toán DQN và Random; hiệu chỉnh số lượng thiết bị IoT và số lượng kênh truyền trong hệ thống.
+\subsubsection{So sánh thuật toán}
+Hình ~\ref{fig:compare_DQN_Random} hiển thị kết quả về tổng thưởng thu được bởi các thuật toán trong quá trình tối ưu hóa. Quan sát biểu đồ, ta nhận thấy thuật toán DQN có khả năng hội tụ đến giá trị thưởng ổn định sau một số lượng các bước huấn luyện. Điều này chứng tỏ tính hiệu quả của thuật toán DQN trong việc giải quyết bài toán tối ưu với môi trường phức tạp như trong trường hợp của hệ thống IoT.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Images/compare_DQN_Random.png}
+    \caption{So sánh tổng phần thưởng của thuật toán DQN và Random}
+    \label{fig:compare_DQN_Random}
+\end{figure}
+
+Trong khi đó, thuật toán ngẫu nhiên cho kết quả thưởng rất thấp. Điều này dễ hiểu vì thuật toán ngẫu nhiên không học từ bất kỳ kinh nghiệm trước đó và chỉ dựa vào việc chọn các lời giải ngẫu nhiên để thực hiện tác vụ. Do đó, việc lựa chọn lời giải không được thông minh và không học từ kinh nghiệm trước đó dẫn đến việc thuật toán ngẫu nhiên không đạt được kết quả tối ưu như DQN.
+
+\subsubsection{Hiệu chỉnh tham số}
+
+
+\textbf{Thay đổi số lượng thiết bị IoT:} Hình \ref{fig:compare_IoT} mô tả tác động của số lượng thiết bị IoT đến các phần thưởng con (sub-rewards) của nó. Theo phương trình ~\eqref{value_func}, khi số lượng thiết bị IoT $N$ thay đổi sẽ ảnh hưởng trực tiếp đến phần thưởng nhận được của toàn hệ thống. Cụ thể là khi $N$ tăng thì tổng thưởng cũng tăng và đều đấy đã được thể hiện qua hình \ref{fig:compare_IoT}.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Images/compare_IoT.png}
+    \caption{Phần thưởng khi thay đổi số lượng thiết bị IoT}
+    \label{fig:compare_IoT}
+\end{figure}
+
+Điều này mang lại ý nghĩa:
+\begin{itemize}
+    \item Hiệu suất mạng cải thiện: việc thêm nhiều thiết bị IoT có thể cải thiện hiệu suất tổng thể của mạng. Điều này có thể bao gồm tăng cường khả năng truyền thông, giảm độ trễ trong truyền dữ liệu và tối ưu hóa các kết nối giữa thiết bị IoT và trạm cơ sở. Hiệu suất mạng cải thiện dẫn đến tăng reward.
+    \item Tối ưu hoá tài nguyên: thuật toán đã góp phần quản lý hiệu quả hơn tài nguyên sẵn có. Điều này có thể làm cho mạng có thể hỗ trợ một lượng lớn hơn các thiết bị IoT mà không làm giảm chất lượng dịch vụ hoặc hiệu suất mạng. Khi chúng ta thêm nhiều thiết bị IoT và mạng vẫn duy trì hiệu suất tốt, reward tăng lên.
+    \item Cải thiện chiến lược học tập: chiến lược học tập trong mô hình của mình đã tận dụng tốt sự thay đổi trong cấu hình mạng. Điều này có thể bao gồm cải thiện việc quản lý tài nguyên, phân phối thông tin, hoặc điều chỉnh các siêu tham số của mô hình. Cải thiện chiến lược học tập có thể dẫn đến tăng reward.
+    \item Tính Mở Rộng của Hệ Thống: Khi thấy rằng tăng số lượng thiết bị IoT không ảnh hưởng đáng kể đến hiệu suất mạng, điều này có thể cho thấy hệ thống có khả năng mở rộng để hỗ trợ nhiều thiết bị hơn mà không làm giảm hiệu suất hoạt động tổng thể.
+
+\end{itemize}
+
+
+\textbf{Thay đổi số lượng kênh truyền:} Hình \ref{fig:compare_channel} mô tả tác động của số lượng kênh truyền tới phần thưởng thành phần. 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Images/compare_channel.png}
+    \caption{Phần thưởng khi thay đổi số lượng kênh truyền}
+    \label{fig:compare_channel}
+\end{figure}
+
+Hình \ref{fig:compare_channel} thể hiện tác động của số lượng kênh truyền lên phần thưởng của hệ thống. Khi số lượng kênh truyền tăng, phần thưởng tính toán $R$ thu được bởi thuật toán DQN tăng lên. Nguyên nhân được giải thích là khi lượng thiết bị IoT có nhiều đường truyền hơn sẽ tăng khả năng tìm thấy đường truyền có mức độ truyền tải được lượng dữ liệu lớn hơn và trực tiếp ảnh hưởng đến phần thưởng theo phương trình ~\eqref{value_func}. Chứng tỏ thật toán có khả năng đáp ứng với sự thay đổi của môi trường thực tế và phù hợp với các cơ sở lý thuyết đưa ra:
+\begin{itemize}
+\item Cải thiện hiệu suất truyền thông: Tăng số lượng kênh truyền có thể giúp tăng hiệu suất truyền thông trong hệ thống mạng IoT. Điều này có thể dẫn đến việc truyền dữ liệu giữa các thiết bị IoT và trạm cơ sở được thực hiện nhanh hơn và ổn định hơn, làm tăng khả năng hoàn thành các nhiệm vụ hoặc ghi nhận sự kiện. Kết quả là tăng cường của reward.
+\item Giảm xung đột truyền thông: Thêm kênh truyền có thể giúp giảm xung đột truyền thông giữa các thiết bị IoT, khiến cho các thiết bị có khả năng giao tiếp với trạm cơ sở mà không cần phải chờ đợi lâu. Điều này có thể dẫn đến việc cải thiện hiệu suất tổng thể của hệ thống và tăng reward.
+\item Khả năng kết nối tốt hơn: Tăng số lượng kênh truyền có thể cải thiện khả năng kết nối của thiết bị IoT với trạm cơ sở. Điều này có thể dẫn đến việc giảm thiểu mất mát dữ liệu và giao tiếp không thành công, làm tăng khả năng hoàn thành các nhiệm vụ và cuối cùng là tăng reward.
+\item Khả năng mở rộng: Sự tăng cường của reward khi tăng số lượng kênh truyền có thể cho thấy tính mở rộng của hệ thống. Điều này có thể đồng nghĩa với việc hệ thống có khả năng mở rộng để hỗ trợ một lượng lớn hơn các thiết bị IoT và cơ cấu truyền thông.
+\end{itemize}
+
+Việc tăng số lượng kênh truyền đã giúp cải thiện hiệu suất truyền thông và khả năng kết nối trong mạng IoT dẫn đến tăng reward trong mô hình DQL. Điều này là một kết quả tích cực và cho thấy tính hiệu suất của hệ thống được cải thiện.
+
+
+
+
+\newpage
+\section*{KẾT LUẬN}
+\phantomsection\addcontentsline{toc}{section}{\numberline {}KẾT LUẬN}
+
+Trong đồ án này, tôi đã được đề xuất một phương pháp tiếp cận để giải quyết các thách thức phổ biến của hệ thống IoT với mục tiêu cải thiện các thông số kết nối, khả năng tính toán và thời gian xử lý. Phương pháp đã áp dụng các thuật toán Học tăng cường sâu (DRL) một cách hiệu quả và đã được chứng minh qua các kết quả thực nghiệm. Ý tưởng chính của phương pháp này là sử dụng mã hóa thông tin và cho phép mô hình DRL tự động đưa ra quyết định phù hợp với tình huống của hệ thống. Mô hình IoT Semcom được sử dụng là một mô hình mới trong lĩnh vực.
+
+Các kết quả mô phỏng rõ ràng đã chứng minh rằng thuật toán DRL đã giải quyết một cách hiệu quả các thách thức của hệ thống IoT, như đã được đề cập. Điều này được thể hiện qua biểu đồ của thuật toán DRL có hiệu suất tốt hơn khi thay đổi các tham số theo chiều hướng tốt trong thực tế. Cụ thể, các kết quả bao gồm việc tăng số lượng thiết bị mở rộng quy mô của hệ thống, giảm đáng kể thời gian giảm tải và giải quyết vấn đề truyền thông tin trong điều kiện tài nguyên có hạn của hệ thống.
+
+Tuy nhiên, trong phạm vi của đồ án này, đã triển khai mô hình cơ bản chỉ xem xét hệ thống với một BS duy nhất. Mặc dù kết quả nghiên cứu cho thấy thuật toán DRL hiệu quả, nhưng mô hình vẫn còn đơn giản và chưa thể hiện mọi khía cạnh của thực tế. Vì vậy, đề xuất tiếp tục nghiên cứu với mục tiêu tăng độ phức tạp của hệ thống trong tương lai, bao gồm:
+
+\begin{itemize}
+    \item Nghiên cứu hệ thống nhiều người dùng đa tác nhân: Tập trung vào hệ thống có nhiều BS sử dụng các thiết bị IoT chung và tương tác với nhau. Điều này đòi hỏi xem xét các khía cạnh phức tạp khi có nhiều yếu tố tương tác.
+    \item Nghiên cứu hệ thống IoT dưới dạng học liên tục (Federated Learning): Tập trung vào việc xem xét hệ thống IoT như một hệ thống học liên tục, nơi mỗi thiết bị IoT có thể học và đưa ra quyết định riêng của mình. Điều này cho phép các thiết bị IoT hỗ trợ nhau và chia sẻ khối lượng tác vụ lớn.
+    \item Tối ưu hóa cơ chế phân bổ tác vụ: Tập trung vào cách tối ưu hóa cơ chế phân bổ tác vụ của thiết bị IoT để đảm bảo rằng tác vụ được phân chia một cách hiệu quả và công bằng giữa các thiết bị IoT, từ đó tối đa hóa hiệu suất toàn bộ hệ thống.
+\end{itemize}
+
+Tóm lại, phương pháp tiếp cận DRL đã mang lại kết quả tích cực. Tuy vậy, vẫn còn nhiều khía cạnh phức tạp và thú vị để khám phá và nghiên cứu tiếp. Nghiên cứu những khía cạnh này sẽ giúp cải thiện hiệu suất và hiệu quả của hệ thống IoT, đáp ứng tốt hơn các yêu cầu và thách thức trong thực tế. 
+
+% \subsection*{Recommendations and proposals}
+% \phantomsection\addcontentsline{toc}{section}{\numberline {}Recommendations and proposals}
+% (Nếu có)
+
+\newpage
+\phantomsection\addcontentsline{toc}{section}{\numberline {}TÀI LIỆU}
+\bibliographystyle{IEEEtran}
+\bibliography{REFERENCES}
+% \newpage
+% \input{PhuLuc} % Phụ lục nếu có
+\end{document}
+
