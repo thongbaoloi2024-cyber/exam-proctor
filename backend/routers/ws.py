@@ -552,7 +552,15 @@ async def client_ws(websocket: WebSocket) -> None:
                             "server_received_at": received_iso,
                         },
                     )
-                if previous_session_state == "SESSION_NORMAL" and data.session_state == "SESSION_ALERT":
+                signal_alert_transition = any(
+                    previous_signal_states.get(name, "NORMAL") != "ALERT"
+                    and new_state == "ALERT"
+                    for name, new_state in data.signal_states.items()
+                )
+                if (
+                    previous_session_state == "SESSION_NORMAL"
+                    and data.session_state == "SESSION_ALERT"
+                ) or signal_alert_transition:
                     pending_violation_transition = True
                 elif data.session_state == "SESSION_NORMAL":
                     pending_violation_transition = False
@@ -580,6 +588,11 @@ async def client_ws(websocket: WebSocket) -> None:
                 if data.event_id in seen_event_ids or violation_event_exists(session_id, data.event_id):
                     await _send_validation_error(websocket, "duplicate_event")
                     continue
+                severity_is_consistent = (
+                    data.severity == _severity_for(data.risk_score)
+                    if exam_session.session_state_current == "SESSION_ALERT"
+                    else data.severity in {"MEDIUM", "HIGH"}
+                )
                 if (
                     last_signal_states is None
                     or last_signal_values is None
@@ -587,9 +600,8 @@ async def client_ws(websocket: WebSocket) -> None:
                     or data.session_id != session_id
                     or last_telemetry_client_video_time is None
                     or abs(data.video_time_sec - last_telemetry_client_video_time) > 2.0
-                    or exam_session.session_state_current != "SESSION_ALERT"
                     or abs(data.risk_score - exam_session.risk_score_current) > 1e-3
-                    or data.severity != _severity_for(data.risk_score)
+                    or not severity_is_consistent
                 ):
                     await _send_validation_error(websocket, "inconsistent_violation")
                     continue
