@@ -3,10 +3,12 @@
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 
-\subsection{Công nghệ sử dụng}
-Hệ thống kế thừa nền tảng Python/FastAPI của mã nguồn ban đầu và tái cấu trúc miền nghiệp vụ. Python được dùng cho camera client, computer vision, backend và worker báo cáo. OpenCV xử lý khung hình và thao tác hình học; Ultralytics YOLOv8 cung cấp detector; ByteTrack được tích hợp qua tracker của Ultralytics hoặc wrapper riêng; facenet-pytorch cung cấp MTCNN và InceptionResnetV1 cho face embedding. FastAPI cung cấp REST/WebSocket, SQLAlchemy 2.0 ánh xạ dữ liệu, PostgreSQL lưu dữ liệu quan hệ và Redis hỗ trợ trạng thái tạm/queue khi triển khai nhiều process.
+\subsection{Phạm vi cài đặt và công nghệ lựa chọn}
+Chương này trình bày phương án tổ chức cài đặt từ kiến trúc ở Chương 4. Cấu trúc thư mục, cấu hình và mã giả là đặc tả triển khai. Các nội dung này không thay thế bằng chứng chạy chương trình hoặc kết quả kiểm thử trên hệ thống hoàn chỉnh.
 
-Hệ thống đóng gói bằng Docker Compose ở phía server. Camera client có thể chạy độc lập trên máy edge có GPU hoặc CPU phù hợp. Việc tách client/server cho phép đặt video gần nguồn camera và chỉ truyền dữ liệu dẫn xuất.
+Hệ thống kế thừa nền tảng Python/FastAPI của mã nguồn ban đầu và tái cấu trúc miền nghiệp vụ. Python được dùng cho ứng dụng camera, thị giác máy tính, backend và tiến trình xử lý nền báo cáo. OpenCV xử lý khung hình và thao tác hình học, Ultralytics YOLOv8 cung cấp bộ phát hiện, ByteTrack được tích hợp qua bộ theo dõi của Ultralytics hoặc wrapper riêng, facenet-pytorch cung cấp MTCNN và InceptionResnetV1 cho vector đặc trưng khuôn mặt. FastAPI cung cấp REST/WebSocket, SQLAlchemy 2.0 ánh xạ dữ liệu, PostgreSQL lưu dữ liệu quan hệ và Redis hỗ trợ trạng thái tạm/hàng đợi khi triển khai nhiều tiến trình.
+
+Hệ thống đóng gói bằng Docker Compose ở phía máy chủ. Ứng dụng camera có thể chạy độc lập trên máy edge có GPU hoặc CPU phù hợp. Việc tách ứng dụng phía máy khách/máy chủ cho phép đặt video gần nguồn camera và chỉ truyền dữ liệu dẫn xuất.
 
 \begin{table}[H]
 \centering
@@ -16,21 +18,21 @@ Hệ thống đóng gói bằng Docker Compose ở phía server. Camera client c
 \toprule
 \textbf{Thành phần} & \textbf{Công nghệ} & \textbf{Vai trò}\\
 \midrule
-Computer Vision & Python, OpenCV, Ultralytics & Frame, detection, geometry\\
-Detector & YOLOv8n & Person và cell phone\\
-Tracker & ByteTrack & Multi-object tracking\\
-Identity & facenet-pytorch & MTCNN crop + FaceNet embedding\\
+Thị giác máy tính & Python, OpenCV, Ultralytics & Khung hình, quan sát phát hiện, hình học\\
+Bộ phát hiện & YOLOv8n & Người và điện thoại\\
+Bộ theo dõi & ByteTrack & Theo dõi đa đối tượng\\
+Danh tính & facenet-pytorch & cắt vùng mặt bằng MTCNN + vector đặc trưng FaceNet\\
 Backend & FastAPI & REST, WebSocket, auth\\
-ORM/DB & SQLAlchemy, PostgreSQL & Dữ liệu quan hệ/current state\\
-Cache/queue & Redis & Fan-out, job/state hỗ trợ\\
-Reporting & Jinja2/HTML/PDF & Báo cáo ngày/nhân viên\\
+ORM/DB & SQLAlchemy, PostgreSQL & Dữ liệu quan hệ/trạng thái hiện tại\\
+Cache/hàng đợi & Redis & Fan-out, tác vụ/trạng thái hỗ trợ\\
+Sinh báo cáo & Jinja2/HTML/PDF & Báo cáo ngày/nhân viên\\
 Triển khai & Docker Compose & Backend, DB, Redis\\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\subsection{Cấu trúc kho mã nguồn sau khi tái cấu trúc}
-Từ source nền, các gói proctoring được thay bằng các miền mới. Cấu trúc mục tiêu:
+\subsection{Cấu trúc kho mã nguồn đề xuất}
+Các gói chức năng được tổ chức theo miền nghiệp vụ nhân viên, camera, hiện diện và thời gian. Cấu trúc thư mục đề xuất như sau:
 \begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
 project/
 |-- main.py
@@ -71,10 +73,10 @@ project/
 `-- docker-compose.yml
 \end{Verbatim}
 
-Cấu trúc này giữ các thành phần hạ tầng đã ổn định như auth, authorization, WebSocket manager, reporting worker và Docker; đồng thời loại bỏ browser extension, head pose, eye/mouth signal và risk fusion vốn chỉ có ý nghĩa với đề tài giám sát thi cũ.
+Cấu trúc đề xuất cho phép tái sử dụng các thành phần xác thực, phân quyền, quản lý WebSocket, sinh báo cáo và đóng gói Docker. Các chức năng không thuộc bài toán hiện diện được đặt ngoài phạm vi triển khai.
 
 \subsection{Cấu hình tập trung}
-Tệp \texttt{vision.yaml} lưu tham số camera, detector, tracker, ROI, identity và state machine. Ví dụ:
+Tệp \texttt{vision.yaml} lưu tham số camera, bộ phát hiện, bộ theo dõi, ROI, danh tính và máy trạng thái. Ví dụ:
 \begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
 camera:
   source: rtsp://...
@@ -83,7 +85,7 @@ camera:
 
 detector:
   model: yolov8n.pt
-  person_conf: 0.35
+  person_conf: 0.10
   phone_conf: 0.50
   iou: 0.60
 
@@ -103,51 +105,53 @@ phone_usage:
   exit_grace_sec: 2.0
   association_threshold: 0.60
 \end{Verbatim}
-Policy nghiệp vụ như allowance không đặt chung với model threshold để tránh nhầm tham số kỹ thuật và quy định tổ chức. \texttt{policies.yaml} hoặc database lưu allowance theo ca/tổ chức và version.
+Ngưỡng lọc người ở đầu ra bộ phát hiện không được lớn hơn ngưỡng liên kết thấp của ByteTrack, nếu không các hộp có độ tin cậy thấp sẽ bị loại trước bước ghép thứ hai. Các giá trị trong ví dụ chỉ là cấu hình khởi đầu, chưa được hiệu chỉnh trên video thực địa.
+
+Chính sách nghiệp vụ như hạn mức không đặt chung với mô hình ngưỡng để tránh nhầm tham số kỹ thuật và quy định tổ chức. \texttt{policies.yaml} hoặc database lưu hạn mức theo ca/tổ chức và phiên bản.
 
 \subsection{Cài đặt tầng nhận thức}
-\subsubsection{PerceptionResult}
-\texttt{PerceptionResult} chứa timestamp, kích thước frame, danh sách person detection, phone detection, frame reference và timing. Sau bước tracking, một cấu trúc \texttt{SceneState} bổ sung \texttt{tracked\_persons}. Các module sau chỉ đọc các cấu trúc này, không gọi lại YOLO.
+\subsubsection{Nhận thứcResult}
+\texttt{PerceptionResult} chứa mốc thời gian, kích thước khung hình, danh sách phát hiện người, phát hiện điện thoại, khung hình reference và timing. Sau bước theo dõi, một cấu trúc \texttt{SceneState} bổ sung \texttt{tracked\_persons}. Các mô-đun sau chỉ đọc các cấu trúc này, không gọi lại YOLO.
 
 \subsubsection{YOLODetector}
-Wrapper detector tải model một lần khi khởi động. Hàm \texttt{process(frame)} lọc class ID tương ứng person/cell phone, trả box theo frame gốc. Với CPU, có thể skip frame theo chu kỳ nhưng tracker cần timestamp thực để dự đoán; với GPU, ưu tiên xử lý liên tục ở FPS vừa phải thay vì 30 FPS bắt buộc.
+Wrapper bộ phát hiện tải mô hình một lần khi khởi động. Hàm \texttt{process(frame)} lọc class ID tương ứng người/điện thoại, trả hộp bao theo khung hình gốc. Với CPU, có thể skip khung hình theo chu kỳ nhưng bộ theo dõi cần mốc thời gian thực để dự đoán, với GPU, ưu tiên xử lý liên tục ở FPS vừa phải thay vì 30 FPS bắt buộc.
 
-Pseudo-code:
+Mã giả minh họa:
 \begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
-result = model(frame)
+result = model(frame, conf=min(person_conf, phone_conf))[0]
 persons = []
 phones = []
 for box in result.boxes:
-    if box.class == PERSON and box.conf >= person_conf:
+    if int(box.cls.item()) == PERSON and float(box.conf.item()) >= person_conf:
         persons.append(to_detection(box))
-    elif box.class == CELL_PHONE and box.conf >= phone_conf:
+    elif int(box.cls.item()) == CELL_PHONE and float(box.conf.item()) >= phone_conf:
         phones.append(to_detection(box))
 return PerceptionResult(persons, phones, timings)
 \end{Verbatim}
 
 \subsection{Cài đặt ByteTrack}
-\texttt{PersonTracker.update(person\_detections, timestamp)} chuyển detection sang định dạng tracker. Kết quả được map lại thành \texttt{TrackedPerson}. Track record cục bộ giữ \texttt{first\_seen}, \texttt{last\_seen}, \texttt{stable\_frames}, area hiện tại và employee association.
+\texttt{PersonTracker.update(person\_detections, timestamp)} chuyển quan sát phát hiện sang định dạng bộ theo dõi. Kết quả được map lại thành \texttt{TrackedPerson}. Quỹ đạo record cục bộ giữ \texttt{first\_seen}, \texttt{last\_seen}, \texttt{stable\_frames}, vùng hiện tại và nhân viên liên kết.
 
-Để tránh rò rỉ track ID giữa phiên, tracker reset khi camera session mới bắt đầu. Khi cấu hình ROI thay đổi giữa phiên, client không hot-swap ngay nếu có interval mở; thay đổi được xếp hàng đến một mốc an toàn hoặc đánh dấu config version mới và đóng interval cũ.
+Để tránh rò rỉ mã quỹ đạo giữa phiên, bộ theo dõi khởi tạo lại khi camera phiên mới bắt đầu. Khi cấu hình ROI thay đổi giữa phiên, ứng dụng phía máy khách không thay thế ngay khi đang chạy ngay nếu có khoảng thời gian mở, thay đổi được xếp hàng đến một mốc an toàn hoặc đánh dấu phiên bản cấu hình mới và đóng khoảng thời gian cũ.
 
 \subsection{Cài đặt ROI manager}
-\texttt{ROIManager} tải polygon chuẩn hóa từ backend. Mỗi frame, manager tính anchor và gọi point-in-polygon. Hàm geometry thuần không phụ thuộc OpenCV UI để dễ unit test.
+\texttt{ROIManager} tải đa giác chuẩn hóa từ backend. Mỗi khung hình, manager tính điểm neo và gọi point-in-polygon. Hàm hình học thuần không phụ thuộc OpenCV giao diện để dễ kiểm thử đơn vị.
 
-Một test điển hình tạo polygon hình chữ nhật và kiểm tra điểm trong, ngoài, trên biên. Với điểm trên biên, hệ thống coi là inside có điều kiện và áp dụng history hysteresis. Nếu hai ROI chồng lấn, unit test xác minh score history ưu tiên vùng trước đó.
+Một kiểm tra điển hình tạo đa giác hình chữ nhật và kiểm tra điểm trong, ngoài, trên biên. Với điểm trên biên, hệ thống coi là inside có điều kiện và áp dụng history hysteresis. Nếu hai ROI chồng lấn, kiểm thử đơn vị xác minh điểm liên kết history ưu tiên vùng trước đó.
 
-\subsection{Cài đặt identity associator}
+\subsection{Cài đặt danh tính associator}
 \subsubsection{Enrollment}
-Quản trị viên chụp nhiều ảnh hoặc tải ảnh tham chiếu theo quy trình được phép. MTCNN tìm face; ảnh crop được resize/chuẩn hóa; InceptionResnetV1 tạo embedding. Các embedding lỗi/face quá nhỏ bị loại. Enrollment lưu số mẫu, timestamp, model version và vector chuẩn hóa.
+Quản trị viên chụp nhiều ảnh hoặc tải ảnh tham chiếu theo quy trình được phép. MTCNN tìm face, ảnh cắt vùng ảnh được đổi kích thước/chuẩn hóa, InceptionResnetV1 tạo vector đặc trưng. Các vector đặc trưng lỗi/face quá nhỏ bị loại. Enrollment lưu số mẫu, mốc thời gian, phiên bản mô hình và vector chuẩn hóa.
 
 \subsubsection{Verification scheduler}
-Mỗi track có \texttt{next\_verify\_at}. Scheduler chỉ xếp task khi có face box đủ diện tích và không có task đang chạy. Identity worker có thể chạy thread/process riêng. Kết quả trả về track ID + track generation để tránh áp dụng embedding cũ cho track ID đã tái sử dụng.
+Mỗi quỹ đạo có \texttt{next\_verify\_at}. Scheduler chỉ xếp task khi có face hộp bao đủ diện tích và không có task đang chạy. Danh tính tiến trình xử lý nền có thể chạy luồng/tiến trình riêng. Kết quả trả về mã quỹ đạo + quỹ đạo generation để tránh áp dụng vector đặc trưng cũ cho mã quỹ đạo đã tái sử dụng.
 
 \subsection{Cài đặt PresenceStateMachine}
-State machine có API:
+Máy trạng thái có API:
 \begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
 update(observation, timestamp) -> list[PresenceTransition]
 \end{Verbatim}
-Observation gồm DETECTED, NOT\_DETECTED, UNKNOWN cùng area/identity. State giữ \texttt{candidate\_since}, \texttt{last\_seen}, \texttt{present\_since}. Khi xác nhận PRESENT, transition payload chứa \texttt{interval\_start=candidate\_since}. Khi xác nhận ABSENT, payload chứa \texttt{interval\_end=last\_seen}.
+Quan sát đầu vào gồm DETECTED, NOT\_DETECTED, UNKNOWN cùng vùng/danh tính. Trạng thái giữ \texttt{candidate\_since}, \texttt{last\_seen}, \texttt{present\_since}. Khi xác nhận PRESENT, nội dung chuyển trạng thái chứa \texttt{interval\_start=candidate\_since}. Khi xác nhận ABSENT, payload chứa \texttt{interval\_end=last\_seen}.
 
 \begin{figure}[H]
 \centering
@@ -156,15 +160,15 @@ Observation gồm DETECTED, NOT\_DETECTED, UNKNOWN cùng area/identity. State gi
 \label{fig:presence-impl}
 \end{figure}
 
-Các timer dùng timestamp thay vì đếm frame. Vì vậy nếu FPS giảm từ 20 xuống 10, ngưỡng 2 giây vẫn giữ nguyên ý nghĩa.
+Các timer dùng mốc thời gian thay vì đếm khung hình. Vì vậy nếu FPS giảm từ 20 xuống 10, ngưỡng 2 giây vẫn giữ nguyên ý nghĩa.
 
 \subsection{Cài đặt PhoneAssociator}
-Với mỗi phone, hàm tạo candidate persons trong cùng hoặc lân cận ROI. Score distance được chuẩn hóa theo đường chéo person box; containment trả 1 nếu center phone nằm trong interaction region, giảm dần nếu ở gần; ROI score ưu tiên cùng vùng. Sau khi tính tất cả pair, thuật toán chọn assignment một-một tham lam theo score giảm dần hoặc Hungarian nếu số phone lớn. Vì thực tế mỗi frame thường ít phone, phương án tham lam có kiểm soát xung đột đủ đơn giản và dễ kiểm thử.
+Với mỗi hộp bao điện thoại, thuật toán xây dựng danh sách quỹ đạo người ứng viên trong vùng tương tác. Điểm liên kết kết hợp khoảng cách tâm chuẩn hóa, mức bao chứa và tính nhất quán với vùng ROI. Các cặp được xét theo điểm giảm dần, đồng thời kiểm tra xung đột để mỗi điện thoại chỉ gắn với một người. Khi nhiều ứng viên có điểm gần nhau, kết quả được giữ ở trạng thái chưa xác định. Phương án tham lam này cần được so sánh với phép gán tối ưu khi số đối tượng tăng.
 
-Một guard quan trọng: nếu phone box nằm cố định trên bàn nhưng xa phần thân người và association score thấp, trạng thái không vào CANDIDATE. Nếu phone detection chập chờn gần người, PhoneUsageStateMachine yêu cầu thời gian tối thiểu trước khi USING.
+Một điều kiện bảo vệ quan trọng: nếu hộp bao điện thoại nằm cố định trên bàn nhưng xa phần thân người và liên kết điểm liên kết thấp, trạng thái không vào CANDIDATE. Nếu phát hiện điện thoại chập chờn gần người, PhoneUsageStateMachine yêu cầu thời gian tối thiểu trước khi USING.
 
 \subsection{Cài đặt PhoneUsageStateMachine}
-API tương tự presence. Khi USING được xác nhận, session start backdate về thời điểm candidate đầu tiên. Khi GRACE hết, end backdate về last associated. Session dưới \texttt{min\_session\_seconds} có thể bỏ khỏi billing nhưng vẫn lưu debug counter.
+Giao diện cập nhật có cấu trúc tương tự máy trạng thái hiện diện. Khi xác nhận USING, mốc bắt đầu phiên được truy hồi về thời điểm xuất hiện ứng viên. Khi hết khoảng đệm GRACE, mốc kết thúc được truy hồi về lần liên kết tin cậy cuối cùng. Phiên ngắn hơn \texttt{min\_session\_seconds} có thể được loại khỏi phần tổng hợp theo chính sách nhưng vẫn được ghi vào bộ đếm chẩn đoán.
 
 \begin{figure}[H]
 \centering
@@ -174,24 +178,24 @@ API tương tự presence. Khi USING được xác nhận, session start backdat
 \end{figure}
 
 \subsection{Cài đặt WorkTimeAggregator}
-Aggregator không đọc frame. Nó chỉ nhận event/interval chuẩn hóa, nhờ đó có thể kiểm thử bằng dữ liệu tổng hợp. Các bước:
+Aggregator không đọc khung hình. Nó chỉ nhận sự kiện/khoảng thời gian chuẩn hóa, nhờ đó có thể kiểm thử bằng dữ liệu tổng hợp. Các bước:
 \begin{enumerate}
-\item Lấy schedule windows của employee/ngày.
-\item Chuẩn hóa và merge presence intervals bị chồng lấn.
-\item Cắt interval theo schedule.
-\item Chuẩn hóa phone intervals, giao với presence và schedule.
-\item Tính gross presence, phone usage, allowance, excess và effective.
-\item Tính unobserved duration từ camera outage trong schedule.
-\item Lưu \texttt{DailyWorkSummary} với policy/config version.
+\item Lấy lịch làm việc windows của nhân viên/ngày.
+\item Chuẩn hóa và hợp nhất các khoảng hiện diện bị chồng lấn.
+\item Cắt khoảng thời gian theo lịch làm việc.
+\item Chuẩn hóa các khoảng sử dụng điện thoại, giao với hiện diện và lịch làm việc.
+\item Tính tổng thời gian hiện diện, thời gian sử dụng điện thoại, hạn mức, phần vượt hạn mức và hiệu lực.
+\item Tính không quan sát được thời lượng từ gián đoạn camera trong lịch làm việc.
+\item Lưu \texttt{DailyWorkSummary} với chính sách/phiên bản cấu hình.
 \end{enumerate}
 
-Hàm merge interval dùng điều kiện hai đoạn cách nhau dưới epsilon kỹ thuật chỉ khi chúng thuộc cùng continuity event; không tự động nối mọi khoảng nghỉ ngắn vì điều đó làm sai ground truth.
+Hàm hợp nhất khoảng thời gian dùng điều kiện hai đoạn cách nhau dưới epsilon kỹ thuật chỉ khi chúng thuộc cùng continuity sự kiện, không tự động nối mọi khoảng nghỉ ngắn vì điều đó làm sai nhãn tham chiếu.
 
 \subsection{Cài đặt backend và API}
 \subsubsection{Mô hình dữ liệu SQLAlchemy}
-\texttt{backend/models.py} được thay các entity Exam/Candidate bằng Employee, Camera, WorkArea, WorkSchedule, MonitoringSession, PresenceInterval, PhoneUsageInterval và DailyWorkSummary. Các bảng Organization/User/AuditLog/ReportJob có thể tái sử dụng với thay đổi nhỏ.
+Tệp \texttt{backend/models.py} cần định nghĩa các thực thể Nhân viên, Camera, WorkArea, WorkSchedule, MonitoringSession, PresenceInterval, PhoneUsageInterval và DailyWorkSummary theo mô hình dữ liệu đã thiết kế. Các bảng Organization/User/AuditLog/ReportJob có thể tái sử dụng với thay đổi nhỏ.
 
-Unique constraint quan trọng gồm: employee code duy nhất trong organization; work area name duy nhất trong camera; một summary cho employee+date+schedule version; event ID duy nhất để idempotency.
+Unique constraint quan trọng gồm: nhân viên mã chương trình duy nhất trong organization, khu vực làm việc name duy nhất trong camera, một bản tổng hợp cho nhân viên+date+lịch làm việc phiên bản, mã sự kiện duy nhất để idempotency.
 
 \subsubsection{REST API}
 Các nhóm route dự kiến:
@@ -206,54 +210,54 @@ Các nhóm route dự kiến:
 /api/reports
 /api/evidence
 \end{Verbatim}
-Route tạo polygon kiểm tra tọa độ 0--1. Route report chỉ trả dữ liệu trong organization đang active. Route evidence kiểm tra permission riêng.
+Route tạo đa giác kiểm tra tọa độ 0--1. Route báo cáo chỉ trả dữ liệu trong organization đang đang hoạt động. Route bằng chứng kiểm tra quyền truy cập riêng.
 
-\subsubsection{WebSocket schema}
-Schema cũ yêu cầu đủ bảy signal proctoring được thay bằng \texttt{CameraTelemetry} và \texttt{MonitoringEvent}. Server kiểm tra camera ID trong token, sequence tăng và số person tối đa để tránh message bất thường. Bounding box được kiểm tra nằm trong biên hợp lệ; employee/area ID phải thuộc organization.
+\subsubsection{WebSocket lược đồ}
+Lược đồ thông điệp được thiết kế gồm \texttt{CameraTelemetry} và \texttt{MonitoringEvent}. Máy chủ kiểm tra mã camera trong token, số thứ tự tăng và số người tối đa để tránh message bất thường. Hộp bao được kiểm tra nằm trong biên hợp lệ, nhân viên/vùng ID phải thuộc organization.
 
-\subsubsection{Dashboard fan-out}
-Connection manager nhóm dashboard theo organization/camera. Khi current state thay đổi, server fan-out bản tóm tắt; snapshot chỉ tải qua REST có quyền, không nhúng base64 vào mọi WebSocket message.
+\subsubsection{Bảng điều khiển fan-out}
+Connection manager nhóm bảng điều khiển theo organization/camera. Khi trạng thái hiện tại thay đổi, máy chủ fan-out bản tóm tắt, ảnh bằng chứng chỉ tải qua REST có quyền, không nhúng base64 vào mọi WebSocket message.
 
 \subsection{Giao diện web}
 \subsubsection{Quản lý nhân viên}
-Trang Employee hiển thị mã, tên, trạng thái, khu vực hiện tại, lịch và trạng thái face enrollment. Không hiển thị raw embedding. Nút enrollment có luồng xác nhận vì đây là dữ liệu sinh trắc học.
+Trang Nhân viên hiển thị mã, tên, trạng thái, khu vực hiện tại, lịch và trạng thái đăng ký khuôn mặt. Không hiển thị vector đặc trưng gốc. Nút enrollment có luồng xác nhận vì đây là dữ liệu sinh trắc học.
 
 \subsubsection{Cấu hình camera và ROI}
-Trang camera tải một ảnh tham chiếu; người dùng click để vẽ polygon. Mỗi polygon có label và employee assignment. Giao diện kiểm tra các điểm nằm trong ảnh, hiển thị chồng lấn và cho phép lưu version mới.
+Trang camera tải một ảnh tham chiếu, người dùng nhấp chuột để vẽ đa giác. Mỗi đa giác có nhãn và nhân viên phân công. Giao diện kiểm tra các điểm nằm trong ảnh, hiển thị chồng lấn và cho phép lưu phiên bản mới.
 
-\subsubsection{Dashboard realtime}
-Mỗi employee card hiển thị trạng thái presence, identity, phone state, gross time, phone used/allowed/excess và effective time. Màu không phải kênh duy nhất: trạng thái luôn có text/icon để tăng khả năng đọc.
+\subsubsection{Bảng điều khiển thời gian thực}
+Mỗi nhân viên card hiển thị trạng thái hiện diện, danh tính, trạng thái điện thoại, tổng thời gian hiện diện, thời gian điện thoại, hạn mức và phần vượt mức và thời gian hiệu lực. Màu không phải kênh duy nhất: trạng thái luôn có văn bản và biểu tượng để tăng khả năng đọc.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.93\textwidth]{Images/sim_timeline.png}
-\caption{Mô phỏng timeline hiện diện, sử dụng điện thoại và thời gian hiệu lực}
+\caption{Mô phỏng dòng thời gian hiện diện, sử dụng điện thoại và thời gian hiệu lực}
 \label{fig:timeline-ui}
 \end{figure}
 
 \subsubsection{Trang chi tiết nhân viên}
-Timeline sự kiện có filter presence/phone/identity/camera outage. Mỗi interval hiển thị start, end, duration, source và confidence. Nếu có evidence, người dùng có quyền mới thấy nút mở ảnh. Review được lưu riêng không ghi đè event.
+Dòng thời gian sự kiện có filter hiện diện/điện thoại/danh tính/gián đoạn camera. Mỗi khoảng thời gian hiển thị start, end, thời lượng, mã nguồn và độ tin cậy. Nếu có bằng chứng, người dùng có quyền mới thấy nút mở ảnh. Hậu kiểm được lưu riêng không ghi đè sự kiện.
 
 \subsection{Lưu trữ bằng chứng và báo cáo}
-Snapshot không lưu liên tục. Mặc định có thể lưu khi identity mismatch, khi phone excess lần đầu vượt allowance hoặc khi supervisor yêu cầu chụp thủ công. File path do server sinh từ organization/session/event ID, kiểm tra traversal và hash để phát hiện hỏng file.
+Ảnh chụp không lưu liên tục. Mặc định có thể lưu khi danh tính không khớp, khi thời gian điện thoại vượt hạn mức lần đầu vượt hạn mức hoặc khi supervisor yêu cầu chụp thủ công. File path do máy chủ sinh từ organization/phiên/mã sự kiện, kiểm tra traversal và hash để phát hiện hỏng file.
 
-Report worker nhận \texttt{ReportJob}, tải summary/interval/event, render Jinja2 sang HTML rồi chuyển PDF. Báo cáo cá nhân gồm bảng tổng thời gian, timeline, danh sách phone session và thời gian camera không quan sát được. Báo cáo tổ chức tổng hợp nhiều nhân viên nhưng không mặc định nhúng ảnh.
+Báo cáo tiến trình xử lý nền nhận \texttt{ReportJob}, tải bản tổng hợp/khoảng thời gian/sự kiện, render Jinja2 sang HTML rồi chuyển PDF. Báo cáo cá nhân gồm bảng tổng thời gian, dòng thời gian, danh sách phiên sử dụng điện thoại và thời gian camera không quan sát được. Báo cáo tổ chức tổng hợp nhiều nhân viên nhưng không mặc định nhúng ảnh.
 
 \subsection{Logging và khả năng quan sát}
-Client ghi pipeline timing, số detection, active tracks, ID switch heuristic, queue size và camera FPS. Backend ghi request ID, event ID, camera session ID, report job. Không ghi token hoặc face embedding vào log. Metric hữu ích gồm \texttt{camera\_last\_seen}, \texttt{pipeline\_latency}, \texttt{ws\_queue\_lag}, số event retry và số frame UNKNOWN.
+Ứng dụng phía máy khách ghi chuỗi xử lý timing, số quan sát phát hiện, số quỹ đạo đang hoạt động, lần đổi định danh heuristic, hàng đợi size và camera FPS. Backend ghi request ID, mã sự kiện, camera mã phiên, tác vụ báo cáo. Không ghi token hoặc vector đặc trưng khuôn mặt vào nhật ký. Chỉ số hữu ích gồm \texttt{camera\_last\_seen}, \texttt{pipeline\_latency}, \texttt{ws\_queue\_lag}, số sự kiện gửi lại và số khung hình UNKNOWN.
 
 \subsection{Kiểm thử mã nguồn}
-\subsubsection{Unit test}
-Unit test bao phủ IoU/geometry, point-in-polygon, anchor, state transitions, backdating, interval intersection, allowance/excess, phone assignment, identity margin và idempotency event.
+\subsubsection{Kiểm thử đơn vị}
+Kiểm thử đơn vị bao phủ IoU/hình học, point-in-polygon, điểm neo, trạng thái các chuyển trạng thái, truy hồi mốc thời gian, khoảng thời gian intersection, hạn mức/phần vượt hạn mức, điện thoại phân công, danh tính biên chênh lệch và idempotency sự kiện.
 
-\subsubsection{Integration test}
-Integration test dùng video ngắn hoặc detection giả để chạy detector/tracker/state đến backend TestClient. Kịch bản gồm người vào/ra, che khuất 3 giây, mất 8 giây, hai người đổi vị trí, phone của người A gần người B, camera offline và reconnect.
+\subsubsection{Kiểm thử tích hợp}
+Kiểm thử tích hợp dùng video ngắn hoặc quan sát phát hiện giả để chạy bộ phát hiện/bộ theo dõi/trạng thái đến backend TestClient. Kịch bản gồm người vào/ra, che khuất 3 giây, mất 8 giây, hai người đổi vị trí, điện thoại của người A gần người B, camera mất kết nối và kết nối lại.
 
-\subsubsection{Security test}
-Backend test tenant isolation, role, camera token, evidence permission, path traversal, WebSocket ticket/replay, rate limit và CORS/HTTPS policy. Các kiểm thử này kế thừa tư tưởng từ source nền nhưng đổi resource theo miền mới.
+\subsubsection{Kiểm thử bảo mật}
+Backend kiểm tra cô lập dữ liệu giữa các tổ chức, vai trò, mã xác thực camera, quyền truy cập bằng chứng, path traversal, WebSocket ticket/phát lại, rate limit và chính sách CORS và HTTPS. Các kiểm thử này kế thừa tư tưởng từ mã nguồn nền nhưng đổi tài nguyên theo miền mới.
 
 \subsection{Triển khai}
-Backend Compose gồm ứng dụng, PostgreSQL, Redis và volume evidence/report. Trong môi trường phát triển có thể dùng SQLite cho test nhưng production schema mục tiêu là PostgreSQL. Camera client được cấu hình URL server và token riêng. Nếu edge GPU không có, có thể giảm inference size/FPS hoặc dùng model nano; các lựa chọn phải được ghi trong metadata kết quả đánh giá.
+Backend Compose gồm ứng dụng, PostgreSQL, Redis và volume bằng chứng/báo cáo. Trong môi trường phát triển có thể dùng SQLite cho kiểm tra nhưng production lược đồ mục tiêu là PostgreSQL. Ứng dụng camera được cấu hình URL máy chủ và token riêng. Nếu edge GPU không có, có thể giảm suy luận size/FPS hoặc dùng mô hình nano, các lựa chọn phải được ghi trong siêu dữ liệu kết quả đánh giá.
 
 \begin{table}[H]
 \centering
@@ -263,18 +267,164 @@ Backend Compose gồm ứng dụng, PostgreSQL, Redis và volume evidence/report
 \toprule
 \textbf{Node} & \textbf{Thành phần} & \textbf{Dữ liệu chính}\\
 \midrule
-Edge camera & CV client, model, local queue & Frame tạm, track/state, event chờ ACK\\
-Application server & FastAPI, worker & API, WebSocket, report\\
-PostgreSQL & Quan hệ/current state & User, employee, camera, intervals, summary\\
-Redis & Cache/fan-out/job & Dữ liệu tạm thời\\
-Evidence volume & Snapshot/report & File có retention\\
-Browser & Dashboard & Dữ liệu đã phân quyền\\
+Edge camera & CV ứng dụng phía máy khách, mô hình, local hàng đợi & Khung hình tạm, quỹ đạo/trạng thái, sự kiện chờ ACK\\
+Application máy chủ & FastAPI, tiến trình xử lý nền & API, WebSocket, báo cáo\\
+PostgreSQL & Quan hệ/trạng thái hiện tại & User, nhân viên, camera, các khoảng thời gian, bản tổng hợp\\
+Redis & Cache/fan-out/tác vụ & Dữ liệu tạm thời\\
+Bằng chứng volume & Ảnh chụp/báo cáo & File có thời hạn lưu trữ\\
+Browser & Bảng điều khiển & Dữ liệu đã phân quyền\\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \subsection{Các lỗi biên cần xử lý}
-Các trường hợp đặc biệt gồm: người ngồi thấp khiến bottom-center nằm ngoài ROI; hai người đứng chung vùng; điện thoại cầm gần ranh giới hai người; track ID reset khi camera reconnect; khuôn mặt nhỏ không đủ embedding; camera timestamp nhảy; schedule thay đổi sau khi summary đã sinh. Mỗi trường hợp cần chính sách rõ: UNKNOWN thay vì đoán, version configuration, khóa summary theo policy version và cho phép recompute có audit.
+Các trường hợp đặc biệt gồm: người ngồi thấp khiến điểm giữa cạnh đáy hộp bao nằm ngoài ROI, hai người đứng chung vùng, điện thoại cầm gần ranh giới hai người, mã quỹ đạo khởi tạo lại khi camera kết nối lại, khuôn mặt nhỏ không đủ vector đặc trưng, camera mốc thời gian nhảy, lịch làm việc thay đổi sau khi bản tổng hợp đã sinh. Mỗi trường hợp cần chính sách rõ: UNKNOWN thay vì đoán, phiên bản configuration, khóa bản tổng hợp theo phiên bản chính sách và cho phép tính lại có kiểm toán.
+
+\subsection{Cài đặt vòng lặp xử lý camera}
+Vòng lặp camera được tách thành thu nhận, suy luận và truyền dữ liệu. Luồng thu nhận chỉ đọc nguồn, đóng gói \texttt{FramePacket} và đưa vào hàng đợi giới hạn. Tiến trình suy luận lấy khung hình mới nhất phù hợp với chính sách lấy mẫu, chạy bộ phát hiện/bộ theo dõi/ngữ cảnh rồi cập nhật trạng thái. Tiến trình truyền dữ liệu gửi sự kiện và telemetry, lỗi mạng không được chặn suy luận.
+
+Một hàng đợi khung hình dài gây ra hiện tượng hệ thống xử lý quá khứ. Vì mục tiêu là giám sát gần thời gian thực, hàng đợi dùng chính sách drop-oldest khi đầy. Mỗi packet có \texttt{captured\_at} và \texttt{enqueued\_at}, tiến trình xử lý nền đo tuổi khung hình trước suy luận. Nếu age vượt ngưỡng, khung hình bị bỏ và chỉ số tăng. Ngược lại, hàng đợi sự kiện không dùng drop-oldest vì sự kiện là dữ liệu nghiệp vụ.
+
+Trình tự xử lý một khung hình được mô tả bằng mã giả sau:
+\begin{Verbatim}[fontsize=\small,breaklines=true]
+packet = frame_queue.get_latest()
+if packet.age_ms > config.max_frame_age_ms:
+    metrics.increment("stale_frame")
+    continue
+
+result = detector.infer(packet)
+tracks = tracker.update(result.person_detections, packet.timestamp)
+contexts = roi_manager.assign(tracks, active_work_areas)
+identities = identity_scheduler.update(packet, tracks, contexts)
+phone_links = phone_associator.assign(
+    result.phone_detections, tracks, contexts
+)
+
+for observation in build_observations(contexts, identities, phone_links):
+    transitions = state_registry.update(observation, packet.monotonic_time)
+    event_queue.append_all(transitions)
+\end{Verbatim}
+
+Mỗi bước nhận dữ liệu bất biến của khung hình hiện tại. Mô-đun không được sửa hộp bao dùng chung theo tọa độ đổi kích thước, mọi hộp bao được chuyển về khung hình gốc ngay sau bộ phát hiện. Cách này tránh ROI và bằng chứng dùng hai hệ tọa độ khác nhau.
+
+\subsection{Quản lý cấu hình và phiên bản}
+Cấu hình được chia thành bốn nhóm: mô hình, camera, theo thời gian và chính sách. Mô hình chứa mã kiểm tra trọng số, suy luận size, class ID và độ tin cậy. Camera chứa nguồn, độ phân giải kỳ vọng, ROI và calibration. Temporal chứa $T_{enter}$, $T_{exit}$, $T_{phone\_enter}$, $T_{phone\_exit}$ và bộ đệm của bộ theo dõi. Chính sách chứa lịch làm việc, hạn mức, quy tắc danh tính và thời hạn lưu trữ.
+
+Ứng dụng phía máy khách kiểm tra lược đồ khi khởi động. Giá trị thời gian phải không âm, ngưỡng độ tin cậy nằm trong $[0,1]$, đa giác hợp lệ, ngưỡng reject nhỏ hơn ngưỡng accept. Cấu hình sai làm ứng dụng phía máy khách vào CONFIGURATION\_ERROR thay vì dùng giá trị mặc định âm thầm.
+
+Khi máy chủ phát cấu hình mới, ứng dụng phía máy khách tải về vùng staging, kiểm tra chữ ký/checksum và xác thực. Các thay đổi không ảnh hưởng hình học có thể áp dụng tại ranh giới khung hình, thay đổi ROI, mô hình hoặc bộ theo dõi cần ranh giới phiên để tránh một khoảng thời gian dùng hai ngữ nghĩa. Sự kiện CONFIG\_ACTIVATED ghi phiên bản và thời điểm bắt đầu hiệu lực.
+
+\subsection{Cài đặt kho trạng thái theo camera phiên}
+\texttt{StateRegistry} ánh xạ khóa $(session\_id, track\_id)$ tới ngữ cảnh và các FSM. Registry chịu trách nhiệm khởi tạo trạng thái khi quỹ đạo mới, cập nhật khi quỹ đạo hoạt động và thu hồi trạng thái sau khi quỹ đạo kết thúc đủ lâu. Thu hồi phải gọi hàm finalize để đóng phiên còn mở trước khi giải phóng bộ nhớ.
+
+Không dùng mã quỹ đạo đơn lẻ làm khóa toàn cục. Khi bộ theo dõi khởi tạo lại, ID có thể bắt đầu lại từ 1. Ghép cùng mã phiên bảo đảm hai quỹ đạo khác phiên không chia sẻ trạng thái. Mã nhân viên chỉ được gắn sau liên kết, nếu danh tính thay đổi từ PROVISIONAL sang VERIFIED, khoảng thời gian hiện tại cập nhật siêu dữ liệu chứ không đổi khóa FSM.
+
+Checkpoint registry được ghi định kỳ bằng thao tác atomic: ghi file tạm, flush rồi rename. Checkpoint không chứa khung hình hoặc vector đặc trưng, chỉ có trạng thái cần phục hồi. Nếu checkpoint hỏng checksum, ứng dụng phía máy khách bỏ checkpoint, tạo phiên mới và phát RECOVERY\_FAILED để máy chủ đánh dấu khoảng không chắc chắn.
+
+\subsection{Cài đặt bộ lập lịch xác minh danh tính}
+Chạy FaceNet cho mọi quỹ đạo ở mọi khung hình vừa tốn tài nguyên vừa tạo nhiều so sánh từ cắt vùng ảnh kém. \texttt{IdentityScheduler} chỉ tạo task khi quỹ đạo đủ tuổi, nằm trong ROI, mặt đạt kích thước/chất lượng tối thiểu và không có kết quả VERIFIED còn hiệu lực.
+
+Chất lượng cắt vùng ảnh có thể kết hợp kích thước mặt, độ mờ và góc nhìn. Laplacian variance được dùng như tín hiệu độ nét nhưng không phải tiêu chí duy nhất. Task được đưa vào hàng đợi ưu tiên, quỹ đạo chưa từng xác minh có ưu tiên cao hơn quỹ đạo đã VERIFIED gần đây. Mỗi quỹ đạo có cooldown để tránh tạo nhiều task khi tiến trình xử lý nền chậm.
+
+Embedding tham chiếu của một nhân viên có thể gồm nhiều mẫu. Thay vì chỉ lấy một vector trung bình trong mọi trường hợp, hệ thống lưu vector trung tâm và thống kê phân tán, điểm liên kết ứng viên có thể lấy khoảng cách nhỏ nhất có kiểm soát hoặc khoảng cách tới vector trung tâm. Phiên bản mô hình phải khớp vì vector đặc trưng từ hai mô hình khác nhau không được so sánh trực tiếp.
+
+\subsection{Cài đặt thuật toán PhoneAssociator}
+Với mỗi hộp bao điện thoại, associator xây dựng tập người ứng viên dựa trên vùng tương tác và vùng ngữ cảnh. Một điểm liên kết minh họa gồm IoU với vùng thân trên, khoảng cách tâm chuẩn hóa và bonus cùng ROI:
+\begin{equation}
+ S(p,q)=w_1IoU(p,U(q))+w_2(1-d_n(p,q))+w_3R(p,q).
+\end{equation}
+Các trọng số và ngưỡng phải lấy từ cấu hình, không gán cố định trong mã nguồn. $d_n$ được chuẩn hóa theo chiều cao hộp bao người và giới hạn trong $[0,1]$ để một khoảng cách pixel có ý nghĩa tương đối nhất quán ở gần và xa camera.
+
+Liên kết thực hiện theo từng điện thoại và giải quyết xung đột toàn cục. Nếu hai điện thoại cùng chọn một người, chính sách có thể giữ hộp bao có độ tin cậy cao nhất hoặc cho phép nhiều vật thể nhưng chỉ một trạng thái hành vi sử dụng điện thoại. Nếu một điện thoại có hai người gần bằng nhau, trả UNKNOWN. Kết quả ghi cả best điểm liên kết, second điểm liên kết và biên chênh lệch để phân tích lỗi.
+
+\begin{Verbatim}[fontsize=\small,breaklines=true]
+candidates = score_candidates(phone_box, active_tracks)
+if not candidates:
+    return UNASSIGNED
+best, second = top_two(candidates)
+if best.score < min_score:
+    return UNASSIGNED
+if second and best.score - second.score < min_margin:
+    return AMBIGUOUS
+return ASSIGNED(best.track_id, best.score)
+\end{Verbatim}
+
+\subsection{Cài đặt bộ tổng hợp khoảng thời gian}
+Aggregator không cộng thời lượng từ các dòng chưa chuẩn hóa. Hàm \texttt{normalize\_intervals} sắp xếp, cắt theo miền hợp lệ và hợp nhất khoảng chồng lấn. Sau đó \texttt{intersect\_sets} tính giao hiện diện với lịch làm việc và điện thoại với hiện diện hợp lệ.
+
+Các phép tính thời lượng dùng số nguyên millisecond hoặc decimal, không dùng float giây tích lũy qua nhiều phép cộng. Khi hiển thị, giá trị được làm tròn ở lớp presentation, database giữ độ chính xác gốc. Quy tắc làm tròn cần thống nhất, ví dụ tổng theo millisecond rồi làm tròn một lần, tránh làm tròn từng phiên gây sai số cộng dồn.
+
+\begin{Verbatim}[fontsize=\small,breaklines=true]
+valid_presence = intersect_sets(
+    normalize_intervals(presence_intervals),
+    normalize_intervals(schedule_intervals),
+)
+valid_phone = intersect_sets(
+    normalize_intervals(phone_intervals),
+    valid_presence,
+)
+gross_ms = duration(valid_presence)
+phone_ms = duration(valid_phone)
+excess_ms = max(0, phone_ms - allowance_ms)
+effective_ms = max(0, gross_ms - excess_ms)
+\end{Verbatim}
+
+Nếu có gián đoạn quan sát, aggregator tính $\texttt{unobserved\_ms}=|\textit{schedule}\cap\textit{outage}|$. Độ bao phủ bằng phần lịch làm việc được quan sát chia tổng lịch làm việc. Bản tổng hợp độ bao phủ thấp được đánh cờ, hệ thống không nội suy hiện diện qua khoảng mất camera trừ khi chính sách được xác định rõ và được ghi phiên bản.
+
+\subsection{Cài đặt API idempotent}
+Endpoint nhận sự kiện yêu cầu \texttt{event\_id} và mã xác thực camera. Transaction kiểm tra token, chèn sự kiện với unique key, cập nhật cursor và tạo outbox record. Nếu mã sự kiện đã tồn tại với cùng hash payload, máy chủ trả kết quả cũ. Nếu cùng ID nhưng payload khác, máy chủ trả conflict và ghi security nhật ký.
+
+Outbox pattern giúp việc lưu database và phát thông báo không bị lệch. Sự kiện và outbox được commit trong một transaction. Tiến trình xử lý nền đọc outbox, cập nhật materialized trạng thái và fan-out, nếu tiến trình xử lý nền dừng đột ngột, record chưa đánh dấu hoàn tất sẽ được xử lý lại một cách idempotent.
+
+REST API danh sách dùng cursor pagination ổn định theo $(occurred\_at,id)$ thay vì offset lớn. Các endpoint tải bằng chứng không nhận đường dẫn file, chúng nhận bằng chứng ID, kiểm tra tenant/quyền truy cập rồi tạo phản hồi hoặc signed URL ngắn hạn.
+
+\subsection{Cài đặt WebSocket và kiểm soát backpressure}
+Khi kết nối, bảng điều khiển đổi access token lấy ticket một lần. WebSocket máy chủ xác thực ticket, tạo subscription theo organization/camera được phép và gửi \texttt{hello} chứa máy chủ time/phiên bản lược đồ. Ứng dụng phía máy khách tải ảnh chụp qua REST trước hoặc ngay sau hello rồi áp dụng delta có số thứ tự lớn hơn ảnh chụp cursor.
+
+Mỗi kết nối có hàng đợi giới hạn. Nếu browser xử lý chậm, máy chủ hợp nhất các cập nhật trạng thái hiện tại cùng key và giữ sự kiện quan trọng. Khi hàng đợi vẫn vượt ngưỡng, máy chủ đóng kết nối với mã rõ ràng, ứng dụng phía máy khách kết nối lại và tải ảnh chụp mới. Cách này tránh một consumer chậm làm tăng bộ nhớ toàn máy chủ.
+
+Thông điệp có \texttt{message\_type}, \texttt{schema\_version}, \texttt{cursor} và \texttt{payload}. Browser bỏ qua type chưa biết nhưng không được bỏ qua thay đổi phiên bản chính của lược đồ. Ping/pong đo kết nối, không thay thế camera heartbeat nghiệp vụ.
+
+\subsection{Migration và tính tương thích dữ liệu}
+Lược đồ database thay đổi qua migration có phiên bản. Thay đổi phá vỡ được triển khai theo expand--migrate--contract: thêm cột/bảng mới tương thích, backfill theo batch, chuyển ứng dụng sang đọc mới, sau đó mới loại trường cũ. Không đổi tên/xóa cột trong cùng lần triển khai mà ứng dụng phía máy khách cũ còn sử dụng.
+
+Backfill bản tổng hợp cần lưu tiến độ và chạy idempotent. Với bảng lớn, tác vụ xử lý theo khoảng ID hoặc ngày để tránh transaction dài. Sau migration, kiểm tra số dòng, constraint, bản ghi mẫu và khả năng rollback ứng dụng, rollback lược đồ chỉ thực hiện khi an toàn dữ liệu.
+
+\subsection{Xử lý lỗi và chiến lược phục hồi}
+Lỗi được phân loại thành transient, configuration, data và fatal. Lỗi mạng hoặc thời gian chờ là transient và gửi lại có backoff. Đa giác sai hoặc mô hình thiếu là lỗi cấu hình, cần can thiệp thay vì gửi lại vô hạn. Sự kiện trái lược đồ là lỗi dữ liệu và chuyển dead-letter. Lỗi bộ nhớ hoặc corruption có thể yêu cầu dừng phiên.
+
+Mỗi lỗi có mã ổn định, thông báo người vận hành và ngữ cảnh không nhạy cảm. Không bắt ngoại lệ chung rồi tiếp tục trong máy trạng thái vì có thể làm trạng thái âm thầm sai. Tại ranh giới vòng lặp, lỗi một khung hình có thể được ghi và bỏ khung hình, lỗi bất biến trạng thái phải dừng phiên hoặc khởi tạo lại có kiểm soát.
+
+\begin{table}[H]
+\centering
+\caption{Chính sách xử lý lỗi theo nhóm}
+\label{tab:error-handling-implementation}
+\begin{tabularx}{\textwidth}{p{3cm}p{3.3cm}X X}
+\toprule
+\textbf{Nhóm} & \textbf{Ví dụ} & \textbf{Phản ứng} & \textbf{Quan sát}\\
+\midrule
+Transient & hết thời gian chờ RTSP, HTTP 503 & Gửi lại backoff, giữ hàng đợi & Số lần gửi lại, downtime\\
+Configuration & ROI sai, thiếu bộ trọng số & Dừng preflight & Mã lỗi, phiên bản cấu hình\\
+Data & Sự kiện sai lược đồ & Reject/dead-letter & Payload hash, producer phiên bản\\
+Tài nguyên & Disk/hàng đợi gần đầy & Giảm telemetry, cảnh báo & Usage, thời gian lưu trong hàng đợi\\
+Fatal invariant & Khoảng thời gian âm, trạng thái hỏng & Dừng phiên an toàn & Crash báo cáo, checkpoint\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Kiểm thử theo lớp và kiểm tra double}
+Bộ phát hiện, clock, khung hình mã nguồn và sự kiện truyền dữ liệu đều có interface để thay bằng kiểm tra double. Fake bộ phát hiện phát hộp bao theo kịch bản định trước, fake clock cho phép tiến thời gian mà không sleep, fake truyền dữ liệu mô phỏng mất ACK, gửi trùng và đảo thứ tự. Nhờ đó máy trạng thái được kiểm thử theo cách xác định.
+
+Property-based kiểm tra phù hợp với khoảng thời gian: kết quả chuẩn hóa không chồng lấn, thời lượng không âm, giao không dài hơn mỗi tập đầu vào, hiệu lực không lớn hơn gross và không âm. Máy trạng thái có thể sinh chuỗi observation ngẫu nhiên và kiểm tra bất biến tối đa một khoảng thời gian mở.
+
+Golden kiểm tra dùng một tệp quan sát phát hiện/quỹ đạo đã ghi để so sự kiện và bản tổng hợp mong đợi. Khi thuật toán thay đổi có chủ ý, reviewer xem diff tệp kết quả trước khi cập nhật golden output. Điều này phát hiện thay đổi ngữ nghĩa ngoài dự kiến tốt hơn chỉ kiểm tra chương trình không dừng đột ngột.
+
+\subsection{Quy trình phát hành và vận hành}
+Chuỗi xử lý CI thực hiện format/lint, kiểm thử đơn vị, kiểm thử tích hợp, migration check, build image và quét dependency. Image được gắn commit SHA, trọng số mô hình có checksum riêng. Môi trường staging chạy video kịch bản trước khi phát hành production.
+
+Triển khai máy chủ theo rolling update nếu lược đồ tương thích. Ứng dụng camera có thể canary trên một số thiết bị, chỉ số UNKNOWN, độ trễ và lỗi sự kiện được so với phiên bản trước. Nếu xấu đi, rollback ứng dụng phía máy khách nhưng giữ sự kiện đã sinh, lược đồ có phiên bản bảo đảm máy chủ hiểu cả hai ứng dụng phía máy khách trong cửa sổ chuyển đổi.
+
+Backup gồm PostgreSQL và siêu dữ liệu bằng chứng, file bằng chứng cần chiến lược riêng theo thời hạn lưu trữ. Restore kiểm tra phải được thực hiện định kỳ, vì backup tồn tại nhưng không phục hồi được không có giá trị. Runbook ghi rõ RPO/RTO mục tiêu, người chịu trách nhiệm và cách xác minh sau phục hồi.
 
 \subsection{Kết luận chương}
-Cài đặt được tổ chức để pipeline CV không tự mang logic nhân sự. Detector/tracker tạo quan sát; context/state chuyển quan sát thành interval; aggregator áp dụng schedule/policy; backend lưu, phân quyền và trình bày. Sự phân tách này cho phép thay YOLO hoặc tracker mà không phải viết lại cách tính thời gian và giúp Chương 6 đánh giá từng lớp riêng biệt.
+Cài đặt được tổ chức để chuỗi xử lý CV không tự mang logic nhân sự. Bộ phát hiện/bộ theo dõi tạo quan sát, ngữ cảnh/trạng thái chuyển quan sát thành khoảng thời gian, aggregator áp dụng lịch làm việc/chính sách, backend lưu, phân quyền và trình bày. Sự phân tách này cho phép thay YOLO hoặc bộ theo dõi mà không phải viết lại cách tính thời gian và giúp Chương 6 đánh giá từng lớp riêng biệt.

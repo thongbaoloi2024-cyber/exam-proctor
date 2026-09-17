@@ -4,291 +4,64 @@
 \setcounter{subsubsection}{0}
 
 \subsection{Mục tiêu và nguyên tắc đánh giá}
-Mục tiêu của chương này là xây dựng một quy trình đánh giá có thể tái lập cho toàn bộ chuỗi từ detection đến thời gian làm việc cuối cùng. Khác với bài toán phân loại frame, chất lượng của hệ thống phải được đánh giá ở nhiều tầng vì một detector có Precision cao vẫn có thể tạo sai số thời gian lớn nếu tracker đổi ID, ROI gán nhầm hoặc grace period không phù hợp.
+Mục tiêu của chương này là xây dựng một quy trình đánh giá có thể tái lập cho toàn bộ chuỗi từ quan sát phát hiện đến thời gian làm việc cuối cùng. Khác với bài toán phân loại khung hình, chất lượng của hệ thống phải được đánh giá ở nhiều tầng vì một bộ phát hiện có Precision cao vẫn có thể tạo sai số thời gian lớn nếu bộ theo dõi đổi ID, ROI gán nhầm hoặc khoảng đệm không phù hợp.
 
-\textbf{Lưu ý quan trọng:} tại thời điểm cập nhật báo cáo, chưa có bộ video CCTV thực địa cuối cùng đi kèm source mới. Vì vậy các bảng số liệu ở mục 6.4--6.11 là \textbf{kết quả mô phỏng có kiểm soát}, được tạo để kiểm tra công thức, cấu trúc bảng, tiêu chí và logic phân tích. Chúng không phải bằng chứng cho độ chính xác của hệ thống ngoài thực tế và phải được thay bằng số đo thực khi tiến hành nghiệm thu chính thức.
+Phạm vi đánh giá trong bản thảo gồm hai phần: kiểm tra công thức và cách tổng hợp chỉ số bằng dữ liệu tổng hợp có thể tái tạo, cùng quy trình thực nghiệm trên video CCTV có nhãn tham chiếu. Phần dữ liệu tổng hợp được trình bày tại mục \ref{sec:synthetic-origin}.
 
-Quy trình đánh giá thật sau này phải giữ nguyên ba nguyên tắc: tách tập hiệu chỉnh threshold với tập test; ground truth do người gán nhãn độc lập; và báo cáo cả sai số mô hình lẫn sai số thời gian nghiệp vụ.
+Quy trình thực nghiệm cần bảo đảm ba nguyên tắc: tập hiệu chỉnh tham số tách biệt với tập kiểm tra, nhãn tham chiếu được xây dựng độc lập với dự đoán của mô hình, và kết quả bao gồm cả sai số thị giác lẫn sai số thời lượng.
 
 \subsection{Thiết kế bộ dữ liệu thực nghiệm}
 \subsubsection{Bối cảnh camera}
-Đề xuất bộ test gồm một camera cố định nhìn 4--8 bàn, độ phân giải tối thiểu Full HD nếu khoảng cách xa, video 20--25 FPS. Camera không đổi góc trong một phiên. Cần ghi dữ liệu ở nhiều thời điểm sáng/tối và có người che khuất nhau để kiểm tra tracker.
+Đề xuất bộ kiểm tra gồm một camera cố định nhìn 4--8 bàn, độ phân giải tối thiểu Full HD nếu khoảng cách xa, video 20--25 FPS. Camera không đổi góc trong một phiên. Cần ghi dữ liệu ở nhiều thời điểm sáng/tối và có người che khuất nhau để kiểm tra bộ theo dõi.
 
 \subsubsection{Kịch bản}
 Bộ kịch bản tối thiểu:
 \begin{enumerate}
 \item Một nhân viên ngồi trong ROI ổn định 10--20 phút.
 \item Ba đến năm nhân viên vào/ra độc lập.
-\item Hai người đi ngang nhau gây giao box.
+\item Hai người đi ngang nhau gây giao hộp bao.
 \item Người bị che bởi người khác hoặc bàn ghế 1--5 giây.
 \item Nhân viên đứng sát biên ROI rồi chuyển vùng.
 \item Người khác ngồi vào bàn của nhân viên được gán.
 \item Điện thoại đặt trên bàn nhưng không sử dụng.
 \item Cầm điện thoại ngắn dưới ngưỡng.
-\item Sử dụng điện thoại nhiều phiên, tổng dưới allowance.
-\item Sử dụng nhiều phiên, tổng vượt allowance.
+\item Sử dụng điện thoại nhiều phiên, tổng dưới hạn mức.
+\item Sử dụng nhiều phiên, tổng vượt hạn mức.
 \item Điện thoại nằm giữa hai nhân viên để kiểm tra WPAR.
 \item Camera mất tín hiệu 10--30 giây rồi kết nối lại.
 \end{enumerate}
 
-Mỗi kịch bản nên có timestamp kịch bản được ghi bằng đồng hồ tham chiếu để hỗ trợ annotation.
+Mỗi kịch bản nên có mốc thời gian kịch bản được ghi bằng đồng hồ tham chiếu để hỗ trợ gán nhãn.
 
-\subsubsection{Ground truth}
-Ground truth cần ít nhất bốn lớp dữ liệu: bounding box/ID người cho một tập frame lấy mẫu; interval hiện diện của từng employee; interval sử dụng điện thoại; mapping phone owner. Hai người gán nhãn độc lập trên các đoạn quan trọng, bất đồng được giải quyết bởi người thứ ba hoặc quy tắc thống nhất.
+\subsubsection{Nhãn tham chiếu}
+Nhãn tham chiếu cần ít nhất bốn lớp dữ liệu: hộp bao/ID người cho một tập khung hình lấy mẫu, khoảng thời gian hiện diện của từng nhân viên, khoảng thời gian sử dụng điện thoại, ánh xạ điện thoại với người sử dụng. Hai người gán nhãn độc lập trên các đoạn quan trọng, bất đồng được giải quyết bởi người thứ ba hoặc quy tắc thống nhất.
 
-Đối với time evaluation, annotation ở mức timestamp quan trọng hơn gán mọi frame. Mỗi employee có danh sách interval $[s_i,e_i]$. Phone ground truth cũng là interval. Tracking metric cần annotation frame/ID dày hơn; có thể lấy một subset video ngắn đại diện để giảm chi phí gán nhãn.
+Đối với đánh giá thời lượng, gán nhãn ở mức mốc thời gian quan trọng hơn gán mọi khung hình. Mỗi nhân viên có danh sách khoảng thời gian $[s_i,e_i]$. Nhãn tham chiếu sử dụng điện thoại cũng được biểu diễn bằng các khoảng thời gian. Chỉ số theo dõi cần gán nhãn khung hình/ID dày hơn, có thể lấy một tập con video ngắn đại diện để giảm chi phí gán nhãn.
 
 \subsubsection{Chia tập dữ liệu}
-Nếu có đủ video, chia theo phiên quay chứ không chia ngẫu nhiên frame để tránh leakage. Ví dụ 60\% train/tuning, 20\% validation, 20\% test. Nếu chỉ dùng pretrained và không fine-tune, tập ``train'' trở thành tập điều chỉnh threshold/state parameters nhưng test vẫn phải tách riêng.
+Dữ liệu cần được chia theo phiên quay để hạn chế rò rỉ thông tin giữa các tập. Có thể dành 60\% số phiên cho huấn luyện hoặc hiệu chỉnh, 20\% cho xác thực và 20\% cho kiểm tra khi quy mô thu thập cho phép. Nếu không tinh chỉnh trọng số mô hình, phần huấn luyện được sử dụng để xây dựng và khảo sát cấu hình. Tập kiểm tra phải được giữ độc lập và chỉ được sử dụng sau khi khóa cấu hình.
 
 \subsection{Phương pháp so sánh}
-Ba pipeline được so sánh:
+Thực nghiệm trên video được thiết kế để so sánh ba chuỗi xử lý:
 \begin{enumerate}
-\item \textbf{Baseline A -- Frame+ROI}: YOLO từng frame, không tracker, present nếu có person anchor trong ROI.
-\item \textbf{Baseline B -- YOLO+ByteTrack+ROI}: thêm tracker, nhưng không temporal state machine và không identity hỗ trợ.
-\item \textbf{Proposed}: YOLO+ByteTrack+ROI+identity support+presence FSM+phone association/FSM.
+\item \textbf{Phương pháp cơ sở A -- Khung hình và ROI}: áp dụng YOLO độc lập trên từng khung hình, xác định hiện diện khi có điểm neo người trong vùng.
+\item \textbf{Phương pháp cơ sở B -- YOLO, ByteTrack và ROI}: bổ sung theo dõi đối tượng nhưng chưa dùng máy trạng thái theo thời gian hoặc xác minh danh tính.
+\item \textbf{Phương pháp đề xuất}: bổ sung xác minh danh tính, máy trạng thái hiện diện, liên kết điện thoại và máy trạng thái sử dụng điện thoại.
 \end{enumerate}
-So sánh này tách đóng góp của tracking và temporal processing thay vì so với một hệ thống khác không cùng mục tiêu.
+Các phương pháp cần chạy trên cùng video và cùng cấu hình bộ phát hiện để phân tích đóng góp của theo dõi và xử lý theo thời gian. Bộ số liệu tổng hợp ở phần tiếp theo chỉ kiểm tra cách tính chỉ số, không phải kết quả chạy ba phương pháp này.
 
-\subsection{Đánh giá phát hiện người -- số liệu mô phỏng}
-Giả lập một tập 10.000 khung hình đánh giá với nhiều mức che khuất cho kết quả minh họa ở Bảng \ref{tab:sim-person-det}. Các giá trị được chọn trong miền hợp lý để kiểm tra pipeline báo cáo, không khẳng định hiệu năng của weight thực tế.
+\input{generated/synthetic_results}
 
-\begin{table}[H]
-\centering
-\caption{Kết quả mô phỏng phát hiện người theo điều kiện}
-\label{tab:sim-person-det}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Điều kiện} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Số frame}\\
-\midrule
-Ít che khuất & 0.975 & 0.968 & 0.971 & 3200\\
-Che khuất nhẹ & 0.962 & 0.944 & 0.953 & 2800\\
-Che khuất vừa & 0.949 & 0.906 & 0.927 & 2400\\
-Sát biên ảnh/ROI & 0.941 & 0.894 & 0.917 & 1600\\
-\midrule
-Tổng hợp & 0.958 & 0.936 & 0.947 & 10000\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Sự giảm recall ở che khuất là lý do cần tracker và grace period. Nếu chỉ dùng frame-level presence, mỗi detection miss lập tức trở thành absent và tạo nhiều false absence segment.
-
-\subsection{Đánh giá tracking -- số liệu mô phỏng}
-Các metric được chọn theo MOTChallenge và HOTA \cite{motmetrics,hota}. Bảng \ref{tab:sim-tracking} minh họa sự khác nhau giữa SORT, Deep SORT và ByteTrack trên cùng detection giả lập. Đây không phải benchmark thực của project.
-
-\begin{table}[H]
-\centering
-\caption{So sánh mô phỏng các tracker trên cảnh văn phòng}
-\label{tab:sim-tracking}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Tracker} & \textbf{IDF1} & \textbf{HOTA} & \textbf{ID Switch} & \textbf{FPS tracker-only}\\
-\midrule
-SORT & 0.887 & 0.762 & 34 & 210\\
-Deep SORT & 0.921 & 0.791 & 21 & 92\\
-ByteTrack & 0.941 & 0.812 & 15 & 165\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Trong thiết kế chọn ByteTrack, tiêu chí chính không phải tracker-only FPS mà là IDF1/ID switch trong điều kiện detector đã có. Deep SORT có lợi thế appearance ở che khuất dài nhưng thêm mạng embedding toàn thân; ByteTrack đơn giản hơn cho nguyên mẫu và vẫn có cơ chế tận dụng box score thấp \cite{bytetrack}.
-
-\subsection{Đánh giá trạng thái hiện diện -- số liệu mô phỏng}
-Presence được đánh giá theo giây: mỗi giây của mỗi employee được gán PRESENT/ABSENT, loại trừ đoạn camera UNKNOWN khỏi mẫu phân loại và báo riêng unobserved time. Kết quả mô phỏng:
-
-\begin{table}[H]
-\centering
-\caption{So sánh mô phỏng Presence F1 của ba phương pháp}
-\label{tab:sim-presence}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Phương pháp} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{False absence (s)}\\
-\midrule
-Frame+ROI & 0.879 & 0.842 & 0.860 & 1920\\
-+ ByteTrack & 0.925 & 0.913 & 0.919 & 820\\
-Proposed + FSM & 0.955 & 0.947 & 0.951 & 350\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.82\textwidth]{Images/sim_presence_f1.png}
-\caption{Presence F1 mô phỏng theo phương pháp}
-\label{fig:sim-pres-f1}
-\end{figure}
-
-Sự cải thiện mô phỏng của Proposed chủ yếu đến từ grace period hấp thụ detection miss và quy tắc backdating. Nếu $T_{gap}$ quá lớn, false absence giảm nhưng false presence tăng khi nhân viên thực sự rời đi; do đó cần phân tích tham số.
-
-\subsection{Phân tích tham số temporal -- số liệu mô phỏng}
-Bảng \ref{tab:sim-gap} minh họa ảnh hưởng của $T_{gap}$ với một tập video mô phỏng. Khi gap tăng từ 0 đến 5 giây, F1 tăng; tăng tiếp lên 12 giây bắt đầu làm Precision giảm do giữ PRESENT quá lâu.
-
-\begin{table}[H]
-\centering
-\caption{Ảnh hưởng mô phỏng của grace period đến presence}
-\label{tab:sim-gap}
-\begin{tabular}{rrrrr}
-\toprule
-$T_{gap}$ (s) & Precision & Recall & F1 & MAE thời gian (s/ca)\\
-\midrule
-0 & 0.884 & 0.846 & 0.865 & 188\\
-2 & 0.931 & 0.918 & 0.924 & 112\\
-5 & 0.955 & 0.947 & 0.951 & 54\\
-8 & 0.946 & 0.956 & 0.951 & 61\\
-12 & 0.921 & 0.963 & 0.942 & 88\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Các con số này cho thấy không thể chọn tham số chỉ theo F1; mục tiêu trực tiếp của đề tài là MAE thời gian. Trong dữ liệu thật, chọn $T_{gap}$ trên validation bằng tiêu chí ưu tiên MAE nhưng có ràng buộc false presence duration.
-
-\subsection{Đánh giá sử dụng điện thoại -- số liệu mô phỏng}
-Phone evaluation có ba lớp: detector, session classification và owner association. Detector phone có thể đúng nhưng behavior sai nếu điện thoại đặt trên bàn; vì vậy chỉ số cuối nên đánh giá PHONE\_USING theo interval/giây sau association và FSM.
-
-\begin{table}[H]
-\centering
-\caption{Kết quả mô phỏng theo kịch bản sử dụng điện thoại}
-\label{tab:sim-phone-scenarios}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Kịch bản} & Precision & Recall & F1 & WPAR\\
-\midrule
-Một người & 0.96 & 0.94 & 0.95 & 0.00\\
-Ba người & 0.92 & 0.90 & 0.91 & 0.018\\
-Che khuất tay/phone & 0.86 & 0.82 & 0.84 & 0.021\\
-Điện thoại đặt trên bàn & 0.89 & 0.84 & 0.86 & 0.012\\
-Gần biên hai người & 0.88 & 0.85 & 0.86 & 0.034\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.90\textwidth]{Images/sim_phone_metrics.png}
-\caption{Precision/Recall phone-use mô phỏng theo kịch bản}
-\label{fig:sim-phone-metrics}
-\end{figure}
-
-Kịch bản khó nhất là phone ở vùng gần hai person. Quy tắc margin giữa score tốt nhất và thứ hai giúp giảm WPAR nhưng làm recall giảm; đây là đánh đổi đúng vì gán sai người có thể dẫn đến điều chỉnh thời gian sai đối tượng.
-
-\subsection{Đánh giá sai số thời lượng điện thoại -- số liệu mô phỏng}
-Giả sử 12 phiên phone có ground truth từ 30 giây đến 14 phút. Bảng \ref{tab:sim-phone-duration} trình bày một phần mẫu.
-
-\begin{table}[H]
-\centering
-\caption{Ví dụ mô phỏng sai số thời lượng phone session}
-\label{tab:sim-phone-duration}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Phiên} & \textbf{Ground truth} & \textbf{Ước lượng} & \textbf{|Sai số|}\\
-\midrule
-P01 & 03:20 & 03:14 & 6 s\\
-P02 & 05:10 & 05:23 & 13 s\\
-P03 & 00:42 & 00:39 & 3 s\\
-P04 & 08:00 & 07:44 & 16 s\\
-P05 & 14:15 & 14:31 & 16 s\\
-P06 & 02:30 & 02:36 & 6 s\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-MAE mô phỏng của 12 phiên là khoảng 11,4 giây/phiên. Sai số chủ yếu ở start/end do phone bị tay che. Việc backdate start/end từ transition giúp giảm bias do $T_{phone\_enter}$ và grace.
-
-\subsection{Đánh giá ước lượng thời gian làm việc -- số liệu mô phỏng}
-Đây là chỉ số chính. Giả lập 30 employee-shift, thời lượng ground truth từ 4 đến 8 giờ, có các đoạn rời bàn và phone session. Bảng \ref{tab:sim-worktime-methods} so sánh ba pipeline.
-
-\begin{table}[H]
-\centering
-\caption{Sai số thời gian mô phỏng theo phương pháp}
-\label{tab:sim-worktime-methods}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Phương pháp} & \textbf{MAE (s/ca)} & \textbf{MAPE (\%)} & \textbf{P95 |error| (s)} & \textbf{Max (s)}\\
-\midrule
-Frame+ROI & 192 & 0.83 & 421 & 618\\
-+ ByteTrack & 96 & 0.42 & 220 & 347\\
-Proposed & 54 & 0.24 & 118 & 201\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.82\textwidth]{Images/sim_time_mae.png}
-\caption{MAE thời gian mô phỏng của ba phương pháp}
-\label{fig:sim-time-mae}
-\end{figure}
-
-Ví dụ chi tiết sáu ca mô phỏng:
-\begin{table}[H]
-\centering
-\caption{Ví dụ mô phỏng ground truth và effective work time}
-\label{tab:sim-shifts}
-\begin{tabular}{lrrrrr}
-\toprule
-\textbf{NV} & \textbf{GT presence} & \textbf{GT phone excess} & \textbf{GT effective} & \textbf{Ước lượng} & \textbf{Sai số}\\
-\midrule
-NV01 & 7:42:10 & 0:12:20 & 7:29:50 & 7:29:17 & -33 s\\
-NV02 & 7:18:42 & 0:00:00 & 7:18:42 & 7:19:21 & +39 s\\
-NV03 & 6:55:33 & 0:06:15 & 6:49:18 & 6:48:27 & -51 s\\
-NV04 & 7:58:08 & 0:21:42 & 7:36:26 & 7:37:44 & +78 s\\
-NV05 & 5:40:50 & 0:00:00 & 5:40:50 & 5:40:28 & -22 s\\
-NV06 & 7:06:12 & 0:04:10 & 7:02:02 & 7:01:19 & -43 s\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Công thức effective phải được kiểm chứng riêng bằng unit test với interval chính xác, để sai số CV và lỗi nghiệp vụ không trộn lẫn. Nếu input interval đúng, aggregator phải cho kết quả bit-for-bit đúng theo policy.
-
-\subsection{Entry/Exit timing error -- số liệu mô phỏng}
-Ngoài total duration, đo lỗi mốc:
-\begin{align}
- E_{entry}&=\hat{t}_{entry}-t_{entry},\\
- E_{exit}&=\hat{t}_{exit}-t_{exit}.
-\end{align}
-Với backdating, trung bình mô phỏng $E_{entry}=+0.3$s và $E_{exit}=+0.6$s, trong khi nếu lấy thời điểm state transition trực tiếp thì bias lần lượt gần $+2.0$s và $+5.0$s theo tham số enter/gap. Điều này minh họa lý do thiết kế lưu candidate\_since/last\_seen.
-
-\subsection{Đánh giá hiệu năng -- số liệu mô phỏng}
-Một cấu hình minh họa 1080p, inference 640 trên GPU tầm trung cho timing mô phỏng:
-\begin{table}[H]
-\centering
-\caption{Độ trễ pipeline mô phỏng}
-\label{tab:sim-latency}
-\begin{tabular}{lrr}
-\toprule
-\textbf{Thành phần} & \textbf{Trung bình (ms)} & \textbf{P95 (ms)}\\
-\midrule
-Preprocess & 2 & 4\\
-YOLOv8n & 31 & 39\\
-ByteTrack & 3 & 5\\
-ROI + phone association & 2 & 4\\
-State/Aggregator & 1 & 2\\
-WebSocket serialize/send & 6 & 12\\
-Face verification* & 18 & 27\\
-\bottomrule
-\end{tabular}
-\end{table}
-*Face verification chạy theo sự kiện, không cộng vào mọi frame.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.86\textwidth]{Images/sim_latency.png}
-\caption{Độ trễ thành phần mô phỏng}
-\label{fig:sim-latency}
-\end{figure}
-
-Độ trễ thường xuyên khoảng 39 ms không kể face event, tương đương trên 20 FPS lý thuyết. Kết quả thật phụ thuộc thiết bị, backend model và độ phân giải, vì vậy cần đo lại trên máy demo cuối cùng.
-
-\subsection{Đánh giá dashboard và luồng dữ liệu}
+\subsection{Đánh giá bảng điều khiển và luồng dữ liệu}
 Kiểm thử tích hợp không cần dữ liệu thật để xác minh một số thuộc tính. Các trường hợp cần có:
 \begin{itemize}
-\item Telemetry sequence cũ không ghi đè state mới.
-\item Event retry cùng event ID không tạo interval trùng.
-\item Supervisor tổ chức A không xem employee/evidence tổ chức B.
-\item Camera token của CAM01 không gửi event giả danh CAM02.
-\item Khi WebSocket dashboard mất, dữ liệu server vẫn được lưu; khi nối lại client nhận current state mới nhất.
-\item Report job failed không được hiển thị completed.
-\item Summary có thể rebuild từ intervals và policy version.
+\item Telemetry số thứ tự cũ không ghi đè trạng thái mới.
+\item Sự kiện gửi lại cùng mã sự kiện không tạo khoảng thời gian trùng.
+\item người giám sát tổ chức A không xem nhân viên/bằng chứng tổ chức B.
+\item Mã xác thực camera của CAM01 không gửi sự kiện giả danh CAM02.
+\item Khi WebSocket bảng điều khiển mất, dữ liệu máy chủ vẫn được lưu, khi nối lại ứng dụng phía máy khách nhận trạng thái hiện tại mới nhất.
+\item Tác vụ báo cáo failed không được hiển thị completed.
+\item Bản tổng hợp có thể tái dựng từ các khoảng thời gian và phiên bản chính sách.
 \end{itemize}
 
 \begin{table}[H]
@@ -299,51 +72,180 @@ Kiểm thử tích hợp không cần dữ liệu thật để xác minh một s
 \toprule
 \textbf{Kịch bản} & \textbf{Kết quả mong đợi} & \textbf{Bằng chứng}\\
 \midrule
-NV vào ROI & Candidate rồi Present; interval start backdate & Transition + DB interval\\
-Che khuất 3 s & Không đóng interval với gap=5 s & Timeline liên tục\\
-Rời ROI 8 s & Grace rồi Absent; end=last seen & Interval duration\\
-Phone 10 phút, allowance 15 & Không excess & Summary\\
-Phone tổng 22 phút & Excess=7 phút & Summary + sessions\\
-Phone owner mơ hồ & UNKNOWN, không trừ ai & Association log\\
-Camera offline & unobserved tăng, không ép absent & Camera event\\
-Identity mismatch & Flag review, không đổi raw event & Review/evidence\\
+NV vào ROI & Candidate rồi Present, khoảng thời gian mốc bắt đầu được truy hồi & Transition + DB khoảng thời gian\\
+Che khuất 3 s & Không đóng khoảng thời gian với gap=5 s & Dòng thời gian liên tục\\
+Rời ROI 8 s & Grace rồi Absent, end=last seen & Khoảng thời gian thời lượng\\
+Điện thoại 10 phút, hạn mức 15 & Không phát sinh phần vượt hạn mức & Bản tổng hợp\\
+Điện thoại tổng 22 phút & Excess=7 phút & Bản tổng hợp + sessions\\
+Người sử dụng điện thoại mơ hồ & UNKNOWN, không trừ ai & Liên kết nhật ký\\
+Camera mất kết nối & không quan sát được tăng, không kết luận vắng mặt & Sự kiện camera\\
+Danh tính không khớp & Đánh dấu hậu kiểm, không đổi sự kiện gốc & Hậu kiểm/bằng chứng\\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \subsection{Các trường hợp sai và hướng cải tiến}
-\subsubsection{Occlusion kéo dài}
-ByteTrack xử lý tốt che khuất ngắn nhưng nếu người biến mất lâu hơn track buffer, khi xuất hiện lại có thể nhận ID mới. ROI + employee context có thể liên kết lại nhưng cần tránh nối nhầm người mới. Face verification hoặc appearance ReID là hướng tăng độ tin cậy.
+\subsubsection{Che khuất kéo dài}
+ByteTrack xử lý tốt che khuất ngắn nhưng nếu người biến mất lâu hơn bộ đệm quỹ đạo, khi xuất hiện lại có thể nhận ID mới. ROI + nhân viên ngữ cảnh có thể liên kết lại nhưng cần tránh nối nhầm người mới. Xác minh khuôn mặt hoặc tái định danh dựa trên ngoại hình là hướng tăng độ tin cậy.
 
 \subsubsection{Camera góc cao và người ngồi}
 Bottom-center có thể nằm trên ghế/bàn chứ không đại diện mặt sàn nếu camera nhìn từ trên xuống mạnh. Có thể hiệu chỉnh homography để chuyển điểm ảnh sang mặt phẳng sàn, hoặc dùng keypoint chân khi đủ rõ.
 
 \subsubsection{Điện thoại nhỏ}
-Cell phone là vật thể nhỏ, dễ bỏ sót ở CCTV xa. Có thể tăng resolution inference, crop vùng người rồi chạy detector phone lần hai, hoặc fine-tune trên dữ liệu camera thực. Tuy nhiên chạy crop detector nhiều người làm tăng chi phí; cần đánh giá latency.
+Điện thoại là vật thể nhỏ, dễ bỏ sót ở CCTV xa. Có thể tăng độ phân giải suy luận, cắt vùng ảnh vùng người rồi chạy bộ phát hiện điện thoại lần hai, hoặc tinh chỉnh trên dữ liệu camera thực. Tuy nhiên chạy cắt vùng ảnh bộ phát hiện nhiều người làm tăng chi phí, cần đánh giá độ trễ.
 
 \subsubsection{Điện thoại trên bàn}
-YOLO không phân biệt ``đang sử dụng''. Interaction region và temporal state giảm false positive nhưng vẫn có trường hợp người đặt tay gần điện thoại. Một hướng phát triển là pose/hand-object interaction model, nhưng nằm ngoài phạm vi phiên bản hiện tại.
+YOLO không phân biệt ``đang sử dụng''. Vùng tương tác và trạng thái theo thời gian giảm dương tính giả nhưng vẫn có trường hợp người đặt tay gần điện thoại. Một hướng phát triển là ước lượng tư thế và tương tác tay--vật thể mô hình, nhưng nằm ngoài phạm vi phiên bản hiện tại.
 
-\subsubsection{Identity từ khuôn mặt nhỏ}
-FaceNet không đáng tin khi mặt quá nhỏ/mờ. Hệ thống phải cho phép UNKNOWN và không ép mismatch. Nếu yêu cầu identity mạnh hơn, cần camera gần hơn hoặc đa camera, nhưng điều này tăng chi phí và vấn đề quyền riêng tư.
+\subsubsection{Danh tính từ khuôn mặt nhỏ}
+FaceNet không đáng tin khi mặt quá nhỏ/mờ. Hệ thống phải cho phép UNKNOWN và không ép mismatch. Nếu yêu cầu danh tính mạnh hơn, cần camera gần hơn hoặc đa camera, nhưng điều này tăng chi phí và vấn đề quyền riêng tư.
 
-\subsection{Phân tích độ tin cậy của số liệu mô phỏng}
-Dữ liệu mô phỏng trong chương này chỉ cho thấy cấu trúc đánh giá có thể phản ánh các trade-off dự kiến: tracking giảm đứt đoạn, FSM giảm false absence, association bảo thủ giảm WPAR, backdating giảm bias thời gian. Không được suy ra rằng hệ thống thực tế chắc chắn đạt Presence F1=0.951 hay MAE=54 giây/ca. Khi thu thập dữ liệu thật, mọi bảng/hình có nhãn ``mô phỏng'' phải được thay hoặc giữ như baseline simulation riêng và thêm kết quả thực nghiệm cạnh bên.
+\subsection{Độ tin cậy của phép tính và phạm vi suy luận}
+Các bảng tổng hợp đã được kiểm tra về mẫu số, tổng số mẫu và ràng buộc thời lượng. Sự nhất quán này xác nhận phép tính trên bộ dữ liệu đã khai báo, nhưng không xác nhận phân phối dữ liệu tương ứng với một môi trường thực tế. Đặc biệt, các mức nhiễu được lựa chọn trước nên không được dùng để chứng minh ưu thế của phương pháp đề xuất.
 
-Việc ghi rõ trạng thái số liệu giúp bảo đảm tính trung thực học thuật. Kết quả thực nghiệm thật cần đính kèm thông tin phần cứng, model weight, commit code, config threshold, camera setup và cách gán nhãn để có khả năng tái lập.
+Đánh giá trên video cần kèm thông tin phần cứng, trọng số mô hình, phiên bản mã nguồn, cấu hình, vị trí camera và quy trình gán nhãn. Kết quả được lưu riêng với bộ dữ liệu tổng hợp để có thể truy nguyên từng bảng và biểu đồ.
 
 \subsection{Kế hoạch thực nghiệm chính thức}
 Quy trình được đề xuất:
 \begin{enumerate}
 \item Thu ít nhất 8--12 giờ video từ camera mục tiêu với sự đồng ý/quy trình dữ liệu phù hợp.
-\item Chọn khoảng 2 giờ cho tuning, 2 giờ validation và phần còn lại test theo phiên độc lập.
-\item Gán presence interval và phone interval cho mọi nhân viên test; gán box/track trên subset.
-\item Chốt config trên validation; khóa config trước khi chạy test.
-\item Chạy ba phương pháp baseline/proposed trên cùng video.
-\item Sinh tự động CSV metrics và report để tránh sửa số bằng tay.
-\item Phân tích lỗi theo occlusion, ROI boundary, phone size, số người và ánh sáng.
+\item Chọn khoảng 2 giờ cho hiệu chỉnh, 2 giờ xác thực và phần còn lại kiểm tra theo phiên độc lập.
+\item Gán khoảng hiện diện và khoảng sử dụng điện thoại cho mọi nhân viên kiểm tra, gán hộp bao/quỹ đạo trên tập con.
+\item Chốt cấu hình trên xác thực, khóa cấu hình trước khi chạy kiểm tra.
+\item Chạy ba cấu hình cơ sở và đề xuất trên cùng video.
+\item Sinh tự động tệp CSV chứa các chỉ số và báo cáo để tránh sửa số bằng tay.
+\item Phân tích lỗi theo che khuất, biên vùng ROI, kích thước điện thoại, số người và ánh sáng.
 \item Lặp lại một lần trên ngày/camera khác nếu có để đánh giá tính tổng quát.
 \end{enumerate}
 
+\subsection{Quy trình gán nhãn chi tiết}
+Trước khi gán nhãn, nhóm thực nghiệm xây dựng tài liệu định nghĩa cho từng nhãn. Hiện diện bắt đầu khi điểm neo cơ thể đi vào ROI và kết thúc khi rời ROI, trường hợp chỉ một phần cơ thể xuất hiện phải có quy tắc thống nhất. Hành vi sử dụng điện thoại yêu cầu dấu hiệu tương tác, không chỉ hộp bao điện thoại xuất hiện. Danh tính UNKNOWN được dùng khi không đủ bằng chứng, không suy đoán theo vị trí nếu kịch bản cố ý có người ngồi nhầm bàn.
+
+Gán nhãn thực hiện theo hai lượt. Lượt đầu đánh dấu khoảng thời gian ở dòng thời gian. Lượt hai xem lại vùng biên và các đoạn có che khuất, chuyển vùng hoặc điện thoại mơ hồ. Một tập con được hai người gán độc lập. Mức đồng thuận cho khoảng thời gian có thể đo bằng IoU theo thời gian và chênh lệch mốc thời gian, với nhãn người sử dụng dùng Cohen's kappa hoặc tỉ lệ đồng thuận.
+
+Khi hai người gán nhãn bất đồng vượt dung sai, một người phân xử xem video và ghi lý do. Nhãn tham chiếu cuối giữ cả nhãn hợp nhất và siêu dữ liệu nguồn để đánh giá chất lượng gán nhãn. Không chỉnh nhãn tham chiếu chỉ vì kết quả mô hình khác kỳ vọng.
+
+\begin{table}[H]
+\centering
+\caption{Quy tắc xử lý trường hợp khó khi gán nhãn}
+\label{tab:annotation-edge-rules}
+\begin{tabularx}{\textwidth}{p{4cm}X X}
+\toprule
+\textbf{Trường hợp} & \textbf{Nhãn đề xuất} & \textbf{Ghi chú}\\
+\midrule
+Người đứng đúng biên ROI & Theo vị trí điểm neo và dung sai & Không đổi quy tắc giữa các video\\
+Người bị che nhưng chưa rời vùng & Giữ hiện diện nếu người gán nhãn xác nhận & Ghi thuộc tính che khuất\\
+Không thể xác định còn hay rời & Khoảng thời gian UNKNOWN & Loại/đánh giá riêng theo quy trình đánh giá\\
+Điện thoại nằm trên bàn & Không sử dụng điện thoại & Có thể gắn phone-visible\\
+Hai người cùng chạm điện thoại & Người sử dụng UNKNOWN/shared & Không ép một người\\
+Camera mất hình & UNOBSERVED & Không gán ABSENT\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Thiết kế thí nghiệm ablation}
+Ablation loại từng thành phần để đo đóng góp. Cấu hình A chỉ bộ phát hiện+ROI theo khung hình. Cấu hình B thêm ByteTrack. Cấu hình C thêm hiện diện FSM. Cấu hình D thêm truy hồi mốc thời gian. Cấu hình E thêm xác minh danh tính. Đối với điện thoại, so sánh phát hiện điện thoại thuần, liên kết gần nhất, liên kết có biên chênh lệch và liên kết+FSM.
+
+Tất cả cấu hình dùng cùng video và phân hoạch. Chỉ thay thành phần đang khảo sát, không đồng thời đổi ngưỡng khác. Chỉ số chính của hiện diện là MAE thời lượng và thời lượng hiện diện giả và vắng mặt giả, chỉ số phụ gồm F1 và mức phân mảnh. Với điện thoại, chỉ số chính gồm MAE thời lượng điện thoại và WPAR.
+
+\begin{table}[H]
+\centering
+\caption{Mục tiêu của các thí nghiệm ablation đề xuất}
+\label{tab:ablation-plan}
+\begin{tabularx}{\textwidth}{p{3.7cm}X X}
+\toprule
+\textbf{So sánh} & \textbf{Giả thuyết} & \textbf{Chỉ số nhạy}\\
+\midrule
+Chỉ dùng khung hình so với ByteTrack & Theo dõi giảm phân mảnh do bỏ sót ngắn & Mức phân mảnh, IDF1, MAE thời lượng\\
+Bộ theo dõi so với Bộ theo dõi+FSM & FSM giảm vắng mặt giả ngắn & Số giây vắng mặt giả, F1 hiện diện\\
+FSM không/có truy hồi mốc thời gian & Truy hồi mốc giảm sai lệch có hệ thống ở biên & Sai số mốc vào và ra, MAE\\
+ROI so với ROI+danh tính & Danh tính giảm gán nhầm người & Khoảng thời gian gán sai nhân viên, độ bao phủ\\
+Liên kết điện thoại theo người gần nhất so với biên chênh lệch & Biên chênh lệch giảm gán sai người sử dụng & WPAR, tỉ lệ UNKNOWN\\
+Điện thoại khung hình so với Điện thoại FSM & FSM loại quan sát phát hiện thoáng qua & Phiên FP, MAE thời lượng điện thoại\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Nếu một thành phần giảm sai gán nhưng tăng UNKNOWN, kết quả phải trình bày sự đánh đổi thay vì chỉ chọn chỉ số thuận lợi. Ví dụ ngưỡng xác minh danh tính nghiêm có thể tăng precision trên các quyết định nhưng giảm độ bao phủ. Đường precision--coverage giúp chọn điểm vận hành phù hợp mức rủi ro.
+
+\subsection{Phân tích độ nhạy tham số}
+Các tham số thời gian không được chọn chỉ từ một video. Với $T_{enter}$, $T_{exit}$, $T_{phone\_enter}$ và biên chênh lệch liên kết, xây dựng lưới giá trị hợp lý trên xác thực. Mỗi điểm ghi MAE hiện diện, MAE điện thoại, WPAR, UNKNOWN và độ trễ. Tập kiểm tra chỉ được chạy sau khi chốt cấu hình.
+
+Phân tích một tham số tại một thời điểm dễ hiểu nhưng có thể bỏ qua tương tác. Ví dụ $T_{exit}$ dài có thể bù bộ đệm của bộ theo dõi ngắn. Vì vậy sau khảo sát đơn biến, chọn một số tổ hợp quan trọng để đánh giá hai chiều. Heatmap $T_{exit}\times tracker\_buffer$ cho thấy vùng cấu hình ổn định thay vì một điểm tối ưu ngẫu nhiên.
+
+Việc lựa chọn cấu hình cần xem xét cả độ ổn định trên tập xác thực. Có thể ưu tiên vùng tham số mà thay đổi nhỏ không làm kết quả suy giảm lớn. Cấu hình như vậy ít nhạy với khác biệt camera và dễ vận hành hơn.
+
+\subsection{Phương pháp ước lượng khoảng tin cậy và biến thiên}
+Báo cáo giá trị trung bình cần đi kèm độ phân tán. Vì khung hình trong cùng video phụ thuộc mạnh, bootstrap nên lấy mẫu theo phiên hoặc theo người--ca. Với $B$ lần bootstrap, mỗi lần lấy lại các phiên có hoàn lại, tính chỉ số và lấy phân vị 2.5/97.5 để tạo khoảng tin cậy 95\%.
+
+Ngoài giá trị trung bình, cần báo cáo trung vị và các phân vị của sai số tuyệt đối. Một số ca có sai số lớn có thể làm tăng MAE đáng kể, trong khi trung vị phản ánh rõ hơn mức sai số của ca điển hình. Các chỉ số nên gồm MAE, trung vị sai số tuyệt đối, P90, P95 và giá trị lớn nhất, kèm phân tích các mẫu ngoại lệ.
+
+Khi so hai chuỗi xử lý trên cùng phiên, dùng chênh lệch theo cặp $d_i=e_{A,i}-e_{B,i}$. Khoảng tin cậy của trung bình/trung vị $d_i$ trực tiếp trả lời chuỗi xử lý mới có giảm lỗi nhất quán hay chỉ tốt do khác mẫu. Không nên suy luận ý nghĩa thống kê chỉ từ chênh lệch số thập phân khi số phiên nhỏ.
+
+\subsection{Phân tầng kết quả}
+Kết quả tổng hợp có thể che giấu lỗi cục bộ. Tập kiểm tra cần gắn thuộc tính: số người trong khung hình, mức che khuất, kích thước người/điện thoại, khoảng cách tới camera, vùng ROI, ánh sáng, có giao nhau hay không và gián đoạn camera. Chỉ số được báo cáo cho từng nhóm có đủ mẫu.
+
+Đặc biệt, sai số theo khu vực làm việc giúp phát hiện góc camera thiên lệch. Nếu ROI xa luôn có Recall thấp, giải pháp có thể là đổi camera/độ phân giải suy luận chứ không phải thay ngưỡng trạng thái. Sai số theo số người giúp đánh giá liên kết khi cảnh đông.
+
+Kích thước điện thoại có thể nhóm theo diện tích hộp bao trên ảnh: nhỏ, trung bình và lớn. WPAR phân theo khoảng cách giữa hai người gần nhất. Độ bao phủ xác minh danh tính phân theo kích thước/độ mờ khuôn mặt. Các phân tầng này nối lỗi với biện pháp cải tiến cụ thể.
+
+\subsection{Đánh giá độ bao phủ và dữ liệu không quan sát được}
+Một hệ thống có MAE thấp trên thời gian quan sát nhưng camera thường xuyên mất kết nối vẫn không đáp ứng nghiệp vụ. Độ bao phủ của một ca được định nghĩa:
+\begin{equation}
+ Coverage=1-\frac{T_{unobserved}}{T_{scheduled}}.
+\end{equation}
+Bản tổng hợp cần báo độ bao phủ và lý do không quan sát được. Chỉ số hiện diện chỉ tính trên đoạn có nhãn tham chiếu/quan sát hợp lệ, đồng thời báo riêng gián đoạn quan sát để tránh che giấu thiếu dữ liệu.
+
+Khi độ bao phủ dưới ngưỡng, không nên tự động xếp hạng thời gian hiệu lực. Báo cáo đánh dấu INCOMPLETE và yêu cầu đối chiếu nguồn khác. Nếu thực nghiệm muốn đánh giá phục hồi sau gián đoạn quan sát, đó là một kịch bản riêng với nhãn tham chiếu trước/sau, không nội suy tùy ý qua khoảng mù.
+
+\subsection{Đánh giá hiệu năng có phương pháp}
+Đo kiểm hiệu năng cần khởi động mô hình và chạy ổn định trước khi ghi nhận thời gian. Các thành phần được đo riêng gồm giải mã, tiền xử lý, suy luận, hậu xử lý, theo dõi, xử lý ngữ cảnh và truyền dữ liệu. Báo cáo cần nêu trung vị, độ trễ P95, FPS hiệu dụng và tỉ lệ khung hình bị bỏ trong cùng một cửa sổ đo.
+
+Thông tin phần cứng, trình điều khiển, phiên bản thư viện, định dạng mô hình, kích thước đầu vào, kích thước lô và độ chính xác số học phải được lưu cùng kết quả. Khi so sánh CPU và GPU, các cấu hình phải xử lý cùng chuỗi video. Nếu có lấy mẫu khung hình, FPS thu nhận và FPS xử lý được báo cáo riêng.
+
+Kiểm thử tải backend mô phỏng số camera và bảng điều khiển tăng dần. Tiêu chí gồm độ trễ yêu cầu, thông lượng sự kiện, độ trễ cập nhật dữ liệu dẫn xuất, thời gian truyền WebSocket và tài nguyên. Kiểm thử độ ổn định kéo dài giúp phát hiện rò bộ nhớ, hàng đợi tích tụ hoặc kết nối không được dọn.
+
+\subsection{Đánh giá độ bền trước lỗi}
+Đưa lỗi có chủ đích chủ động tạo hết thời gian chờ RTSP, HTTP 503, mất ACK, sự kiện trùng, sự kiện đảo thứ tự, Redis khởi động lại và database chậm. Mục tiêu không chỉ là hệ thống tiếp tục chạy mà là bảo toàn bất biến: không khoảng thời gian trùng, không mất sự kiện đã ACK, không nối quỹ đạo qua phiên sai và bản tổng hợp tái lập được.
+
+Sau mỗi phép thử, cần đối chiếu số sự kiện, số mã duy nhất, khoảng thiếu số thứ tự, các khoảng thời gian và bản tổng hợp với kết quả tham chiếu. Phép thử chỉ được xác nhận đạt khi hệ thống phục hồi trong thời gian quy định và dữ liệu cuối cùng nhất quán. Thông báo phục hồi trong nhật ký chưa đủ để xác nhận tính đúng đắn.
+
+\begin{table}[H]
+\centering
+\caption{Kịch bản đưa lỗi có chủ đích và tiêu chí kiểm chứng}
+\label{tab:fault-injection-plan}
+\begin{tabularx}{\textwidth}{p{3.4cm}X X}
+\toprule
+\textbf{Lỗi đưa vào} & \textbf{Hành vi mong đợi} & \textbf{Bất biến kiểm tra}\\
+\midrule
+Mất ACK sau khi máy chủ hoàn tất giao dịch & Ứng dụng phía máy khách gửi lại, máy chủ trả ACK cũ & Một sự kiện, một chuyển trạng thái\\
+Đảo thứ tự hai sự kiện & Bộ đệm và đối soát & Khoảng thời gian không âm\\
+RTSP mất 20 giây & Ghi gián đoạn và kết nối lại & Không coi gián đoạn quan sát là vắng mặt chắc chắn\\
+Ứng dụng phía máy khách khởi động lại & Phiên mới & Không tái dùng trạng thái quỹ đạo cũ\\
+Redis khởi động lại & Tái dựng trạng thái hiện tại & Sự kiện PostgreSQL không mất\\
+Disk edge gần đầy & Giảm telemetry/cảnh báo & Sự kiện nghiệp vụ được ưu tiên\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Phân tích lỗi định tính}
+Chỉ số định lượng phản ánh mức sai lệch nhưng chưa giải thích đầy đủ nguyên nhân. Sau khi chạy thử, cần xem lại các mẫu nhận biết ổn định, vắng mặt giả kéo dài, gán sai danh tính hoặc người sử dụng điện thoại và sai số thời lượng lớn. Mỗi mẫu cần có dòng thời gian về độ tin cậy phát hiện, mã quỹ đạo, vùng liên kết, trạng thái danh tính và chuyển trạng thái để đối chiếu.
+
+Lỗi được gán nguyên nhân gần nhất và nguyên nhân gốc. Ví dụ hiện diện mất vì bộ theo dõi khởi tạo lại là nguyên nhân gần, camera rung hoặc bộ phát hiện bỏ sót kéo dài có thể là nguyên nhân gốc. Phân loại nguyên nhân gồm thu nhận, quan sát phát hiện, theo dõi, hình học, danh tính, liên kết điện thoại, theo thời gian, truyền dữ liệu và gán nhãn.
+
+Một lỗi có thể có nhiều tầng, nhưng cần quy tắc ưu tiên để thống kê không đếm tùy ý. Báo cáo Pareto theo số lần và tổng số giây ảnh hưởng giúp ưu tiên cải tiến: lỗi ít nhưng gây hàng chục phút có thể quan trọng hơn nhiều lỗi một khung hình.
+
+\subsection{Quản lý tệp kết quả thực nghiệm}
+Mỗi lần chạy tạo thư mục tệp kết quả chỉ đọc gồm cấu hình, commit SHA, mã kiểm tra trọng số mô hình, danh sách video/phân hoạch, chỉ số CSV, nhật ký tóm tắt và hình biểu diễn. Run ID xuất hiện trong bảng kết quả và báo cáo. Script sinh bảng LaTeX từ CSV để giảm sao chép thủ công.
+
+Bộ dữ liệu manifest giữ video ID ẩn danh, checksum, thời lượng, camera, attribute và phân hoạch. Dữ liệu nhạy cảm không đưa vào kho mã nguồn. Quyền truy cập, thời hạn lưu trữ và quy trình xóa áp dụng cho video/gán nhãn, chỉ số tổng hợp có thể giữ lâu hơn.
+
+Trước khi công bố kết quả thực nghiệm, cần kiểm tra các điều kiện sau: tệp kết quả tồn tại, phân hoạch kiểm tra chưa dùng hiệu chỉnh, cấu hình đã khóa, bảng khớp CSV, hình có thể tái tạo, cỡ mẫu đã được ghi nhận, mọi ngoại lệ/loại mẫu có lý do. Nếu thiếu một điều kiện, kết quả phải được đánh dấu sơ bộ.
+
+\subsection{Tiêu chí chuyển từ mô phỏng sang thực nghiệm}
+Các bảng mô phỏng chỉ được thay bằng kết quả thật khi có đủ nhãn tham chiếu, chuỗi xử lý chạy từ video gốc và tệp kết quả có thể tái lập. Không trộn số thật và số mô phỏng trong cùng cột mà không nhãn. Nếu chỉ hoàn thành một phần, giữ bảng mô phỏng trong mục minh họa và thêm mục thực nghiệm thí điểm riêng.
+
+Kết luận định lượng phải phù hợp cỡ mẫu. Thực nghiệm thí điểm có thể chứng minh chuỗi xử lý chạy và phát hiện lỗi, nhưng chưa chứng minh khả năng khái quát. Chỉ khi kiểm tra bao phủ nhiều phiên, điều kiện và người tham gia mới có thể báo khoảng tin cậy và so sánh có ý nghĩa hơn.
+
 \subsection{Kết luận chương}
-Khung đánh giá chuyển trọng tâm từ ``model có phát hiện đúng không'' sang ``sai số cuối cùng theo thời gian là bao nhiêu và xuất phát từ đâu''. Đây là cách phù hợp với tên đề tài. Các kết quả hiện tại được cố ý đánh dấu mô phỏng; giá trị chính của chương ở giai đoạn này là định nghĩa ground truth, metric, baseline và quy trình để thay thế bằng số đo thật mà không thay đổi logic báo cáo.
+Chương này xác định quy trình đánh giá từ chất lượng quan sát đến sai số thời lượng. Bộ dữ liệu tổng hợp công bố số đếm và bản ghi nguồn để kiểm tra lại Precision, Recall, F1, WPAR, MAE và MAPE. Kết quả tính toán cho thấy các bảng và biểu đồ nhất quán với dữ liệu nguồn trong phạm vi giả định đã nêu. Hiệu quả của bộ phát hiện, bộ theo dõi và máy trạng thái vẫn cần được kiểm chứng bằng thực nghiệm trên video có nhãn tham chiếu độc lập.

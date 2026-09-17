@@ -1,0 +1,75 @@
+{
+  "data_kind": "SYNTHETIC_NOT_FIELD_EXPERIMENT",
+  "seed": 20260917,
+  "calibrated_to_field_data": false,
+  "generator": "generate_synthetic_evaluation.py",
+  "generator_sha256": "5dc02e04387765bb689c7556774c53e43e8315f2334e9ae2d8e38afe5ea3803e",
+  "data_sha256": "48fe1fd2d245f29dc6e4055c211d7a386e4a3a9be1dad8e76485b0fc015f0035",
+  "counts": {
+    "person_reference_objects": 10000,
+    "presence_seconds_per_scenario": 36000,
+    "phone_seconds_per_condition": 3000,
+    "phone_sessions": 12,
+    "shifts": 30
+  },
+  "assumptions": {
+    "schedule_hours": [
+      4,
+      6,
+      8
+    ],
+    "presence_fraction_of_observed": [
+      0.76,
+      0.96
+    ],
+    "allowance_s": 900,
+    "phone_duration_s": [
+      0,
+      2700
+    ],
+    "unobserved_s": [
+      0,
+      30,
+      90,
+      180
+    ],
+    "base_presence_error_normal_s": {
+      "mean": -35,
+      "sd": 65
+    },
+    "base_phone_error_normal_s": {
+      "mean": -5,
+      "sd": 25
+    },
+    "outlier_shifts": [
+      10,
+      20,
+      30
+    ],
+    "outlier_additive_magnitude_s": [
+      180,
+      330
+    ],
+    "phone_session_error_normal_s": "mean=-2, sd=6+0.035*reference_s",
+    "error_multipliers": {
+      "S1": 1.0,
+      "S2": 2.0,
+      "S3": 4.0
+    }
+  },
+  "independent_blocks": [
+    "person_counts",
+    "presence_counts",
+    "phone_counts",
+    "phone_sessions",
+    "shifts"
+  ],
+  "restrictions": [
+    "No empirical accuracy claim",
+    "No algorithm ranking",
+    "No measured latency",
+    "Do not join independent blocks as if they came from the same video"
+  ],
+  "quantile_method": "linear interpolation at (n-1)*q",
+  "validation": "PASS: count support, duration bounds, policy formulas, undefined metrics"
+}

@@ -1,0 +1,1300 @@
+{
+  "data_kind": "SYNTHETIC_NOT_FIELD_EXPERIMENT",
+  "seed": 20260917,
+  "provenance": "Generated counts and time totals. No CCTV, model inference or algorithm execution.",
+  "person_counts": [
+    {
+      "condition": "Ít che khuất",
+      "reference_objects": 3200,
+      "tp": 3063,
+      "fp": 91,
+      "fn": 137,
+      "precision": 0.971147748890298,
+      "recall": 0.9571875,
+      "f1": 0.9641170915958451
+    },
+    {
+      "condition": "Che khuất nhẹ",
+      "reference_objects": 2800,
+      "tp": 2539,
+      "fp": 139,
+      "fn": 261,
+      "precision": 0.9480955937266616,
+      "recall": 0.9067857142857143,
+      "f1": 0.9269806498722162
+    },
+    {
+      "condition": "Che khuất vừa",
+      "reference_objects": 2400,
+      "tp": 1987,
+      "fp": 184,
+      "fn": 413,
+      "precision": 0.9152464302164901,
+      "recall": 0.8279166666666666,
+      "f1": 0.8693940056880333
+    },
+    {
+      "condition": "Sát biên vùng",
+      "reference_objects": 1600,
+      "tp": 1271,
+      "fp": 152,
+      "fn": 329,
+      "precision": 0.893183415319747,
+      "recall": 0.794375,
+      "f1": 0.840886536553093
+    }
+  ],
+  "person_micro": {
+    "tp": 8860,
+    "fp": 566,
+    "fn": 1140,
+    "precision": 0.9399533206025886,
+    "recall": 0.886,
+    "f1": 0.9121795531761556
+  },
+  "presence_counts": [
+    {
+      "scenario": "S1",
+      "tp": 26190,
+      "fp": 430,
+      "fn": 810,
+      "precision": 0.9838467317806161,
+      "recall": 0.97,
+      "f1": 0.9768743006340918,
+      "tn": 8570,
+      "fpr": 0.04777777777777778
+    },
+    {
+      "scenario": "S2",
+      "tp": 25110,
+      "fp": 810,
+      "fn": 1890,
+      "precision": 0.96875,
+      "recall": 0.93,
+      "f1": 0.9489795918367347,
+      "tn": 8190,
+      "fpr": 0.09
+    },
+    {
+      "scenario": "S3",
+      "tp": 23490,
+      "fp": 1440,
+      "fn": 3510,
+      "precision": 0.9422382671480144,
+      "recall": 0.87,
+      "f1": 0.9046793760831889,
+      "tn": 7560,
+      "fpr": 0.16
+    }
+  ],
+  "phone_counts": [
+    {
+      "condition": "Một người",
+      "tp": 920,
+      "fp": 73,
+      "fn": 80,
+      "precision": 0.9264853977844915,
+      "recall": 0.92,
+      "f1": 0.9232313095835424,
+      "tn": 1927,
+      "fpr": 0.0365,
+      "assigned_events": 80,
+      "wrong_owner_events": 1,
+      "wpar": 0.0125
+    },
+    {
+      "condition": "Nhiều người",
+      "tp": 845,
+      "fp": 110,
+      "fn": 155,
+      "precision": 0.8848167539267016,
+      "recall": 0.845,
+      "f1": 0.8644501278772379,
+      "tn": 1890,
+      "fpr": 0.055,
+      "assigned_events": 110,
+      "wrong_owner_events": 4,
+      "wpar": 0.03636363636363636
+    },
+    {
+      "condition": "Che khuất tay",
+      "tp": 728,
+      "fp": 132,
+      "fn": 272,
+      "precision": 0.8465116279069768,
+      "recall": 0.728,
+      "f1": 0.7827956989247312,
+      "tn": 1868,
+      "fpr": 0.066,
+      "assigned_events": 95,
+      "wrong_owner_events": 6,
+      "wpar": 0.06315789473684211
+    },
+    {
+      "condition": "Gần hai người",
+      "tp": 760,
+      "fp": 148,
+      "fn": 240,
+      "precision": 0.8370044052863436,
+      "recall": 0.76,
+      "f1": 0.7966457023060797,
+      "tn": 1852,
+      "fpr": 0.074,
+      "assigned_events": 105,
+      "wrong_owner_events": 9,
+      "wpar": 0.08571428571428572
+    },
+    {
+      "condition": "Chỉ đặt trên bàn",
+      "tp": 0,
+      "fp": 64,
+      "fn": 0,
+      "precision": 0.0,
+      "recall": null,
+      "f1": null,
+      "tn": 2936,
+      "fpr": 0.021333333333333333,
+      "assigned_events": 0,
+      "wrong_owner_events": 0,
+      "wpar": null
+    }
+  ],
+  "phone_sessions": [
+    {
+      "session_id": "SYN-P01",
+      "reference_s": 34,
+      "synthetic_estimate_s": 24,
+      "error_s": -10
+    },
+    {
+      "session_id": "SYN-P02",
+      "reference_s": 49,
+      "synthetic_estimate_s": 39,
+      "error_s": -10
+    },
+    {
+      "session_id": "SYN-P03",
+      "reference_s": 76,
+      "synthetic_estimate_s": 92,
+      "error_s": 16
+    },
+    {
+      "session_id": "SYN-P04",
+      "reference_s": 123,
+      "synthetic_estimate_s": 118,
+      "error_s": -5
+    },
+    {
+      "session_id": "SYN-P05",
+      "reference_s": 188,
+      "synthetic_estimate_s": 185,
+      "error_s": -3
+    },
+    {
+      "session_id": "SYN-P06",
+      "reference_s": 247,
+      "synthetic_estimate_s": 256,
+      "error_s": 9
+    },
+    {
+      "session_id": "SYN-P07",
+      "reference_s": 326,
+      "synthetic_estimate_s": 334,
+      "error_s": 8
+    },
+    {
+      "session_id": "SYN-P08",
+      "reference_s": 418,
+      "synthetic_estimate_s": 432,
+      "error_s": 14
+    },
+    {
+      "session_id": "SYN-P09",
+      "reference_s": 507,
+      "synthetic_estimate_s": 482,
+      "error_s": -25
+    },
+    {
+      "session_id": "SYN-P10",
+      "reference_s": 633,
+      "synthetic_estimate_s": 681,
+      "error_s": 48
+    },
+    {
+      "session_id": "SYN-P11",
+      "reference_s": 746,
+      "synthetic_estimate_s": 764,
+      "error_s": 18
+    },
+    {
+      "session_id": "SYN-P12",
+      "reference_s": 858,
+      "synthetic_estimate_s": 846,
+      "error_s": -12
+    }
+  ],
+  "phone_duration_metrics": {
+    "n": 12,
+    "mae_s": 14.833333333333334,
+    "median_ae_s": 11.0,
+    "p95_ae_s": 35.34999999999998,
+    "max_ae_s": 48,
+    "bias_s": 4,
+    "mape_percent": 8.525476207818711,
+    "mape_n": 12
+  },
+  "shifts": [
+    {
+      "shift_id": "SYN-C01",
+      "schedule_s": 14400,
+      "unobserved_s": 30,
+      "coverage": 0.9979166666666667,
+      "reference_presence_s": 13501,
+      "reference_phone_s": 0,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 13501,
+      "estimates": {
+        "S1": {
+          "presence_s": 13472,
+          "phone_s": 0,
+          "excess_s": 0,
+          "effective_s": 13472,
+          "error_s": -29
+        },
+        "S2": {
+          "presence_s": 13443,
+          "phone_s": 0,
+          "excess_s": 0,
+          "effective_s": 13443,
+          "error_s": -58
+        },
+        "S3": {
+          "presence_s": 13385,
+          "phone_s": 0,
+          "excess_s": 0,
+          "effective_s": 13385,
+          "error_s": -116
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C02",
+      "schedule_s": 28800,
+      "unobserved_s": 180,
+      "coverage": 0.99375,
+      "reference_presence_s": 21991,
+      "reference_phone_s": 840,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 21991,
+      "estimates": {
+        "S1": {
+          "presence_s": 22009,
+          "phone_s": 797,
+          "excess_s": 0,
+          "effective_s": 22009,
+          "error_s": 18
+        },
+        "S2": {
+          "presence_s": 22028,
+          "phone_s": 754,
+          "excess_s": 0,
+          "effective_s": 22028,
+          "error_s": 37
+        },
+        "S3": {
+          "presence_s": 22065,
+          "phone_s": 669,
+          "excess_s": 0,
+          "effective_s": 22065,
+          "error_s": 74
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C03",
+      "schedule_s": 14400,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 13230,
+      "reference_phone_s": 900,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 13230,
+      "estimates": {
+        "S1": {
+          "presence_s": 13247,
+          "phone_s": 874,
+          "excess_s": 0,
+          "effective_s": 13247,
+          "error_s": 17
+        },
+        "S2": {
+          "presence_s": 13265,
+          "phone_s": 848,
+          "excess_s": 0,
+          "effective_s": 13265,
+          "error_s": 35
+        },
+        "S3": {
+          "presence_s": 13299,
+          "phone_s": 795,
+          "excess_s": 0,
+          "effective_s": 13299,
+          "error_s": 69
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C04",
+      "schedule_s": 14400,
+      "unobserved_s": 30,
+      "coverage": 0.9979166666666667,
+      "reference_presence_s": 13742,
+      "reference_phone_s": 960,
+      "allowance_s": 900,
+      "reference_excess_s": 60,
+      "reference_effective_s": 13682,
+      "estimates": {
+        "S1": {
+          "presence_s": 13679,
+          "phone_s": 945,
+          "excess_s": 45,
+          "effective_s": 13634,
+          "error_s": -48
+        },
+        "S2": {
+          "presence_s": 13617,
+          "phone_s": 929,
+          "excess_s": 29,
+          "effective_s": 13588,
+          "error_s": -94
+        },
+        "S3": {
+          "presence_s": 13492,
+          "phone_s": 898,
+          "excess_s": 0,
+          "effective_s": 13492,
+          "error_s": -190
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C05",
+      "schedule_s": 28800,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 23352,
+      "reference_phone_s": 826,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 23352,
+      "estimates": {
+        "S1": {
+          "presence_s": 23209,
+          "phone_s": 846,
+          "excess_s": 0,
+          "effective_s": 23209,
+          "error_s": -143
+        },
+        "S2": {
+          "presence_s": 23066,
+          "phone_s": 865,
+          "excess_s": 0,
+          "effective_s": 23066,
+          "error_s": -286
+        },
+        "S3": {
+          "presence_s": 22780,
+          "phone_s": 904,
+          "excess_s": 4,
+          "effective_s": 22776,
+          "error_s": -576
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C06",
+      "schedule_s": 14400,
+      "unobserved_s": 30,
+      "coverage": 0.9979166666666667,
+      "reference_presence_s": 12364,
+      "reference_phone_s": 880,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 12364,
+      "estimates": {
+        "S1": {
+          "presence_s": 12307,
+          "phone_s": 895,
+          "excess_s": 0,
+          "effective_s": 12307,
+          "error_s": -57
+        },
+        "S2": {
+          "presence_s": 12250,
+          "phone_s": 909,
+          "excess_s": 9,
+          "effective_s": 12241,
+          "error_s": -123
+        },
+        "S3": {
+          "presence_s": 12136,
+          "phone_s": 939,
+          "excess_s": 39,
+          "effective_s": 12097,
+          "error_s": -267
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C07",
+      "schedule_s": 14400,
+      "unobserved_s": 90,
+      "coverage": 0.99375,
+      "reference_presence_s": 12286,
+      "reference_phone_s": 419,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 12286,
+      "estimates": {
+        "S1": {
+          "presence_s": 12300,
+          "phone_s": 422,
+          "excess_s": 0,
+          "effective_s": 12300,
+          "error_s": 14
+        },
+        "S2": {
+          "presence_s": 12314,
+          "phone_s": 424,
+          "excess_s": 0,
+          "effective_s": 12314,
+          "error_s": 28
+        },
+        "S3": {
+          "presence_s": 12341,
+          "phone_s": 429,
+          "excess_s": 0,
+          "effective_s": 12341,
+          "error_s": 55
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C08",
+      "schedule_s": 28800,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 22455,
+      "reference_phone_s": 832,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 22455,
+      "estimates": {
+        "S1": {
+          "presence_s": 22218,
+          "phone_s": 857,
+          "excess_s": 0,
+          "effective_s": 22218,
+          "error_s": -237
+        },
+        "S2": {
+          "presence_s": 21982,
+          "phone_s": 882,
+          "excess_s": 0,
+          "effective_s": 21982,
+          "error_s": -473
+        },
+        "S3": {
+          "presence_s": 21509,
+          "phone_s": 932,
+          "excess_s": 32,
+          "effective_s": 21477,
+          "error_s": -978
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C09",
+      "schedule_s": 28800,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 21919,
+      "reference_phone_s": 2002,
+      "allowance_s": 900,
+      "reference_excess_s": 1102,
+      "reference_effective_s": 20817,
+      "estimates": {
+        "S1": {
+          "presence_s": 21904,
+          "phone_s": 2003,
+          "excess_s": 1103,
+          "effective_s": 20801,
+          "error_s": -16
+        },
+        "S2": {
+          "presence_s": 21890,
+          "phone_s": 2005,
+          "excess_s": 1105,
+          "effective_s": 20785,
+          "error_s": -32
+        },
+        "S3": {
+          "presence_s": 21861,
+          "phone_s": 2008,
+          "excess_s": 1108,
+          "effective_s": 20753,
+          "error_s": -64
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C10",
+      "schedule_s": 21600,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 20596,
+      "reference_phone_s": 2049,
+      "allowance_s": 900,
+      "reference_excess_s": 1149,
+      "reference_effective_s": 19447,
+      "estimates": {
+        "S1": {
+          "presence_s": 20276,
+          "phone_s": 2035,
+          "excess_s": 1135,
+          "effective_s": 19141,
+          "error_s": -306
+        },
+        "S2": {
+          "presence_s": 19956,
+          "phone_s": 2021,
+          "excess_s": 1121,
+          "effective_s": 18835,
+          "error_s": -612
+        },
+        "S3": {
+          "presence_s": 19316,
+          "phone_s": 1993,
+          "excess_s": 1093,
+          "effective_s": 18223,
+          "error_s": -1224
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C11",
+      "schedule_s": 14400,
+      "unobserved_s": 90,
+      "coverage": 0.99375,
+      "reference_presence_s": 11950,
+      "reference_phone_s": 1849,
+      "allowance_s": 900,
+      "reference_excess_s": 949,
+      "reference_effective_s": 11001,
+      "estimates": {
+        "S1": {
+          "presence_s": 11924,
+          "phone_s": 1814,
+          "excess_s": 914,
+          "effective_s": 11010,
+          "error_s": 9
+        },
+        "S2": {
+          "presence_s": 11898,
+          "phone_s": 1779,
+          "excess_s": 879,
+          "effective_s": 11019,
+          "error_s": 18
+        },
+        "S3": {
+          "presence_s": 11846,
+          "phone_s": 1709,
+          "excess_s": 809,
+          "effective_s": 11037,
+          "error_s": 36
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C12",
+      "schedule_s": 28800,
+      "unobserved_s": 90,
+      "coverage": 0.996875,
+      "reference_presence_s": 22118,
+      "reference_phone_s": 1606,
+      "allowance_s": 900,
+      "reference_excess_s": 706,
+      "reference_effective_s": 21412,
+      "estimates": {
+        "S1": {
+          "presence_s": 22022,
+          "phone_s": 1610,
+          "excess_s": 710,
+          "effective_s": 21312,
+          "error_s": -100
+        },
+        "S2": {
+          "presence_s": 21927,
+          "phone_s": 1613,
+          "excess_s": 713,
+          "effective_s": 21214,
+          "error_s": -198
+        },
+        "S3": {
+          "presence_s": 21736,
+          "phone_s": 1620,
+          "excess_s": 720,
+          "effective_s": 21016,
+          "error_s": -396
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C13",
+      "schedule_s": 14400,
+      "unobserved_s": 30,
+      "coverage": 0.9979166666666667,
+      "reference_presence_s": 13211,
+      "reference_phone_s": 1909,
+      "allowance_s": 900,
+      "reference_excess_s": 1009,
+      "reference_effective_s": 12202,
+      "estimates": {
+        "S1": {
+          "presence_s": 13254,
+          "phone_s": 1942,
+          "excess_s": 1042,
+          "effective_s": 12212,
+          "error_s": 10
+        },
+        "S2": {
+          "presence_s": 13296,
+          "phone_s": 1975,
+          "excess_s": 1075,
+          "effective_s": 12221,
+          "error_s": 19
+        },
+        "S3": {
+          "presence_s": 13381,
+          "phone_s": 2042,
+          "excess_s": 1142,
+          "effective_s": 12239,
+          "error_s": 37
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C14",
+      "schedule_s": 28800,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 22716,
+      "reference_phone_s": 2303,
+      "allowance_s": 900,
+      "reference_excess_s": 1403,
+      "reference_effective_s": 21313,
+      "estimates": {
+        "S1": {
+          "presence_s": 22671,
+          "phone_s": 2303,
+          "excess_s": 1403,
+          "effective_s": 21268,
+          "error_s": -45
+        },
+        "S2": {
+          "presence_s": 22626,
+          "phone_s": 2302,
+          "excess_s": 1402,
+          "effective_s": 21224,
+          "error_s": -89
+        },
+        "S3": {
+          "presence_s": 22536,
+          "phone_s": 2301,
+          "excess_s": 1401,
+          "effective_s": 21135,
+          "error_s": -178
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C15",
+      "schedule_s": 21600,
+      "unobserved_s": 180,
+      "coverage": 0.9916666666666667,
+      "reference_presence_s": 18742,
+      "reference_phone_s": 2658,
+      "allowance_s": 900,
+      "reference_excess_s": 1758,
+      "reference_effective_s": 16984,
+      "estimates": {
+        "S1": {
+          "presence_s": 18698,
+          "phone_s": 2672,
+          "excess_s": 1772,
+          "effective_s": 16926,
+          "error_s": -58
+        },
+        "S2": {
+          "presence_s": 18655,
+          "phone_s": 2685,
+          "excess_s": 1785,
+          "effective_s": 16870,
+          "error_s": -114
+        },
+        "S3": {
+          "presence_s": 18567,
+          "phone_s": 2713,
+          "excess_s": 1813,
+          "effective_s": 16754,
+          "error_s": -230
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C16",
+      "schedule_s": 14400,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 13788,
+      "reference_phone_s": 1746,
+      "allowance_s": 900,
+      "reference_excess_s": 846,
+      "reference_effective_s": 12942,
+      "estimates": {
+        "S1": {
+          "presence_s": 13801,
+          "phone_s": 1748,
+          "excess_s": 848,
+          "effective_s": 12953,
+          "error_s": 11
+        },
+        "S2": {
+          "presence_s": 13814,
+          "phone_s": 1750,
+          "excess_s": 850,
+          "effective_s": 12964,
+          "error_s": 22
+        },
+        "S3": {
+          "presence_s": 13840,
+          "phone_s": 1753,
+          "excess_s": 853,
+          "effective_s": 12987,
+          "error_s": 45
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C17",
+      "schedule_s": 28800,
+      "unobserved_s": 90,
+      "coverage": 0.996875,
+      "reference_presence_s": 26722,
+      "reference_phone_s": 2616,
+      "allowance_s": 900,
+      "reference_excess_s": 1716,
+      "reference_effective_s": 25006,
+      "estimates": {
+        "S1": {
+          "presence_s": 26693,
+          "phone_s": 2576,
+          "excess_s": 1676,
+          "effective_s": 25017,
+          "error_s": 11
+        },
+        "S2": {
+          "presence_s": 26665,
+          "phone_s": 2537,
+          "excess_s": 1637,
+          "effective_s": 25028,
+          "error_s": 22
+        },
+        "S3": {
+          "presence_s": 26608,
+          "phone_s": 2457,
+          "excess_s": 1557,
+          "effective_s": 25051,
+          "error_s": 45
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C18",
+      "schedule_s": 28800,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 25600,
+      "reference_phone_s": 2591,
+      "allowance_s": 900,
+      "reference_excess_s": 1691,
+      "reference_effective_s": 23909,
+      "estimates": {
+        "S1": {
+          "presence_s": 25533,
+          "phone_s": 2614,
+          "excess_s": 1714,
+          "effective_s": 23819,
+          "error_s": -90
+        },
+        "S2": {
+          "presence_s": 25466,
+          "phone_s": 2638,
+          "excess_s": 1738,
+          "effective_s": 23728,
+          "error_s": -181
+        },
+        "S3": {
+          "presence_s": 25332,
+          "phone_s": 2685,
+          "excess_s": 1785,
+          "effective_s": 23547,
+          "error_s": -362
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C19",
+      "schedule_s": 21600,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 17030,
+      "reference_phone_s": 1996,
+      "allowance_s": 900,
+      "reference_excess_s": 1096,
+      "reference_effective_s": 15934,
+      "estimates": {
+        "S1": {
+          "presence_s": 16966,
+          "phone_s": 1960,
+          "excess_s": 1060,
+          "effective_s": 15906,
+          "error_s": -28
+        },
+        "S2": {
+          "presence_s": 16902,
+          "phone_s": 1924,
+          "excess_s": 1024,
+          "effective_s": 15878,
+          "error_s": -56
+        },
+        "S3": {
+          "presence_s": 16775,
+          "phone_s": 1852,
+          "excess_s": 952,
+          "effective_s": 15823,
+          "error_s": -111
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C20",
+      "schedule_s": 14400,
+      "unobserved_s": 90,
+      "coverage": 0.99375,
+      "reference_presence_s": 12334,
+      "reference_phone_s": 280,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 12334,
+      "estimates": {
+        "S1": {
+          "presence_s": 12546,
+          "phone_s": 264,
+          "excess_s": 0,
+          "effective_s": 12546,
+          "error_s": 212
+        },
+        "S2": {
+          "presence_s": 12757,
+          "phone_s": 248,
+          "excess_s": 0,
+          "effective_s": 12757,
+          "error_s": 423
+        },
+        "S3": {
+          "presence_s": 13181,
+          "phone_s": 215,
+          "excess_s": 0,
+          "effective_s": 13181,
+          "error_s": 847
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C21",
+      "schedule_s": 14400,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 13075,
+      "reference_phone_s": 1257,
+      "allowance_s": 900,
+      "reference_excess_s": 357,
+      "reference_effective_s": 12718,
+      "estimates": {
+        "S1": {
+          "presence_s": 13041,
+          "phone_s": 1279,
+          "excess_s": 379,
+          "effective_s": 12662,
+          "error_s": -56
+        },
+        "S2": {
+          "presence_s": 13008,
+          "phone_s": 1302,
+          "excess_s": 402,
+          "effective_s": 12606,
+          "error_s": -112
+        },
+        "S3": {
+          "presence_s": 12940,
+          "phone_s": 1346,
+          "excess_s": 446,
+          "effective_s": 12494,
+          "error_s": -224
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C22",
+      "schedule_s": 28800,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 24510,
+      "reference_phone_s": 2184,
+      "allowance_s": 900,
+      "reference_excess_s": 1284,
+      "reference_effective_s": 23226,
+      "estimates": {
+        "S1": {
+          "presence_s": 24342,
+          "phone_s": 2209,
+          "excess_s": 1309,
+          "effective_s": 23033,
+          "error_s": -193
+        },
+        "S2": {
+          "presence_s": 24174,
+          "phone_s": 2233,
+          "excess_s": 1333,
+          "effective_s": 22841,
+          "error_s": -385
+        },
+        "S3": {
+          "presence_s": 23838,
+          "phone_s": 2282,
+          "excess_s": 1382,
+          "effective_s": 22456,
+          "error_s": -770
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C23",
+      "schedule_s": 14400,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 11977,
+      "reference_phone_s": 506,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 11977,
+      "estimates": {
+        "S1": {
+          "presence_s": 11961,
+          "phone_s": 470,
+          "excess_s": 0,
+          "effective_s": 11961,
+          "error_s": -16
+        },
+        "S2": {
+          "presence_s": 11945,
+          "phone_s": 433,
+          "excess_s": 0,
+          "effective_s": 11945,
+          "error_s": -32
+        },
+        "S3": {
+          "presence_s": 11913,
+          "phone_s": 361,
+          "excess_s": 0,
+          "effective_s": 11913,
+          "error_s": -64
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C24",
+      "schedule_s": 14400,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 10950,
+      "reference_phone_s": 1695,
+      "allowance_s": 900,
+      "reference_excess_s": 795,
+      "reference_effective_s": 10155,
+      "estimates": {
+        "S1": {
+          "presence_s": 10921,
+          "phone_s": 1659,
+          "excess_s": 759,
+          "effective_s": 10162,
+          "error_s": 7
+        },
+        "S2": {
+          "presence_s": 10893,
+          "phone_s": 1623,
+          "excess_s": 723,
+          "effective_s": 10170,
+          "error_s": 15
+        },
+        "S3": {
+          "presence_s": 10835,
+          "phone_s": 1551,
+          "excess_s": 651,
+          "effective_s": 10184,
+          "error_s": 29
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C25",
+      "schedule_s": 14400,
+      "unobserved_s": 180,
+      "coverage": 0.9875,
+      "reference_presence_s": 11081,
+      "reference_phone_s": 2212,
+      "allowance_s": 900,
+      "reference_excess_s": 1312,
+      "reference_effective_s": 9769,
+      "estimates": {
+        "S1": {
+          "presence_s": 11147,
+          "phone_s": 2238,
+          "excess_s": 1338,
+          "effective_s": 9809,
+          "error_s": 40
+        },
+        "S2": {
+          "presence_s": 11214,
+          "phone_s": 2264,
+          "excess_s": 1364,
+          "effective_s": 9850,
+          "error_s": 81
+        },
+        "S3": {
+          "presence_s": 11346,
+          "phone_s": 2317,
+          "excess_s": 1417,
+          "effective_s": 9929,
+          "error_s": 160
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C26",
+      "schedule_s": 28800,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 23527,
+      "reference_phone_s": 965,
+      "allowance_s": 900,
+      "reference_excess_s": 65,
+      "reference_effective_s": 23462,
+      "estimates": {
+        "S1": {
+          "presence_s": 23488,
+          "phone_s": 971,
+          "excess_s": 71,
+          "effective_s": 23417,
+          "error_s": -45
+        },
+        "S2": {
+          "presence_s": 23448,
+          "phone_s": 978,
+          "excess_s": 78,
+          "effective_s": 23370,
+          "error_s": -92
+        },
+        "S3": {
+          "presence_s": 23369,
+          "phone_s": 991,
+          "excess_s": 91,
+          "effective_s": 23278,
+          "error_s": -184
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C27",
+      "schedule_s": 28800,
+      "unobserved_s": 30,
+      "coverage": 0.9989583333333333,
+      "reference_presence_s": 22946,
+      "reference_phone_s": 2272,
+      "allowance_s": 900,
+      "reference_excess_s": 1372,
+      "reference_effective_s": 21574,
+      "estimates": {
+        "S1": {
+          "presence_s": 22924,
+          "phone_s": 2299,
+          "excess_s": 1399,
+          "effective_s": 21525,
+          "error_s": -49
+        },
+        "S2": {
+          "presence_s": 22903,
+          "phone_s": 2326,
+          "excess_s": 1426,
+          "effective_s": 21477,
+          "error_s": -97
+        },
+        "S3": {
+          "presence_s": 22860,
+          "phone_s": 2380,
+          "excess_s": 1480,
+          "effective_s": 21380,
+          "error_s": -194
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C28",
+      "schedule_s": 21600,
+      "unobserved_s": 0,
+      "coverage": 1.0,
+      "reference_presence_s": 19577,
+      "reference_phone_s": 1804,
+      "allowance_s": 900,
+      "reference_excess_s": 904,
+      "reference_effective_s": 18673,
+      "estimates": {
+        "S1": {
+          "presence_s": 19533,
+          "phone_s": 1791,
+          "excess_s": 891,
+          "effective_s": 18642,
+          "error_s": -31
+        },
+        "S2": {
+          "presence_s": 19490,
+          "phone_s": 1778,
+          "excess_s": 878,
+          "effective_s": 18612,
+          "error_s": -61
+        },
+        "S3": {
+          "presence_s": 19403,
+          "phone_s": 1753,
+          "excess_s": 853,
+          "effective_s": 18550,
+          "error_s": -123
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C29",
+      "schedule_s": 14400,
+      "unobserved_s": 30,
+      "coverage": 0.9979166666666667,
+      "reference_presence_s": 12949,
+      "reference_phone_s": 1612,
+      "allowance_s": 900,
+      "reference_excess_s": 712,
+      "reference_effective_s": 12237,
+      "estimates": {
+        "S1": {
+          "presence_s": 12954,
+          "phone_s": 1578,
+          "excess_s": 678,
+          "effective_s": 12276,
+          "error_s": 39
+        },
+        "S2": {
+          "presence_s": 12959,
+          "phone_s": 1544,
+          "excess_s": 644,
+          "effective_s": 12315,
+          "error_s": 78
+        },
+        "S3": {
+          "presence_s": 12968,
+          "phone_s": 1475,
+          "excess_s": 575,
+          "effective_s": 12393,
+          "error_s": 156
+        }
+      }
+    },
+    {
+      "shift_id": "SYN-C30",
+      "schedule_s": 14400,
+      "unobserved_s": 30,
+      "coverage": 0.9979166666666667,
+      "reference_presence_s": 13129,
+      "reference_phone_s": 112,
+      "allowance_s": 900,
+      "reference_excess_s": 0,
+      "reference_effective_s": 13129,
+      "estimates": {
+        "S1": {
+          "presence_s": 12862,
+          "phone_s": 97,
+          "excess_s": 0,
+          "effective_s": 12862,
+          "error_s": -267
+        },
+        "S2": {
+          "presence_s": 12594,
+          "phone_s": 82,
+          "excess_s": 0,
+          "effective_s": 12594,
+          "error_s": -535
+        },
+        "S3": {
+          "presence_s": 12059,
+          "phone_s": 51,
+          "excess_s": 0,
+          "effective_s": 12059,
+          "error_s": -1070
+        }
+      }
+    }
+  ],
+  "shift_metrics": {
+    "S1": {
+      "n": 30,
+      "mae_s": 73.4,
+      "median_ae_s": 42.5,
+      "p95_ae_s": 253.49999999999991,
+      "max_ae_s": 306,
+      "bias_s": -47.53333333333333,
+      "mape_percent": 0.4357695424301757,
+      "mape_n": 30
+    },
+    "S2": {
+      "n": 30,
+      "mae_s": 146.93333333333334,
+      "median_ae_s": 85.0,
+      "p95_ae_s": 507.0999999999998,
+      "max_ae_s": 612,
+      "bias_s": -95.06666666666666,
+      "mape_percent": 0.8731999800524617,
+      "mape_n": 30
+    },
+    "S3": {
+      "n": 30,
+      "mae_s": 295.8,
+      "median_ae_s": 169.0,
+      "p95_ae_s": 1028.5999999999997,
+      "max_ae_s": 1224,
+      "bias_s": -192.26666666666668,
+      "mape_percent": 1.7570858670132696,
+      "mape_n": 30
+    }
+  }
+}

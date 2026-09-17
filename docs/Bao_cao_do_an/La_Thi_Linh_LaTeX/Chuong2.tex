@@ -5,99 +5,99 @@
 
 \subsection{Thị giác máy tính và video giám sát}
 \subsubsection{Khái niệm}
-Thị giác máy tính là lĩnh vực nghiên cứu các phương pháp giúp máy tính trích xuất thông tin có cấu trúc từ ảnh và video. Trong bài toán của đồ án, đầu vào không phải một ảnh độc lập mà là chuỗi khung hình theo thời gian. Mỗi frame chứa thông tin vị trí tức thời; ý nghĩa ``nhân viên đang hiện diện'', ``đã rời khỏi khu vực'', hoặc ``đã sử dụng điện thoại 12 phút'' chỉ xuất hiện khi kết hợp nhiều frame và lưu lịch sử trạng thái.
+Thị giác máy tính là lĩnh vực nghiên cứu các phương pháp giúp máy tính trích xuất thông tin có cấu trúc từ ảnh và video. Trong bài toán của đồ án, đầu vào không phải một ảnh độc lập mà là chuỗi khung hình theo thời gian. Mỗi khung hình chứa thông tin vị trí tức thời, ý nghĩa ``nhân viên đang hiện diện'', ``đã rời khỏi khu vực'', hoặc ``đã sử dụng điện thoại 12 phút'' chỉ xuất hiện khi kết hợp nhiều khung hình và lưu lịch sử trạng thái.
 
-Ảnh màu có thể biểu diễn bởi tensor $I\in\mathbb{R}^{H\times W\times C}$, với $H$, $W$ là chiều cao, chiều rộng và $C$ là số kênh màu. Video là chuỗi $V=\{I_t\}_{t=1}^{T}$, trong đó khoảng thời gian giữa hai frame phụ thuộc FPS. Nếu xử lý 25 FPS, một phút video tương ứng khoảng 1500 frame. Vì vậy thuật toán cần cân bằng giữa độ chính xác, độ trễ và tài nguyên tính toán.
+Ảnh màu có thể biểu diễn bởi tensor $I\in\mathbb{R}^{H\times W\times C}$, với $H$, $W$ là chiều cao, chiều rộng và $C$ là số kênh màu. Video là chuỗi $V=\{I_t\}_{t=1}^{T}$, trong đó khoảng thời gian giữa hai khung hình phụ thuộc FPS. Nếu xử lý 25 FPS, một phút video tương ứng khoảng 1500 khung hình. Vì vậy thuật toán cần cân bằng giữa độ chính xác, độ trễ và tài nguyên tính toán.
 
-\subsubsection{Pipeline video analytics}
-Một pipeline giám sát video thường gồm bốn tầng: thu nhận, nhận thức, liên kết theo thời gian và suy luận nghiệp vụ. Thu nhận chịu trách nhiệm đọc RTSP/tệp camera và xử lý lỗi kết nối. Nhận thức tạo detection. Liên kết theo thời gian duy trì identity tạm thời của đối tượng. Tầng nghiệp vụ áp dụng quy tắc vùng, state machine và tổng hợp thời gian. Tách tầng giúp mỗi thành phần có thể kiểm thử độc lập và thay thế model mà không thay đổi toàn bộ hệ thống.
+\subsubsection{Chuỗi xử lý phân tích video}
+Một chuỗi xử lý giám sát video thường gồm bốn tầng: thu nhận, nhận thức, liên kết theo thời gian và suy luận nghiệp vụ. Thu nhận chịu trách nhiệm đọc RTSP/tệp camera và xử lý lỗi kết nối. Nhận thức tạo quan sát phát hiện. Liên kết theo thời gian duy trì danh tính tạm thời của đối tượng. Tầng nghiệp vụ áp dụng quy tắc vùng, máy trạng thái và tổng hợp thời gian. Tách tầng giúp mỗi thành phần có thể kiểm thử độc lập và thay thế mô hình mà không thay đổi toàn bộ hệ thống.
 
 \subsection{Phát hiện đối tượng}
 \subsubsection{Định nghĩa bài toán}
-Object detection xác định đồng thời lớp và vị trí của nhiều đối tượng trong ảnh. Đầu ra thường là bộ:
+Phát hiện đối tượng xác định đồng thời lớp và vị trí của nhiều đối tượng trong ảnh. Đầu ra thường là bộ:
 \begin{equation}
  d_i=(b_i,c_i,s_i),
 \end{equation}
-trong đó $b_i=(x_1,y_1,x_2,y_2)$ là bounding box, $c_i$ là nhãn lớp và $s_i\in[0,1]$ là confidence. Theo tài liệu Ultralytics, detector trả về bounding box, class label và confidence cho các đối tượng được phát hiện \cite{ultralyticsdetect}.
+trong đó $b_i=(x_1,y_1,x_2,y_2)$ là hộp bao, $c_i$ là nhãn lớp và $s_i\in[0,1]$ là độ tin cậy. Theo tài liệu Ultralytics, bộ phát hiện trả về hộp bao, nhãn lớp và độ tin cậy cho các đối tượng được phát hiện \cite{ultralyticsdetect}.
 
-Độ chồng lấn giữa hai box thường được đo bằng Intersection over Union:
+Độ chồng lấn giữa hai hộp bao thường được đo bằng Intersection over Union:
 \begin{equation}
  IoU(A,B)=\frac{|A\cap B|}{|A\cup B|}.
  \label{eq:iou}
 \end{equation}
-IoU được dùng trong đánh giá detection, non-maximum suppression và nhiều thuật toán tracking.
+IoU được dùng trong đánh giá phát hiện đối tượng, non-maximum suppression và nhiều thuật toán theo dõi.
 
 \subsubsection{YOLO và YOLOv8}
-YOLO đặt bài toán phát hiện thành suy luận một lượt trên toàn ảnh. Phiên bản YOLO đầu tiên của Redmon và cộng sự nhấn mạnh tính thời gian thực bằng cách dự đoán trực tiếp bounding box và class probability từ ảnh đầu vào \cite{yolo}. Các phiên bản sau cải thiện backbone, neck, head, chiến lược gán mẫu và loss.
+YOLO đặt bài toán phát hiện thành suy luận một lượt trên toàn ảnh. Phiên bản YOLO đầu tiên của Redmon và cộng sự nhấn mạnh tính thời gian thực bằng cách dự đoán trực tiếp hộp bao và xác suất lớp từ ảnh đầu vào \cite{yolo}. Các phiên bản sau cải thiện backbone, neck, head, chiến lược gán mẫu và loss.
 
-YOLOv8 do Ultralytics phát hành năm 2023. Ultralytics công bố YOLOv8 như một họ model hỗ trợ detection, segmentation, pose, OBB và classification; các weight detection chuẩn được huấn luyện trên COCO với 80 lớp \cite{ultralyticsv8}. YOLOv8 không có bài báo học thuật chính thức tương ứng; vì vậy báo cáo trích dẫn tài liệu/phần mềm Ultralytics thay vì gán nhầm một bài báo khác cho kiến trúc này.
+YOLOv8 do Ultralytics phát hành năm 2023, gồm các biến thể phục vụ phát hiện đối tượng, phân đoạn ảnh, ước lượng tư thế, phát hiện hộp bao định hướng và phân loại ảnh. Các bộ trọng số phát hiện tiêu chuẩn được huấn luyện trên COCO với 80 lớp \cite{ultralyticsv8}. Báo cáo sử dụng tài liệu phần mềm Ultralytics làm nguồn mô tả YOLOv8 vì nhóm phát triển chưa công bố bài báo học thuật riêng cho phiên bản này.
 
-Đồ án chọn YOLOv8n làm cấu hình khởi đầu vì mô hình nhỏ và phù hợp xử lý trực tuyến. Hai lớp được dùng trực tiếp là \textit{person} và \textit{cell phone}. COCO là tập dữ liệu lớn cho nhận dạng đối tượng trong cảnh tự nhiên; phiên bản nghiên cứu gốc chứa hàng trăm nghìn ảnh và hàng triệu instance, tạo nền tảng pretrained phổ biến cho các detector tổng quát \cite{coco}.
+Đồ án chọn YOLOv8n làm cấu hình khởi đầu vì mô hình nhỏ và phù hợp xử lý trực tuyến. Hai lớp được dùng trực tiếp là \textit{person} và \textit{cell phone}. COCO là tập dữ liệu lớn cho nhận dạng đối tượng trong cảnh tự nhiên, phiên bản nghiên cứu gốc chứa hàng trăm nghìn ảnh và hàng triệu đối tượng được gán nhãn, tạo nền tảng được huấn luyện trước phổ biến cho các bộ phát hiện tổng quát \cite{coco}.
 
-\subsubsection{Ngưỡng confidence và NMS}
-Nếu ngưỡng confidence quá cao, detector bỏ sót người bị che một phần; nếu quá thấp, số false positive tăng. Với tracking, việc bỏ toàn bộ detection có score thấp có thể làm track bị đứt. Đây chính là động cơ của ByteTrack: thay vì chỉ liên kết detection confidence cao, thuật toán còn dùng các detection thấp hơn trong bước ghép thứ hai để phục hồi đối tượng thật \cite{bytetrack}.
+\subsubsection{Ngưỡng độ tin cậy và NMS}
+Nếu ngưỡng độ tin cậy quá cao, bộ phát hiện bỏ sót người bị che một phần, nếu quá thấp, số dương tính giả tăng. Với theo dõi, việc bỏ toàn bộ quan sát phát hiện có độ tin cậy thấp có thể làm quỹ đạo bị đứt. Đây chính là động cơ của ByteTrack: thay vì chỉ liên kết quan sát phát hiện có độ tin cậy cao, thuật toán còn dùng các quan sát có độ tin cậy thấp hơn trong bước ghép thứ hai để phục hồi đối tượng thật \cite{bytetrack}.
 
-Non-Maximum Suppression loại bỏ các box dư thừa của cùng đối tượng. Với tập box cùng lớp, box có score cao nhất được giữ; các box còn lại có IoU vượt ngưỡng sẽ bị loại. Trong ứng dụng nhiều người đứng gần nhau, NMS quá mạnh có thể làm mất người thật, nên tham số cần đánh giá trên góc camera mục tiêu.
+Non-Maximum Suppression loại bỏ các hộp bao dư thừa của cùng đối tượng. Với tập hộp bao cùng lớp, hộp bao có độ tin cậy cao nhất được giữ, các hộp bao còn lại có IoU vượt ngưỡng sẽ bị loại. Trong ứng dụng nhiều người đứng gần nhau, NMS quá mạnh có thể làm mất người thật, nên tham số cần đánh giá trên góc camera mục tiêu.
 
 \subsection{Theo dõi đa đối tượng}
 \subsubsection{Bài toán MOT}
-Multi-Object Tracking nhận chuỗi detection và gán identity nhất quán cho các đối tượng qua thời gian. Mục tiêu không chỉ tìm đúng box mà còn duy trì quỹ đạo. Một tracker tốt phải hạn chế ba nhóm lỗi: bỏ sót/false positive, sai vị trí và sai association. HOTA được đề xuất để cân bằng chất lượng detection và association thay vì chỉ nhấn mạnh một thành phần \cite{hota}.
+Theo dõi đa đối tượng nhận chuỗi quan sát phát hiện và gán danh tính nhất quán cho các đối tượng qua thời gian. Mục tiêu không chỉ tìm đúng hộp bao mà còn duy trì quỹ đạo. Một bộ theo dõi tốt phải hạn chế ba nhóm lỗi: bỏ sót/dương tính giả, sai vị trí và sai liên kết. HOTA được đề xuất để cân bằng chất lượng phát hiện đối tượng và liên kết thay vì chỉ nhấn mạnh một thành phần \cite{hota}.
 
-Trong tracking-by-detection, detector xử lý từng frame độc lập; tracker dự đoán vị trí của track ở frame sau và giải bài toán gán giữa track và detection. Hai thành phần kinh điển là Kalman filter cho dự đoán trạng thái và Hungarian algorithm cho assignment tối ưu. SORT kết hợp hai kỹ thuật này với IoU và cho thấy tốc độ theo dõi rất cao trong thiết lập trực tuyến \cite{sort}.
+Trong theo dõi dựa trên phát hiện đối tượng, bộ phát hiện xử lý từng khung hình độc lập, bộ theo dõi dự đoán vị trí của quỹ đạo ở khung hình sau và giải bài toán gán giữa quỹ đạo và quan sát phát hiện. Hai thành phần kinh điển là bộ lọc Kalman cho dự đoán trạng thái và thuật toán Hungarian cho phép gán tối ưu. SORT kết hợp hai kỹ thuật này với IoU và cho thấy tốc độ theo dõi rất cao trong thiết lập trực tuyến \cite{sort}.
 
 \subsubsection{Deep SORT}
-SORT có thể đổi ID khi hai người che nhau hoặc quỹ đạo gần nhau. Deep SORT bổ sung embedding ngoại hình, dùng khoảng cách appearance kết hợp motion gating. Bài báo Deep SORT báo cáo giảm identity switch đáng kể so với SORT trên tập đánh giá của họ \cite{deepsort}. Đổi lại, hệ thống cần thêm một mạng re-identification và chi phí tính toán.
+SORT có thể đổi ID khi hai người che nhau hoặc quỹ đạo gần nhau. Deep SORT bổ sung vector đặc trưng ngoại hình, dùng khoảng cách ngoại hình kết hợp motion gating. Bài báo Deep SORT báo cáo giảm số lần đổi định danh đáng kể so với SORT trên tập đánh giá của họ \cite{deepsort}. Đổi lại, hệ thống cần thêm một mạng tái định danh và chi phí tính toán.
 
 \subsubsection{ByteTrack}
-ByteTrack quan sát rằng detection score thấp không đồng nghĩa với background; nhiều box score thấp là đối tượng thật bị che khuất. Thuật toán trước tiên liên kết track với detection score cao, sau đó tiếp tục liên kết các track chưa ghép với detection score thấp phù hợp. Những box thấp không khớp track được loại như background. Cách tiếp cận này giữ kiến trúc đơn giản nhưng cải thiện khả năng duy trì track qua che khuất \cite{bytetrack}.
+ByteTrack quan sát rằng quan sát phát hiện có độ tin cậy thấp không đồng nghĩa với nền ảnh, nhiều hộp bao có độ tin cậy thấp là đối tượng thật bị che khuất. Thuật toán trước tiên liên kết quỹ đạo với quan sát phát hiện có độ tin cậy cao, sau đó tiếp tục liên kết các quỹ đạo chưa ghép với quan sát phát hiện có độ tin cậy thấp phù hợp. Những hộp bao có độ tin cậy thấp không khớp quỹ đạo được loại như nền ảnh. Cách tiếp cận này giữ kiến trúc đơn giản nhưng cải thiện khả năng duy trì quỹ đạo qua che khuất \cite{bytetrack}.
 
-Đối với đồ án, ByteTrack có ba ưu điểm: tích hợp thuận lợi với detector YOLO, không bắt buộc chạy mạng ReID toàn thân riêng, và tập trung đúng lỗi thường gặp trong CCTV là detection suy giảm tạm thời. Ultralytics cũng cung cấp cấu hình ByteTrack cho chế độ theo dõi video, cho phép dùng cùng model detection trong pipeline \cite{ultralyticstrack}.
+Đối với đồ án, ByteTrack có ba ưu điểm: tích hợp thuận lợi với bộ phát hiện YOLO, không bắt buộc chạy mạng ReID toàn thân riêng, và tập trung đúng lỗi thường gặp trong CCTV là quan sát phát hiện suy giảm tạm thời. Ultralytics cũng cung cấp cấu hình ByteTrack cho chế độ theo dõi video, cho phép dùng cùng mô hình phát hiện đối tượng trong chuỗi xử lý \cite{ultralyticstrack}.
 
-\subsubsection{Track ID và danh tính nhân viên}
-Track ID không phải employee ID. Track ID có vòng đời ngắn và có thể đổi khi đối tượng biến mất lâu. Vì vậy hệ thống duy trì ánh xạ:
+\subsubsection{Mã quỹ đạo và danh tính nhân viên}
+Mã quỹ đạo không phải mã nhân viên. Mã quỹ đạo có vòng đời ngắn và có thể đổi khi đối tượng biến mất lâu. Vì vậy hệ thống duy trì ánh xạ:
 \begin{equation}
  track\_id \rightarrow work\_area \rightarrow employee\_candidate \rightarrow identity\_state.
 \end{equation}
-Trong đó ROI cung cấp ngữ cảnh không gian; FaceNet chỉ hỗ trợ xác minh khi ảnh mặt đủ chất lượng. Tách hai loại định danh giúp tránh lỗi thiết kế phổ biến là lưu track ID như danh tính bền vững.
+Trong đó ROI cung cấp ngữ cảnh không gian, FaceNet chỉ hỗ trợ xác minh khi ảnh mặt đủ chất lượng. Tách hai loại định danh giúp tránh lỗi thiết kế phổ biến là lưu mã quỹ đạo như danh tính bền vững.
 
 \subsection{Vùng quan tâm và hình học không gian ảnh}
-\subsubsection{Biểu diễn polygon ROI}
-Mỗi khu vực làm việc được biểu diễn bởi đa giác $A=\{v_1,\ldots,v_k\}$ trên hệ tọa độ ảnh. Polygon linh hoạt hơn rectangle vì camera phối cảnh khiến bàn và vùng sàn thường không song song với biên ảnh. Thao tác quản trị lưu các điểm theo tỉ lệ chuẩn hóa $(x/W,y/H)$ để khi thay đổi độ phân giải vẫn phục hồi được polygon tương ứng.
+\subsubsection{Biểu diễn đa giác ROI}
+Mỗi khu vực làm việc được biểu diễn bởi đa giác $A=\{v_1,\ldots,v_k\}$ trên hệ tọa độ ảnh. Đa giác linh hoạt hơn hình chữ nhật vì camera phối cảnh khiến bàn và vùng sàn thường không song song với biên ảnh. Thao tác quản trị lưu các điểm theo tỉ lệ chuẩn hóa $(x/W,y/H)$ để khi thay đổi độ phân giải vẫn phục hồi được đa giác tương ứng.
 
 \subsubsection{Điểm neo của người}
-Tâm bounding box có thể nằm phía trên bàn dù chân người ở ngoài ROI. Bởi vậy hệ thống dùng bottom-center như phương trình \ref{eq:anchor}. Đây là một xấp xỉ hình học: với camera cố định và người đứng/ngồi tương đối thẳng, đáy box gần giao điểm giữa cơ thể và mặt phẳng sàn hơn tâm box.
+Tâm hộp bao có thể nằm phía trên bàn dù chân người ở ngoài ROI. Bởi vậy hệ thống dùng điểm giữa cạnh đáy hộp bao như phương trình \ref{eq:anchor}. Đây là một xấp xỉ hình học: với camera cố định và người đứng/ngồi tương đối thẳng, đáy hộp bao gần giao điểm giữa cơ thể và mặt phẳng sàn hơn tâm hộp bao.
 
 \subsubsection{Point-in-polygon}
-Bài toán kiểm tra điểm nằm trong đa giác có thể giải bằng ray casting hoặc winding number. Trong cài đặt Python, có thể dùng thuật toán hình học tự cài đặt hoặc hàm thư viện như \texttt{cv2.pointPolygonTest}. Kết quả không nên áp dụng cứng ở đúng đường biên; hệ thống có thể dùng vùng đệm hoặc yêu cầu tỉ lệ quan sát trong ROI đủ lớn để tránh dao động khi người đứng sát biên.
+Bài toán kiểm tra điểm nằm trong đa giác có thể giải bằng ray casting hoặc winding number. Trong cài đặt Python, có thể dùng thuật toán hình học tự cài đặt hoặc hàm thư viện như \texttt{cv2.pointPolygonTest}. Kết quả không nên áp dụng cứng ở đúng đường biên, hệ thống có thể dùng vùng đệm hoặc yêu cầu tỉ lệ quan sát trong ROI đủ lớn để tránh dao động khi người đứng sát biên.
 
 \subsubsection{Chuyển vùng và cạnh tranh vùng}
-Một track có thể đồng thời chạm hai ROI lân cận nếu dùng bounding box overlap. Khi đó, hệ thống ưu tiên ROI chứa bottom-center; nếu vẫn không duy nhất, dùng khoảng cách đến tâm/vùng lõi và trạng thái vùng trước đó. Hysteresis không gian giúp giảm việc track nhảy qua lại giữa hai khu vực khi đứng gần ranh giới.
+Một quỹ đạo có thể đồng thời chạm hai ROI lân cận nếu dùng phần giao giữa các hộp bao. Khi đó, hệ thống ưu tiên ROI chứa điểm giữa cạnh đáy hộp bao, nếu vẫn không duy nhất, dùng khoảng cách đến tâm/vùng lõi và trạng thái vùng trước đó. Hysteresis không gian giúp giảm việc quỹ đạo nhảy qua lại giữa hai khu vực khi đứng gần ranh giới.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{Images/roi_scene.png}
-\caption{Minh họa camera CCTV, nhiều track và vùng làm việc ROI}
+\caption{Minh họa camera CCTV, nhiều quỹ đạo và vùng làm việc ROI}
 \label{fig:roi-scene}
 \end{figure}
 
-\subsection{Xác thực danh tính bằng face embedding}
-\subsubsection{Face embedding}
-Face embedding ánh xạ ảnh khuôn mặt sang vector đặc trưng sao cho ảnh cùng người có khoảng cách nhỏ hơn ảnh khác người. FaceNet học không gian embedding trực tiếp và sử dụng triplet loss để kéo cặp cùng danh tính lại gần, đẩy danh tính khác ra xa \cite{facenet}.
+\subsection{Xác thực danh tính bằng vector đặc trưng khuôn mặt}
+\subsubsection{Vector đặc trưng khuôn mặt}
+Vector đặc trưng khuôn mặt ánh xạ ảnh khuôn mặt sang vector đặc trưng sao cho ảnh cùng người có khoảng cách nhỏ hơn ảnh khác người. FaceNet học không gian vector đặc trưng trực tiếp và sử dụng triplet loss để kéo cặp cùng danh tính lại gần, đẩy danh tính khác ra xa \cite{facenet}.
 
-Với hai embedding $u$ và $v$, cosine similarity là:
+Với hai vector đặc trưng $u$ và $v$, cosine similarity là:
 \begin{equation}
  sim(u,v)=\frac{u\cdot v}{\|u\|_2\|v\|_2}.
 \end{equation}
-Nếu embedding đã chuẩn hóa L2, cosine similarity thuận tiện để so sánh nhanh. Ngưỡng không nên lấy cố định từ một nghiên cứu khác mà phải hiệu chỉnh trên camera/điều kiện mục tiêu vì kích thước mặt, góc và ánh sáng thay đổi.
+Nếu vector đặc trưng đã chuẩn hóa L2, cosine similarity thuận tiện để so sánh nhanh. Ngưỡng xác minh cần được hiệu chỉnh cho dữ liệu mục tiêu và không nên áp dụng trực tiếp từ một nghiên cứu khác mà phải hiệu chỉnh trên camera/điều kiện mục tiêu vì kích thước mặt, góc và ánh sáng thay đổi.
 
-\subsubsection{Phát hiện và crop khuôn mặt}
-Để lấy embedding, hệ thống cần face detector. MTCNN là mô hình cascade đa nhiệm phát hiện mặt và landmark, được đề xuất bởi Zhang và cộng sự \cite{mtcnn}. Trong source nền, MTCNN và InceptionResnetV1 của facenet-pytorch đã được sử dụng. Ở đề tài mới, MTCNN chỉ phục vụ bước xác minh identity theo sự kiện chứ không còn là detector chính của pipeline.
+\subsubsection{Phát hiện và cắt vùng ảnh khuôn mặt}
+Để lấy vector đặc trưng, hệ thống cần face bộ phát hiện. MTCNN là mô hình cascade đa nhiệm phát hiện mặt và landmark, được đề xuất bởi Zhang và cộng sự \cite{mtcnn}. Trong mã nguồn nền, MTCNN và InceptionResnetV1 của facenet-pytorch đã được sử dụng. Ở đề tài mới, MTCNN chỉ phục vụ bước xác minh danh tính theo sự kiện chứ không còn là bộ phát hiện chính của chuỗi xử lý.
 
-\subsubsection{Trạng thái identity}
-Thay vì Boolean match/mismatch, đồ án dùng bốn trạng thái:
+\subsubsection{Trạng thái danh tính}
+Thay vì Giá trị logic match/mismatch, đồ án dùng bốn trạng thái:
 \begin{itemize}
-\item \textbf{PROVISIONAL}: track mới nằm đúng ROI nhưng chưa có khuôn mặt đủ chất lượng.
-\item \textbf{VERIFIED}: embedding đủ số quan sát và similarity vượt ngưỡng xác minh.
+\item \textbf{PROVISIONAL}: quỹ đạo mới nằm đúng ROI nhưng chưa có khuôn mặt đủ chất lượng.
+\item \textbf{VERIFIED}: vector đặc trưng đủ số quan sát và similarity vượt ngưỡng xác minh.
 \item \textbf{UNKNOWN}: không đủ dữ liệu để kết luận.
 \item \textbf{MISMATCH}: có đủ bằng chứng khuôn mặt nhưng không phù hợp nhân viên được gán.
 \end{itemize}
@@ -105,18 +105,18 @@ Việc biểu diễn không chắc chắn giúp tránh biến lỗi camera thàn
 
 \subsection{Phát hiện và liên kết hành vi sử dụng điện thoại}
 \subsubsection{Phát hiện điện thoại}
-Lớp \textit{cell phone} nằm trong COCO, vì vậy YOLOv8 pretrained có thể tạo detection điện thoại cùng lúc với person. Tuy nhiên detection không chứng minh hành vi sử dụng. Điện thoại nằm trên bàn, trong tay người khác hoặc ở nền đều có thể xuất hiện.
+Lớp \textit{cell phone} nằm trong COCO, vì vậy YOLOv8 được huấn luyện trước có thể tạo quan sát phát hiện điện thoại cùng lúc với người. Tuy nhiên quan sát phát hiện không chứng minh hành vi sử dụng. Điện thoại nằm trên bàn, trong tay người khác hoặc ở nền đều có thể xuất hiện.
 
 \subsubsection{Vùng tương tác người--điện thoại}
-Với person box $B_p$ và phone box $B_h$, hệ thống tạo một interaction region quanh phần thân trên và vùng phía trước của person. Các đặc trưng liên kết gồm: khoảng cách giữa tâm phone và tâm/điểm tay ước lượng của person, phone có nằm trong box mở rộng hay không, IoU với box person và quan hệ phone với ROI hiện tại. Một score tổng hợp có thể viết:
+Với hộp bao người $B_p$ và hộp bao điện thoại $B_h$, hệ thống tạo một vùng tương tác quanh phần thân trên và vùng phía trước của người. Các đặc trưng liên kết gồm: khoảng cách giữa tâm điện thoại và tâm/điểm tay ước lượng của người, điện thoại có nằm trong hộp bao mở rộng hay không, IoU với hộp bao người và quan hệ điện thoại với ROI hiện tại. Một điểm liên kết tổng hợp có thể viết:
 \begin{equation}
  S(p,h)=\alpha S_{dist}+\beta S_{contain}+\gamma S_{roi},
  \label{eq:phoneassoc}
 \end{equation}
-trong đó các thành phần được chuẩn hóa về $[0,1]$. Phone chỉ được gán cho người có score lớn nhất khi vượt ngưỡng; nếu hai score gần nhau hoặc đều thấp, owner được đặt UNKNOWN.
+trong đó các thành phần được chuẩn hóa về $[0,1]$. Điện thoại chỉ được gán cho người có điểm liên kết lớn nhất khi vượt ngưỡng, nếu hai điểm liên kết gần nhau hoặc đều thấp, người sử dụng được đặt UNKNOWN.
 
 \subsubsection{Tại sao phải xử lý theo thời gian}
-Một detection phone kéo dài 1--2 frame có thể là nhiễu. Ngược lại, điện thoại có thể bị tay che vài frame trong khi người vẫn đang sử dụng. Máy trạng thái theo thời gian có hai ngưỡng vào/ra giúp hấp thụ cả hai trường hợp. Đây là ý tưởng tương tự hysteresis: điều kiện để xác nhận bắt đầu cần mạnh hơn điều kiện duy trì.
+Một quan sát phát hiện điện thoại kéo dài 1--2 khung hình có thể là nhiễu. Ngược lại, điện thoại có thể bị tay che vài khung hình trong khi người vẫn đang sử dụng. Máy trạng thái theo thời gian có hai ngưỡng vào/ra giúp hấp thụ cả hai trường hợp. Đây là ý tưởng tương tự hysteresis: điều kiện để xác nhận bắt đầu cần mạnh hơn điều kiện duy trì.
 
 \subsection{Xử lý tín hiệu theo thời gian}
 \subsubsection{Debounce theo thời lượng}
@@ -124,17 +124,17 @@ Debounce trong ngữ cảnh này là yêu cầu tín hiệu duy trì đủ lâu 
 \begin{equation}
  \int_{t-T_{enter}}^t z(\tau)d\tau \geq \rho T_{enter},
 \end{equation}
-trong đó $\rho$ là tỉ lệ quan sát hợp lệ tối thiểu. Triển khai rời rạc có thể dùng deque theo timestamp thay vì giả định FPS cố định.
+trong đó $\rho$ là tỉ lệ quan sát hợp lệ tối thiểu. Triển khai rời rạc có thể dùng deque theo mốc thời gian thay vì giả định FPS cố định.
 
 \subsubsection{Cửa sổ thời gian trượt}
 Cửa sổ trượt chỉ giữ các quan sát trong khoảng $[t-W,t]$. Tỉ lệ hiện diện:
 \begin{equation}
  r(t)=\frac{N_{present}(t-W,t)}{N_{valid}(t-W,t)}.
 \end{equation}
-Nếu camera mất frame hoặc detector lỗi, mẫu không hợp lệ không nên tự động được xem là absent; cần phân biệt ``không thấy người'' và ``không có dữ liệu tin cậy''.
+Nếu camera mất khung hình hoặc bộ phát hiện lỗi, mẫu không hợp lệ không nên tự động được xem là absent, cần phân biệt ``không thấy người'' và ``không có dữ liệu tin cậy''.
 
 \subsubsection{Máy trạng thái hữu hạn}
-Finite State Machine biểu diễn rõ các trạng thái và điều kiện chuyển. Với presence, các trạng thái ABSENT, CANDIDATE, PRESENT, GRACE giúp xử lý quá trình vào/ra. Với phone, NO\_PHONE, CANDIDATE, USING, GRACE có ý nghĩa tương tự. So với một chuỗi if-elif theo frame, FSM làm cho logic dễ kiểm thử, có thể lưu transition và tái dựng timeline.
+Finite Trạng thái Machine biểu diễn rõ các trạng thái và điều kiện chuyển. Với hiện diện, các trạng thái ABSENT, CANDIDATE, PRESENT, GRACE giúp xử lý quá trình vào/ra. Với điện thoại, NO\_PHONE, CANDIDATE, USING, GRACE có ý nghĩa tương tự. So với một chuỗi if-elif theo khung hình, FSM làm cho logic dễ kiểm thử, có thể lưu chuyển trạng thái và tái dựng dòng thời gian.
 
 \begin{figure}[H]
 \centering
@@ -151,39 +151,39 @@ Finite State Machine biểu diễn rõ các trạng thái và điều kiện chu
 \end{figure}
 
 \subsubsection{Hysteresis thời gian}
-Nếu cùng một ngưỡng được dùng cho vào và ra, trạng thái có thể bật/tắt liên tục quanh biên. Hysteresis dùng $T_{enter}$ khác $T_{exit}$ hoặc tỉ lệ vào/ra khác nhau. Trong presence, hệ thống có thể yêu cầu 2 giây ổn định để xác nhận vào nhưng cho phép grace 5 giây khi mất detection. Mốc thời gian interval vẫn được neo về detection đầu tiên/last-seen để không tạo bias 2 hoặc 5 giây cho mọi phiên.
+Nếu cùng một ngưỡng được dùng cho vào và ra, trạng thái có thể bật/tắt liên tục quanh biên. Hysteresis dùng $T_{enter}$ khác $T_{exit}$ hoặc tỉ lệ vào/ra khác nhau. Trong hiện diện, hệ thống có thể yêu cầu 2 giây ổn định để xác nhận vào nhưng cho phép grace 5 giây khi mất quan sát phát hiện. Mốc thời gian khoảng thời gian vẫn được neo về quan sát phát hiện đầu tiên/last-seen để không tạo sai lệch có hệ thống 2 hoặc 5 giây cho mọi phiên.
 
 \subsection{Tổng hợp thời gian làm việc}
-\subsubsection{Presence interval}
-Một presence interval là cặp $(s,e)$ đã qua xác nhận temporal. Khi chuyển từ CANDIDATE sang PRESENT, hệ thống ghi $s$ là thời điểm ứng viên đầu tiên đủ điều kiện lịch sử. Khi GRACE chuyển sang ABSENT, $e$ là last-seen đáng tin cậy. Cách backdating giúp state machine lọc nhiễu mà không làm thay đổi tổng thời gian chỉ vì có ngưỡng xác nhận.
+\subsubsection{Hiện diện khoảng thời gian}
+Một khoảng hiện diện là cặp $(s,e)$ đã qua xác nhận theo thời gian. Khi chuyển từ CANDIDATE sang PRESENT, hệ thống ghi $s$ là thời điểm ứng viên đầu tiên đủ điều kiện lịch sử. Khi GRACE chuyển sang ABSENT, $e$ là last-seen đáng tin cậy. Cách truy hồi mốc thời gian giúp máy trạng thái lọc nhiễu mà không làm thay đổi tổng thời gian chỉ vì có ngưỡng xác nhận.
 
 \subsubsection{Giao với lịch làm việc}
-Nếu ca làm là tập cửa sổ $W=\cup_l[a_l,b_l]$, thời gian hiện diện hợp lệ là tổng giao giữa presence intervals và $W$. Khoảng nghỉ trưa được biểu diễn bằng việc tách ca thành hai cửa sổ thay vì trừ thủ công một hằng số, nhờ đó các ca linh hoạt vẫn xử lý được.
+Nếu ca làm là tập cửa sổ $W=\cup_l[a_l,b_l]$, thời gian hiện diện hợp lệ là tổng giao giữa các khoảng hiện diện và $W$. Khoảng nghỉ trưa được biểu diễn bằng việc tách ca thành hai cửa sổ thay vì trừ thủ công một hằng số, nhờ đó các ca linh hoạt vẫn xử lý được.
 
 \subsubsection{Chính sách điện thoại}
-Chính sách gồm ít nhất: bật/tắt giám sát phone, hạn mức giây mỗi ca, thời lượng tối thiểu một phiên, confidence detector, ngưỡng liên kết và bật/tắt cơ chế trừ. Việc cấu hình thay vì hard-code giúp hệ thống phù hợp nhiều tổ chức và làm rõ rằng hạn mức là quy tắc nghiệp vụ, không phải tham số học máy.
+Chính sách gồm ít nhất: bật/tắt giám sát điện thoại, hạn mức giây mỗi ca, thời lượng tối thiểu một phiên, độ tin cậy bộ phát hiện, ngưỡng liên kết và bật/tắt cơ chế trừ. Việc cấu hình thay vì gán cố định trong mã nguồn giúp hệ thống phù hợp nhiều tổ chức và làm rõ rằng hạn mức là quy tắc nghiệp vụ, không phải tham số học máy.
 
 \subsubsection{Bảo toàn dữ liệu nguyên thủy}
-Không nên chỉ lưu effective work time vì không thể giải thích. Báo cáo cuối ngày phải giữ:
+Không nên chỉ lưu thời gian làm việc hiệu lực vì không thể giải thích. Báo cáo cuối ngày phải giữ:
 \begin{equation}
  (T_{presence},T_{phone},T_{allow},T_{excess},T_{effective}).
 \end{equation}
-Nếu chính sách thay đổi, hệ thống có thể tính lại summary từ interval/event mà không cần chạy lại video nếu dữ liệu cần thiết còn được lưu.
+Nếu chính sách thay đổi, hệ thống có thể tính lại bản tổng hợp từ khoảng thời gian/sự kiện mà không cần chạy lại video nếu dữ liệu cần thiết còn được lưu.
 
 \subsection{Giao tiếp thời gian thực và kiến trúc dữ liệu}
 \subsubsection{WebSocket}
-WebSocket được chuẩn hóa trong RFC 6455, cung cấp kênh hai chiều trên một kết nối lâu dài \cite{rfc6455}. Đối với dashboard, WebSocket phù hợp hơn polling dày vì server có thể đẩy thay đổi trạng thái ngay khi event phát sinh. Tuy nhiên cần heartbeat, giới hạn message, xác thực kết nối và xử lý reconnect.
+WebSocket được chuẩn hóa trong RFC 6455, cung cấp kênh hai chiều trên một kết nối lâu dài \cite{rfc6455}. Đối với bảng điều khiển, WebSocket phù hợp hơn polling dày vì máy chủ có thể đẩy thay đổi trạng thái ngay khi sự kiện phát sinh. Tuy nhiên cần heartbeat, giới hạn message, xác thực kết nối và xử lý kết nối lại.
 
-\subsubsection{Current state và event store}
-Dashboard cần current state nhanh, trong khi hậu kiểm cần timeline. Vì vậy hệ thống dùng hai kiểu lưu trữ: SQL cho trạng thái mới nhất và quan hệ nghiệp vụ; event/evidence append-only cho lịch sử. Thiết kế này tránh ghi mọi frame thành transaction SQL nhưng vẫn cho phép dựng lại interval và báo cáo.
+\subsubsection{Trạng thái hiện tại và kho sự kiện}
+Bảng điều khiển cần trạng thái hiện tại nhanh, trong khi hậu kiểm cần dòng thời gian. Vì vậy hệ thống dùng hai kiểu lưu trữ: SQL cho trạng thái mới nhất và quan hệ nghiệp vụ, sự kiện/bằng chứng append-only cho lịch sử. Thiết kế này tránh ghi mọi khung hình thành transaction SQL nhưng vẫn cho phép dựng lại khoảng thời gian và báo cáo.
 
 \subsubsection{Phân quyền}
-RBAC gán quyền theo vai trò. Đề tài dự kiến ba nhóm chính: System Admin quản trị nền tảng; Organization Admin/HR quản lý nhân viên, camera, policy; Supervisor xem dashboard và báo cáo trong phạm vi được giao. Bằng chứng hình ảnh cần permission riêng vì mức nhạy cảm cao hơn dữ liệu thời lượng tổng hợp.
+RBAC gán quyền theo vai trò. Đề tài dự kiến ba nhóm chính: quản trị viên hệ thống quản trị nền tảng, quản trị viên tổ chức/HR quản lý nhân viên, camera, chính sách, người giám sát xem bảng điều khiển và báo cáo trong phạm vi được giao. Bằng chứng hình ảnh cần quyền truy cập riêng vì mức nhạy cảm cao hơn dữ liệu thời lượng tổng hợp.
 
 \subsection{Quyền riêng tư và bảo vệ dữ liệu}
-Camera nơi làm việc và face embedding liên quan trực tiếp dữ liệu cá nhân. Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15 có hiệu lực từ 01/01/2026 tại Việt Nam \cite{vnprivacy}. Báo cáo không diễn giải chi tiết nghĩa vụ pháp lý thay chuyên gia pháp lý, nhưng rút ra các nguyên tắc thiết kế kỹ thuật: giới hạn mục đích, giảm dữ liệu thu thập, phân quyền, ghi audit, mã hóa kênh truyền, thời hạn lưu trữ, khả năng xóa/ẩn dữ liệu theo chính sách và tránh dùng kết quả mô hình như quyết định nhân sự tự động duy nhất.
+Camera nơi làm việc và vector đặc trưng khuôn mặt liên quan trực tiếp dữ liệu cá nhân. Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15 có hiệu lực từ 01/01/2026 tại Việt Nam \cite{vnprivacy}. Trong phạm vi kỹ thuật, đồ án xác định các nguyên tắc thiết kế gồm giới hạn mục đích, giảm dữ liệu thu thập, phân quyền, ghi kiểm toán, mã hóa kênh truyền, thời hạn lưu trữ, khả năng xóa/ẩn dữ liệu theo chính sách và tránh dùng kết quả mô hình như quyết định nhân sự tự động duy nhất.
 
-Face embedding nên được lưu như dữ liệu nhạy cảm: không xuất ra URL công khai, hạn chế số bản sao, không ghi vào log thông thường và có cơ chế thay thế khi nhân viên đăng ký lại. Snapshot chỉ lưu tại các transition hoặc sự kiện cần hậu kiểm thay vì liên tục chụp mọi frame.
+Vector đặc trưng khuôn mặt nên được lưu như dữ liệu nhạy cảm: không xuất ra URL công khai, hạn chế số bản sao, không ghi vào nhật ký thông thường và có cơ chế thay thế khi nhân viên đăng ký lại. Ảnh chụp chỉ lưu tại các chuyển trạng thái hoặc sự kiện cần hậu kiểm thay vì liên tục chụp mọi khung hình.
 
 \subsection{Các chỉ số đánh giá}
 \subsubsection{Precision, Recall và F1}
@@ -193,32 +193,149 @@ Với TP, FP, FN:
  Recall &= \frac{TP}{TP+FN},\\
  F1 &= 2\frac{Precision\cdot Recall}{Precision+Recall}.
 \end{align}
-Các chỉ số này dùng cho person detection, presence classification và phone-use classification nhưng cần chỉ rõ đơn vị mẫu là frame, giây hay event.
+Các chỉ số này dùng cho phát hiện người, phân loại hiện diện và hành vi sử dụng điện thoại classification nhưng cần chỉ rõ đơn vị mẫu là khung hình, giây hay sự kiện.
 
-\subsubsection{Chỉ số tracking}
-MOTChallenge mô tả MOTA là chỉ số kết hợp false positive, missed target và identity switch; IDF1 đo tỉ lệ detection được định danh đúng; HOTA cân bằng detection accuracy và association accuracy \cite{motmetrics}. Trong đồ án, IDF1 và số ID switch hữu ích vì sai ID có thể làm thời gian của người này bị cộng cho người khác.
+\subsubsection{Chỉ số theo dõi}
+MOTChallenge mô tả MOTA là chỉ số kết hợp dương tính giả, missed target và lần đổi định danh, IDF1 đo tỉ lệ quan sát phát hiện được định danh đúng, HOTA cân bằng quan sát phát hiện accuracy và liên kết accuracy \cite{motmetrics}. Trong đồ án, IDF1 và số lần đổi định danh hữu ích vì sai ID có thể làm thời gian của người này bị cộng cho người khác.
 
 \subsubsection{Sai số thời gian}
-Với ground truth $T_i$ và ước lượng $\hat{T}_i$:
+Với nhãn tham chiếu $T_i$ và ước lượng $\hat{T}_i$:
 \begin{equation}
  MAE=\frac{1}{N}\sum_{i=1}^{N}|\hat{T}_i-T_i|,
  \label{eq:mae}
 \end{equation}
 \begin{equation}
- MAPE=\frac{100}{N}\sum_{i=1}^{N}\frac{|\hat{T}_i-T_i|}{\max(T_i,\epsilon)}.
+ MAPE=\frac{100}{N}\sum_{i=1}^{N}\frac{|\hat{T}_i-T_i|}{T_i}.
  \label{eq:mape}
 \end{equation}
-Với phiên có $T_i$ gần 0, MAPE không ổn định nên cần $\epsilon$ hoặc loại trường hợp không có ground truth dương. Ngoài tổng thời gian, báo cáo nên đo lỗi entry/exit, false-present duration và false-absent duration.
+MAPE chỉ được tính trên các mẫu có $T_i>0$, trong đó $N$ là số mẫu đáp ứng điều kiện này. Số mẫu có $T_i=0$ phải được báo cáo riêng và đánh giá bằng sai số tuyệt đối. Khi $T_i$ rất nhỏ, MAPE cần được diễn giải cùng MAE để tránh phóng đại mức sai lệch. Ngoài tổng thời gian, báo cáo nên đo lỗi mốc vào và ra, thời lượng hiện diện giả và thời lượng vắng mặt giả.
 
 \subsubsection{Sai gán điện thoại}
-Phone detection đúng nhưng gán sai người có thể gây hậu quả nghiệp vụ lớn. Vì vậy thêm chỉ số Wrong-Person Association Rate:
+Điện thoại được phát hiện đúng nhưng gán sai người có thể gây hậu quả nghiệp vụ lớn. Vì vậy thêm chỉ số tỉ lệ gán sai người (Wrong-Person Association Rate, WPAR):
 \begin{equation}
  WPAR=\frac{N_{phone\ assigned\ to\ wrong\ person}}{N_{assigned\ phone\ events}}.
 \end{equation}
-Một hệ thống có phone F1 cao nhưng WPAR cao vẫn không phù hợp để trừ thời gian cá nhân.
+Một hệ thống có điện thoại F1 cao nhưng WPAR cao vẫn không phù hợp để trừ thời gian cá nhân.
 
 \subsubsection{Hiệu năng}
-Độ trễ xử lý mỗi frame, FPS hiệu dụng, phần trăm frame bị drop, thời gian WebSocket fan-out và mức sử dụng CPU/GPU được theo dõi. Vì FaceNet không chạy mọi frame, báo cáo cần tách latency thường xuyên của detector/tracker với latency sự kiện khi identity verification kích hoạt.
+Độ trễ xử lý mỗi khung hình, FPS hiệu dụng, phần trăm khung hình bị drop, thời gian WebSocket fan-out và mức sử dụng CPU/GPU được theo dõi. Vì FaceNet không chạy mọi khung hình, báo cáo cần tách độ trễ thường xuyên của bộ phát hiện/bộ theo dõi với độ trễ sự kiện khi xác minh danh tính kích hoạt.
+
+\subsection{Biểu diễn bất định trong chuỗi xử lý}
+Mỗi tầng của chuỗi xử lý đều tạo ra một dạng bất định khác nhau. Bộ phát hiện cung cấp độ tin cậy của lớp và hộp bao nhưng độ tin cậy không phải xác suất đã được hiệu chỉnh tuyệt đối. Bộ theo dõi tạo mã quỹ đạo dựa trên lịch sử chuyển động và liên kết, trong khi ROI tạo quan hệ hình học chứ không xác nhận danh tính. Vector đặc trưng khuôn mặt cung cấp khoảng cách trong không gian đặc trưng nhưng khoảng cách thấp cũng không bảo đảm đúng người trong mọi điều kiện camera. Nếu các tín hiệu này bị ép thành giá trị đúng/sai quá sớm, sai số nhỏ ở đầu chuỗi xử lý sẽ trở thành kết luận nghiệp vụ chắc chắn ở cuối chuỗi xử lý.
+
+Đồ án sử dụng ba mức quyết định: \texttt{CONFIRMED}, \texttt{REJECTED} và \texttt{UNKNOWN}. Quy tắc ba mức đặc biệt quan trọng với danh tính và liên kết điện thoại. Khoảng không chắc chắn giữa ngưỡng chấp nhận và ngưỡng từ chối được giữ lại để chờ thêm quan sát hoặc yêu cầu hậu kiểm. Giả sử $s$ là độ tương đồng danh tính, hai ngưỡng $\tau_{reject}<\tau_{accept}$ tạo quyết định:
+\begin{equation}
+ state(s)=
+ \begin{cases}
+ CONFIRMED, & s\geq \tau_{accept},\\
+ REJECTED, & s\leq \tau_{reject},\\
+ UNKNOWN, & \tau_{reject}<s<\tau_{accept}.
+ \end{cases}
+\end{equation}
+
+Hai ngưỡng tạo vùng từ chối quyết định, giúp giảm xác minh nhầm khi chất lượng ảnh thấp. Chi phí là tăng tỉ lệ UNKNOWN, nhưng đây là đánh đổi phù hợp khi kết quả có thể tác động đến báo cáo cá nhân. Khi đánh giá cần báo cáo đồng thời tỉ lệ đúng trên các mẫu đã quyết định và độ bao phủ, tức tỉ lệ mẫu hệ thống có thể kết luận.
+
+\subsection{Hiệu chỉnh camera và hệ tọa độ}
+ROI được định nghĩa trong ảnh nhưng ý nghĩa nghiệp vụ nằm trên mặt phẳng không gian thật. Với camera cố định, điểm $(x,y)$ trong ảnh có thể được chuẩn hóa thành $(u,v)=(x/W,y/H)$ để không phụ thuộc trực tiếp vào độ phân giải. Cách này phù hợp khi camera không đổi góc và chỉ thay đổi kích thước khung hình. Tuy nhiên phép chuẩn hóa không sửa được méo phối cảnh: cùng một khoảng cách trong ảnh có thể tương ứng khoảng cách thật rất khác ở vùng gần và xa camera.
+
+Khi cần độ chính xác cao hơn, có thể dùng homography giữa mặt phẳng ảnh và mặt phẳng sàn. Với ma trận $H\in\mathbb{R}^{3\times3}$, điểm ảnh thuần nhất $p=[x,y,1]^T$ được chuyển thành:
+\begin{equation}
+ \tilde{p}'=Hp,\qquad p'=\left(\frac{\tilde{x}'}{\tilde{w}'},\frac{\tilde{y}'}{\tilde{w}'}\right).
+\end{equation}
+Homography cần ít nhất bốn cặp điểm tương ứng không thẳng hàng trên cùng mặt phẳng. Phương pháp này hữu ích khi các ROI biểu diễn khu vực sàn, nhưng kém phù hợp nếu điểm neo của người không nằm ổn định trên mặt phẳng sàn hoặc camera bị rung. Vì vậy phiên bản cơ sở dùng đa giác chuẩn hóa và cung cấp homography như tùy chọn nâng cao.
+
+Hiệu chỉnh camera phải được phiên bản hóa. Khi camera đổi vị trí, ROI cũ không còn giá trị dù mã camera không đổi. Một \texttt{calibration\_version} cần gắn vào telemetry và khoảng thời gian để dữ liệu lịch sử vẫn diễn giải được theo cấu hình đã dùng tại thời điểm ghi nhận.
+
+\subsection{Chi tiết mô hình chuyển động và liên kết quỹ đạo}
+Bộ theo dõi theo hướng theo dõi dựa trên phát hiện đối tượng thường gồm hai bước: dự đoán trạng thái và ghép quan sát phát hiện. bộ lọc Kalman mô tả trạng thái động học bằng phương trình:
+\begin{align}
+ x_k &= F_kx_{k-1}+w_k,\\
+ z_k &= H_kx_k+v_k,
+\end{align}
+trong đó $x_k$ là trạng thái ẩn, $z_k$ là quan sát từ bộ phát hiện, $F_k$ là mô hình chuyển động, $H_k$ ánh xạ trạng thái sang không gian quan sát, còn $w_k$ và $v_k$ là nhiễu quá trình và nhiễu đo. Trong theo dõi hộp bao, trạng thái có thể chứa tâm hộp bao, tỉ lệ, kích thước và vận tốc.
+
+Sau bước dự đoán, bộ theo dõi xây dựng ma trận chi phí giữa quỹ đạo và quan sát phát hiện. Một chi phí đơn giản dựa trên IoU:
+\begin{equation}
+ C_{ij}=1-IoU(\hat{b}_i,d_j),
+\end{equation}
+trong đó $\hat{b}_i$ là hộp bao dự đoán của quỹ đạo $i$ và $d_j$ là quan sát phát hiện $j$. Hungarian phân công tìm phép ghép có tổng chi phí nhỏ nhất dưới các ràng buộc mỗi quỹ đạo và quan sát phát hiện được dùng tối đa một lần \cite{hungarian}. Các cặp vượt gating ngưỡng bị loại để tránh ghép đối tượng ở quá xa.
+
+ByteTrack thực hiện liên kết theo hai tầng độ tin cậy \cite{bytetrack}. Trước hết quỹ đạo được ghép với quan sát phát hiện có độ tin cậy cao. Các quỹ đạo chưa ghép tiếp tục được so với quan sát phát hiện độ tin cậy thấp. Cách này tận dụng các hộp bao yếu do che khuất thay vì loại bỏ ngay, nhờ đó giảm phân mảnh. Tuy nhiên quan sát phát hiện thấp cũng chứa nhiều dương tính giả hơn, bước thứ hai phải được giới hạn bởi motion/IoU gate và tuổi quỹ đạo.
+
+\begin{table}[H]
+\centering
+\caption{Các nguyên nhân làm thay đổi độ ổn định của quỹ đạo}
+\label{tab:track-stability-theory}
+\begin{tabularx}{\textwidth}{p{3.5cm}X X}
+\toprule
+\textbf{Yếu tố} & \textbf{Tác động} & \textbf{Biện pháp}\\
+\midrule
+Lỗi bỏ sót phát hiện ngắn & Quỹ đạo chuyển sang trạng thái mất dấu rồi có thể phục hồi & Low-score liên kết, bộ đệm quỹ đạo\\
+Hai người giao nhau & Tăng nguy cơ lần đổi định danh & Motion gate, ngoại hình/ROI ngữ cảnh\\
+Chuyển động nhanh & Box dự đoán lệch xa quan sát phát hiện & Tăng FPS, hiệu chỉnh noise mô hình\\
+Camera rung & Mọi quỹ đạo có chuyển động giả & Ổn định camera, phát hiện scene change\\
+Khung hình bị trễ & Sai giả định khoảng thời gian giữa khung hình & Dùng mốc thời gian thực thay vì chỉ số khung hình\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Đối với bài toán thời gian, tuổi quỹ đạo và trạng thái lost quan trọng không kém vị trí hộp bao. Một quỹ đạo mới không nên lập tức mở khoảng thời gian, còn quỹ đạo lost ngắn không nên lập tức đóng khoảng thời gian. Bộ theo dõi cung cấp tín hiệu tạm thời, quyết định nghiệp vụ vẫn thuộc về máy trạng thái hiện diện.
+
+\subsection{Từ quan sát khung hình đến khoảng thời gian liên tục}
+Giả sử $y_t\in\{0,1\}$ là quan sát người nằm trong ROI tại thời điểm $t$. Cộng trực tiếp $y_t\Delta t$ làm kết quả nhạy với mọi khung hình miss. Một bộ lọc cửa sổ có thể tính:
+\begin{equation}
+ r_t=\frac{1}{|W_t|}\sum_{k\in W_t}y_k,
+\end{equation}
+rồi coi hiện diện khi $r_t$ vượt ngưỡng. Phương pháp này dễ cài đặt nhưng gây trễ gần bằng chiều dài cửa sổ và khó biểu diễn riêng điều kiện vào/ra.
+
+Máy trạng thái hữu hạn tách các giai đoạn CANDIDATE, PRESENT, GRACE và ABSENT. Thời điểm xác nhận có thể muộn hơn thời điểm sự kiện thật, vì vậy truy hồi mốc thời gian đặt đầu khoảng thời gian về \texttt{candidate\_since} và cuối khoảng thời gian về \texttt{last\_seen}. Nếu $t_c$ là lúc bắt đầu ứng viên, $t_p$ là lúc đủ ngưỡng vào, thì không truy hồi mốc sẽ tạo sai lệch có hệ thống $t_p-t_c$ cho mỗi lần vào. Với nhiều phiên trong ngày, sai lệch có hệ thống tích lũy có thể đáng kể dù phân loại khung hình có vẻ tốt.
+
+Khoảng đệm cũng phải dùng mốc thời gian thay vì số khung hình. Khi chuỗi xử lý xử lý không đều, ngưỡng 50 khung hình có thể tương ứng hai giây hoặc mười giây. Ngưỡng thời lượng $T_{exit}$ giữ nguyên ý nghĩa độc lập FPS. Mỗi lần cập nhật trạng thái cần nhận mốc thời gian đơn điệu và kiểm tra mốc thời gian không lùi.
+
+\subsection{Đại số khoảng thời gian}
+Các đại lượng nghiệp vụ được xây dựng từ phép toán trên khoảng thời gian. Hai khoảng $A=[a_s,a_e]$ và $B=[b_s,b_e]$ có độ dài giao:
+\begin{equation}
+ |A\cap B|=\max\left(0,\min(a_e,b_e)-\max(a_s,b_s)\right).
+\end{equation}
+Tập khoảng thời gian cần được chuẩn hóa trước khi tổng hợp bằng cách sắp xếp theo thời gian, từ chối khoảng có độ dài âm và hợp nhất các khoảng chồng lấn. Chỉ nối hai khoảng cách nhau dưới sai số kỹ thuật khi có bằng chứng chúng thuộc cùng một phiên liên tục. Không tự động nối các khoảng vắng mặt ngắn. Nếu không chuẩn hóa, việc cộng từng khoảng có thể tính trùng thời gian.
+
+Giả sử $\mathcal{I}$ là tập khoảng hiện diện, $\mathcal{S}$ là tập lịch làm việc khoảng thời gian và $\mathcal{P}$ là tập khoảng sử dụng điện thoại. Hiện diện hợp lệ là:
+\begin{equation}
+ \mathcal{V}=\operatorname{merge}(\mathcal{I})\cap\operatorname{merge}(\mathcal{S}).
+\end{equation}
+Điện thoại hợp lệ được tính trên $\mathcal{P}\cap\mathcal{V}$. Thứ tự này bảo đảm hệ thống không trừ thời gian điện thoại ngoài ca hoặc khi nhân viên không hiện diện. Khi lịch làm việc đi qua nửa đêm, khoảng thời gian phải dùng mốc thời gian đầy đủ kèm múi giờ thay vì chỉ lưu giờ trong ngày.
+
+\subsection{Sai số biên và sai số tổng thời lượng}
+Sai số thời lượng có thể được phân rã từ lỗi tại biên. Với nhãn tham chiếu $[s,e]$ và dự đoán $[\hat{s},\hat{e}]$, sai số có dấu ở biên là:
+\begin{align}
+ \epsilon_s &= \hat{s}-s,\\
+ \epsilon_e &= \hat{e}-e.
+\end{align}
+Sai số độ dài của một khoảng thời gian bằng $\epsilon_e-\epsilon_s$. Nếu hệ thống luôn xác nhận vào muộn và xác nhận ra muộn cùng một lượng, thời lượng có thể gần đúng nhưng mốc thời gian vẫn sai. Ngược lại, sai số nhỏ cùng dấu khác nhau ở nhiều phiên có thể tích lũy thành MAE lớn theo ca.
+
+Vì vậy cần báo cáo song song sai số mốc vào, sai số mốc ra, MAE thời lượng và IoU theo thời gian:
+\begin{equation}
+ tIoU=\frac{|I_{pred}\cap I_{gt}|}{|I_{pred}\cup I_{gt}|}.
+\end{equation}
+tIoU phản ánh mức chồng lấn nhưng không thay thế sai số giây. Với khoảng thời gian dài, sai lệch vài phút vẫn có tIoU cao, trong nghiệp vụ thời gian, con số phút vẫn quan trọng.
+
+\subsection{Mô hình hàng đợi và độ trễ đầu-cuối}
+Độ trễ bảng điều khiển gồm nhiều thành phần:
+\begin{equation}
+ L_{e2e}=L_{capture}+L_{queue}+L_{infer}+L_{track}+L_{state}+L_{network}+L_{server}+L_{render}.
+\end{equation}
+Tối ưu riêng suy luận không bảo đảm bảng điều khiển nhanh nếu khung hình hàng đợi tích tụ. Trong hệ thống thời gian thực, chiến lược thường là ưu tiên khung hình mới và bỏ một số khung hình cũ khi producer nhanh hơn consumer. Tuy nhiên sự kiện và khoảng thời gian không được bỏ giống khung hình, chúng cần hàng đợi bền vững và cơ chế ACK.
+
+Little's Law liên hệ số phần tử trung bình trong hệ thống $L$, tốc độ đến $\lambda$ và thời gian chờ $W$ qua $L=\lambda W$. Khi camera tạo khung hình nhanh hơn khả năng xử lý trong thời gian dài, hàng đợi sẽ tăng không giới hạn. Do đó ứng dụng phía máy khách cần giới hạn hàng đợi, đo thời gian lưu trong hàng đợi và giảm tần suất lấy mẫu trước khi độ trễ vượt ngưỡng.
+
+\subsection{Mối đe dọa đối với tính hợp lệ}
+Tính hợp lệ nội tại bị đe dọa khi nhãn tham chiếu không nhất quán, cấu hình được chỉnh sau khi xem kiểm tra hoặc các chuỗi xử lý không dùng cùng input. Biện pháp là hướng dẫn gán nhãn rõ, đo mức đồng thuận, khóa cấu hình và chạy phương pháp cơ sở/phương pháp đề xuất trên cùng video.
+
+Tính hợp lệ ngoại tại bị giới hạn bởi số camera, cách bố trí bàn và điều kiện ánh sáng. Kết quả ở một văn phòng không tự động khái quát sang nhà xưởng hoặc không gian đông người. Báo cáo cần mô tả phạm vi camera và không mở rộng kết luận vượt dữ liệu.
+
+Tính hợp lệ cấu trúc liên quan đến việc đại lượng đo có đúng khái niệm hay không. Hiện diện khoảng thời gian chỉ đại diện việc có mặt trong vùng, không phải năng suất. Điện thoại quan sát phát hiện chỉ là tín hiệu cho hành vi sử dụng điện thoại và phải qua liên kết/theo thời gian xác thực. Việc ghi rõ định nghĩa vận hành giúp tránh diễn giải sai.
+
+Tính hợp lệ kết luận bị ảnh hưởng bởi cỡ mẫu nhỏ và phụ thuộc giữa các khung hình. Hàng nghìn khung hình liên tiếp không tương đương hàng nghìn mẫu độc lập. Vì vậy nên báo cáo theo phiên, theo người và dùng bootstrap theo phiên thay vì coi từng khung hình là quan sát độc lập khi ước lượng khoảng tin cậy.
 
 \subsection{Kết luận chương}
-Chương này đã xác định nền tảng lý thuyết cho hệ thống: detector tạo box người và điện thoại; ByteTrack duy trì identity tạm thời; ROI chuyển vị trí ảnh thành ngữ cảnh làm việc; FaceNet hỗ trợ xác minh; state machine chuyển quan sát nhiễu thành interval; và work-time aggregator biến interval thành đại lượng thời gian có thể giải thích. Các chỉ số đánh giá được lựa chọn để nối trực tiếp lỗi mô hình với sai số cuối cùng theo đơn vị giây, là đại lượng cốt lõi của đề tài.
+Chương này đã xác định nền tảng lý thuyết cho hệ thống: bộ phát hiện tạo hộp bao người và điện thoại, ByteTrack duy trì danh tính tạm thời, ROI chuyển vị trí ảnh thành ngữ cảnh làm việc, FaceNet hỗ trợ xác minh, máy trạng thái chuyển quan sát nhiễu thành khoảng thời gian, và work-time aggregator biến khoảng thời gian thành đại lượng thời gian có thể giải thích. Các chỉ số đánh giá được lựa chọn để nối trực tiếp lỗi mô hình với sai số cuối cùng theo đơn vị giây, là đại lượng cốt lõi của đề tài.

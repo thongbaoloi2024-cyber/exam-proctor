@@ -25,4 +25,4 @@ xelatex main.tex
 xelatex main.tex
 ```
 
-PDF hiện tại: 108 trang.
+PDF hiện tại: 151 trang. Phần nội dung từ Mở đầu đến hết Chương 7 tăng từ 77 lên 117 trang, tương ứng bổ sung 40 trang nội dung.
