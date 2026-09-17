@@ -1,0 +1,273 @@
+{
+  "figures": [
+    {
+      "type": "Hình",
+      "num": 1,
+      "cap": "Tổng quan về thị giác máy tính",
+      "pno": 25,
+      "text": "Hình 1 Tổng quan về thị giác máy tính"
+    },
+    {
+      "type": "Hình",
+      "num": 2,
+      "cap": "Kiến trúc MTCNN",
+      "pno": 29,
+      "text": "Hình 2 Kiến trúc MTCNN"
+    },
+    {
+      "type": "Hình",
+      "num": 3,
+      "cap": "State machine độc lập của một tín hiệu",
+      "pno": 52,
+      "text": "Hình 3 State machine độc lập của một tín hiệu"
+    },
+    {
+      "type": "Hình",
+      "num": 4,
+      "cap": "Hysteresis ở cấp phiên thi",
+      "pno": 53,
+      "text": "Hình 4 Hysteresis ở cấp phiên thi"
+    },
+    {
+      "type": "Hình",
+      "num": 5,
+      "cap": "Sequence diagram của một phiên thi được giám sát",
+      "pno": 55,
+      "text": "Hình 5 Sequence diagram của một phiên thi được giám sát"
+    },
+    {
+      "type": "Hình",
+      "num": 6,
+      "cap": "ERD rút gọn của lớp nền tảng",
+      "pno": 56,
+      "text": "Hình 6 ERD rút gọn của lớp nền tảng"
+    },
+    {
+      "type": "Hình",
+      "num": 7,
+      "cap": "Sơ đồ luồng dữ liệu mức ngữ cảnh của hệ thống",
+      "pno": 57,
+      "text": "Hình 7 Sơ đồ luồng dữ liệu mức ngữ cảnh của hệ thống"
+    },
+    {
+      "type": "Hình",
+      "num": 8,
+      "cap": "Sơ đồ luồng dữ liệu chi tiết của một phiên thi",
+      "pno": 58,
+      "text": "Hình 8 Sơ đồ luồng dữ liệu chi tiết của một phiên thi"
+    },
+    {
+      "type": "Hình",
+      "num": 9,
+      "cap": "Sơ đồ luồng dữ liệu mức 1 của hệ thống",
+      "pno": 59,
+      "text": "Hình 9 Sơ đồ luồng dữ liệu mức 1 của hệ thống"
+    },
+    {
+      "type": "Hình",
+      "num": 10,
+      "cap": "Giao diện đăng ký tài khoản và khởi tạo tổ chức.",
+      "pno": 74,
+      "text": "Hình 10 Giao diện đăng ký tài khoản và khởi tạo tổ chức."
+    },
+    {
+      "type": "Hình",
+      "num": 11,
+      "cap": "Giao diện đăng nhập của người dùng.",
+      "pno": 74,
+      "text": "Hình 11 Giao diện đăng nhập của người dùng."
+    },
+    {
+      "type": "Hình",
+      "num": 12,
+      "cap": "Giao diện xác thực MFA của người dùng",
+      "pno": 75,
+      "text": "Hình 12 Giao diện xác thực MFA của người dùng"
+    },
+    {
+      "type": "Hình",
+      "num": 13,
+      "cap": "Giao diện thiết lập tài khoản và bảo mật cá nhân.",
+      "pno": 75,
+      "text": "Hình 13 Giao diện thiết lập tài khoản và bảo mật cá nhân."
+    },
+    {
+      "type": "Hình",
+      "num": 14,
+      "cap": "Giao diện tổng quan quản trị nền tảng dành cho quản trị viên hệ thống.",
+      "pno": 76,
+      "text": "Hình 14 Giao diện tổng quan quản trị nền tảng dành cho quản trị viên hệ thống."
+    },
+    {
+      "type": "Hình",
+      "num": 15,
+      "cap": "Giao diện chính sách, bảo mật và nhật ký cấp hệ thống.",
+      "pno": 76,
+      "text": "Hình 15 Giao diện chính sách, bảo mật và nhật ký cấp hệ thống."
+    },
+    {
+      "type": "Hình",
+      "num": 16,
+      "cap": "Giao diện quản lý tổ chức, thành viên và quyền truy cập.",
+      "pno": 77,
+      "text": "Hình 16 Giao diện quản lý tổ chức, thành viên và quyền truy cập."
+    },
+    {
+      "type": "Hình",
+      "num": 17,
+      "cap": "Giao diện chính sách, quyền truy cập của tổ chức.",
+      "pno": 77,
+      "text": "Hình 17 Giao diện chính sách, quyền truy cập của tổ chức."
+    },
+    {
+      "type": "Hình",
+      "num": 18,
+      "cap": "Giao diện danh sách và không gian làm việc của kỳ thi.",
+      "pno": 78,
+      "text": "Hình 18 Giao diện danh sách và không gian làm việc của kỳ thi."
+    },
+    {
+      "type": "Hình",
+      "num": 19,
+      "cap": "Giao diện cấu hình và kiểm tra trạng thái sẵn sàng của kỳ thi.",
+      "pno": 78,
+      "text": "Hình 19 Giao diện cấu hình và kiểm tra trạng thái sẵn sàng của kỳ thi."
+    },
+    {
+      "type": "Hình",
+      "num": 20,
+      "cap": "Bảng điều khiển giám sát các phiên thi theo thời gian thực.",
+      "pno": 79,
+      "text": "Hình 20 Bảng điều khiển giám sát các phiên thi theo thời gian thực."
+    },
+    {
+      "type": "Hình",
+      "num": 21,
+      "cap": "Giao diện chi tiết phiên thi, diễn biến theo thời gian và bằng chứng sự cố.",
+      "pno": 79,
+      "text": "Hình 21 Giao diện chi tiết phiên thi, diễn biến theo thời gian và bằng chứng sự cố."
+    },
+    {
+      "type": "Hình",
+      "num": 22,
+      "cap": "Giao diện thiết lập tiện ích mở rộng trước khi tham gia kỳ thi.",
+      "pno": 80,
+      "text": "Hình 22 Giao diện thiết lập tiện ích mở rộng trước khi tham gia kỳ thi."
+    },
+    {
+      "type": "Hình",
+      "num": 23,
+      "cap": "Sơ đồ triển khai các máy khách, dịch vụ và vùng dữ liệu",
+      "pno": 84,
+      "text": "Hình 23 Sơ đồ triển khai các máy khách, dịch vụ và vùng dữ liệu"
+    },
+    {
+      "type": "Hình",
+      "num": 24,
+      "cap": "Đánh giá các metric sau khi fine-tune YOLOv8",
+      "pno": 89,
+      "text": "Hình 24 Đánh giá các metric sau khi fine-tune YOLOv8"
+    },
+    {
+      "type": "Hình",
+      "num": 25,
+      "cap": "Thay đổi các giá trị metric theo số lượng epoch",
+      "pno": 90,
+      "text": "Hình 25 Thay đổi các giá trị metric theo số lượng epoch"
+    }
+  ],
+  "tables": [
+    {
+      "type": "Bảng",
+      "num": 1,
+      "cap": "So sánh các phương pháp phát hiện khuôn mặt",
+      "pno": 32,
+      "text": "Bảng 1 So sánh các phương pháp phát hiện khuôn mặt"
+    },
+    {
+      "type": "Bảng",
+      "num": 2,
+      "cap": "So sánh định hướng giải pháp",
+      "pno": 43,
+      "text": "Bảng 2 So sánh định hướng giải pháp"
+    },
+    {
+      "type": "Bảng",
+      "num": 3,
+      "cap": "Các tác nhân hệ thống",
+      "pno": 44,
+      "text": "Bảng 3 Các tác nhân hệ thống"
+    },
+    {
+      "type": "Bảng",
+      "num": 4,
+      "cap": "Yêu cầu phi chức năng",
+      "pno": 46,
+      "text": "Bảng 4 Yêu cầu phi chức năng"
+    },
+    {
+      "type": "Bảng",
+      "num": 5,
+      "cap": "Nguyên tắc tổ chức giao diện",
+      "pno": 72,
+      "text": "Bảng 5 Nguyên tắc tổ chức giao diện"
+    },
+    {
+      "type": "Bảng",
+      "num": 6,
+      "cap": "Docker Compose",
+      "pno": 83,
+      "text": "Bảng 6 Docker Compose"
+    },
+    {
+      "type": "Bảng",
+      "num": 7,
+      "cap": "Các quyết định cài đặt đáng chú ý",
+      "pno": 85,
+      "text": "Bảng 7 Các quyết định cài đặt đáng chú ý"
+    },
+    {
+      "type": "Bảng",
+      "num": 8,
+      "cap": "Kết quả kiểm thử",
+      "pno": 93,
+      "text": "Bảng 8 Kết quả kiểm thử"
+    },
+    {
+      "type": "Bảng",
+      "num": 9,
+      "cap": "Đánh giá các kịch bản đầu-cuối",
+      "pno": 95,
+      "text": "Bảng 9 Đánh giá các kịch bản đầu-cuối"
+    },
+    {
+      "type": "Bảng",
+      "num": 10,
+      "cap": "Tổng hợp mức độ hoạt động",
+      "pno": 98,
+      "text": "Bảng 10 Tổng hợp mức độ hoạt động"
+    },
+    {
+      "type": "Bảng",
+      "num": 11,
+      "cap": "Kịch bản nghiệm thu thủ công khi chạy hệ thống",
+      "pno": 98,
+      "text": "Bảng 11 Kịch bản nghiệm thu thủ công khi chạy hệ thống"
+    },
+    {
+      "type": "Bảng",
+      "num": 12,
+      "cap": "Đánh giá hiệu năng chuỗi xử lý",
+      "pno": 100,
+      "text": "Bảng 12 Đánh giá hiệu năng chuỗi xử lý"
+    },
+    {
+      "type": "Bảng",
+      "num": 13,
+      "cap": "Kết quả kiểm thử và thực nghiệm",
+      "pno": 103,
+      "text": "Bảng 13 Kết quả kiểm thử và thực nghiệm"
+    }
+  ],
+  "references": 21
+}

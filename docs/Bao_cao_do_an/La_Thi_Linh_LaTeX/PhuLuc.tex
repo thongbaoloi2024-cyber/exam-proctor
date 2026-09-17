@@ -1,0 +1,132 @@
+\clearpage
+\section*{PHỤ LỤC A -- ĐẶC TẢ DỮ LIỆU VÀ API}
+\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC A -- ĐẶC TẢ DỮ LIỆU VÀ API}
+
+\subsection*{A.1. Đặc tả CameraTelemetry}
+\begin{longtable}{p{3.5cm}p{2.5cm}p{7.2cm}}
+\toprule
+\textbf{Trường} & \textbf{Kiểu} & \textbf{Mô tả}\\
+\midrule\endfirsthead
+camera\_id & UUID & Camera đã được xác thực bằng token camera\\
+session\_id & UUID & Phiên giám sát hiện tại\\
+sequence & Integer & Số tăng dần để phát hiện message cũ/lặp\\
+captured\_at & DateTime & Timestamp frame tại edge\\
+received\_at & DateTime & Server tự tạo khi nhận\\
+fps & Float & FPS xử lý gần nhất\\
+pipeline\_\allowbreak latency\_\allowbreak ms & Float & Thời gian xử lý frame\\
+persons & Array & Danh sách current tracked persons\\
+config\_version & String & Phiên bản camera/ROI/model config\\
+\bottomrule
+\end{longtable}
+
+\subsection*{A.2. Đặc tả TrackedPersonTelemetry}
+\begin{longtable}{p{3.3cm}p{2.5cm}p{7.4cm}}
+\toprule
+track\_id & Integer & ID tạm trong camera session\\
+bbox & Float[4] & $x_1,y_1,x_2,y_2$ theo frame gốc\\
+detection\_\allowbreak confidence & Float & Confidence person gần nhất\\
+area\_id & UUID/null & Work area được association\\
+employee\_id & UUID/null & Employee association nếu có\\
+identity\_state & Enum & PROVISIONAL/\allowbreak VERIFIED/\allowbreak UNKNOWN/\allowbreak MISMATCH\\
+presence\_state & Enum & ABSENT/\allowbreak CANDIDATE/\allowbreak PRESENT/\allowbreak GRACE\\
+phone\_state & Enum & NO\_PHONE/\allowbreak CANDIDATE/\allowbreak USING/\allowbreak GRACE\\
+last\_seen\_at & DateTime & Mốc detection gần nhất\\
+\bottomrule
+\end{longtable}
+
+\subsection*{A.3. Đặc tả MonitoringEvent}
+Mỗi event gồm \texttt{event\_id}, \texttt{camera\_id}, \texttt{session\_id}, \texttt{event\_type}, \texttt{occurred\_at}, \texttt{employee\_id?}, \texttt{area\_id?}, \texttt{track\_id?}, \texttt{payload} và \texttt{evidence\_ref?}. Event ID do client sinh UUID và giữ nguyên khi retry. Server đặt unique constraint theo organization+event ID.
+
+\subsection*{A.4. Các loại sự kiện}
+\begin{longtable}{p{4.4cm}p{8.8cm}}
+\toprule
+\textbf{Event} & \textbf{Ý nghĩa}\\
+\midrule\endfirsthead
+CAMERA\_ONLINE & Client sẵn sàng xử lý\\
+CAMERA\_OFFLINE & Mất nguồn hoặc heartbeat timeout\\
+PRESENCE\_\allowbreak CANDIDATE & Bắt đầu có ứng viên trong ROI\\
+PRESENCE\_\allowbreak CONFIRMED & Mở presence interval\\
+PRESENCE\_LOST & Vào grace\\
+ABSENCE\_\allowbreak CONFIRMED & Đóng presence interval\\
+IDENTITY\_\allowbreak VERIFIED & Face embedding xác minh thành công\\
+IDENTITY\_\allowbreak MISMATCH & Có đủ bằng chứng không khớp\\
+PHONE\_START & Mở phone usage interval\\
+PHONE\_END & Đóng phone usage interval\\
+PHONE\_\allowbreak EXCESS\_\allowbreak REACHED & Tổng phone lần đầu vượt allowance\\
+SUMMARY\_\allowbreak MATERIALIZED & Hoàn thành tổng hợp ngày/ca\\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\section*{PHỤ LỤC B -- DANH SÁCH CA KIỂM THỬ}
+\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC B -- DANH SÁCH CA KIỂM THỬ}
+
+\begin{longtable}{p{1.1cm}p{4.6cm}p{7.5cm}}
+\toprule
+\textbf{ID} & \textbf{Kịch bản} & \textbf{Kết quả mong đợi}\\
+\midrule\endfirsthead
+T01 & Point trong polygon & Gán đúng ROI\\
+T02 & Point ngoài polygon & Không gán ROI\\
+T03 & Point tại biên & Kết quả nhất quán theo rule boundary\\
+T04 & Hai ROI chồng & Ưu tiên history/score, log cảnh báo cấu hình\\
+T05 & Candidate dưới $T_{enter}$ & Không mở interval\\
+T06 & Candidate đủ $T_{enter}$ & Mở interval tại candidate\_since\\
+T07 & Present mất 3 s, gap 5 s & Interval liên tục\\
+T08 & Present mất 7 s & Đóng tại last\_seen\\
+T09 & Camera UNKNOWN 3 s & Không coi là absent\\
+T10 & Camera offline dài & Tăng unobserved, sinh CAMERA\_OFFLINE\\
+T11 & Phone 1 frame & Không tạo session\\
+T12 & Phone đủ 3 s & Mở phone session backdate\\
+T13 & Phone che 1 s & Không đóng session nếu grace 2 s\\
+T14 & Phone mất > grace & Đóng ở last associated\\
+T15 & Phone giữa hai người & Association UNKNOWN nếu margin không đủ\\
+T16 & Phone trên bàn xa người & Score thấp, không session\\
+T17 & Tổng phone < allowance & excess=0\\
+T18 & Tổng phone > allowance & excess=phone-allowance\\
+T19 & Deduction disabled & effective=presence\\
+T20 & Phone khi absent & Không tính phone cho employee\\
+T21 & Identity verified & State chuyển VERIFIED\\
+T22 & Identity vùng margin & UNKNOWN/PROVISIONAL\\
+T23 & Identity mismatch lặp & MISMATCH + review flag\\
+T24 & Event retry & Không nhân đôi interval\\
+T25 & Sequence cũ & Không ghi đè current state\\
+T26 & Tenant isolation & Tổ chức A không truy cập B\\
+T27 & Evidence không quyền & HTTP 403\\
+T28 & Path traversal & Request bị từ chối\\
+T29 & Report job lỗi & Trạng thái failed, không có file giả\\
+T30 & Recompute summary & Cùng interval/policy cho cùng kết quả\\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\section*{PHỤ LỤC C -- KỊCH BẢN GÁN NHÃN THỰC NGHIỆM}
+\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC C -- KỊCH BẢN GÁN NHÃN THỰC NGHIỆM}
+Ground truth nên được lưu dưới dạng CSV/JSON có timestamp thay vì chỉ frame index để hỗ trợ video có FPS biến đổi. Với presence:
+\begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
+employee_id,start_at,end_at,label,annotator
+NV001,2026-09-20T08:02:10.120,2026-09-20T09:15:33.450,PRESENT,A1
+\end{Verbatim}
+Phone interval tương tự nhưng thêm owner confidence của annotator và tình trạng ``phone on desk''. Tracking subset sử dụng định dạng MOTChallenge hoặc chuyển đổi tương đương để có thể tính IDF1/HOTA bằng công cụ chuẩn.
+
+Khi hai người gán nhãn lệch entry/exit dưới một ngưỡng nhỏ, có thể lấy trung vị timestamp; nếu bất đồng về owner hoặc có/không sử dụng điện thoại thì bắt buộc adjudication. Báo cáo thực nghiệm phải ghi số lượng bất đồng và cách xử lý, tránh chỉ nêu ``gán nhãn thủ công'' mà không có kiểm soát chất lượng.
+
+\clearpage
+\section*{PHỤ LỤC D -- CHECKLIST TRƯỚC KHI NGHIỆM THU}
+\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC D -- CHECKLIST TRƯỚC KHI NGHIỆM THU}
+\begin{enumerate}
+\item Khóa commit source, model weight và file cấu hình dùng cho test.
+\item Ghi phần cứng, hệ điều hành, phiên bản CUDA/PyTorch/Ultralytics.
+\item Ghi camera, độ phân giải, FPS, vị trí và ảnh sơ đồ ROI.
+\item Kiểm tra đồng hồ camera/edge/server.
+\item Chạy unit test aggregator để xác minh phép tính thời gian độc lập CV.
+\item Chạy test subset trước để xác minh annotation parser.
+\item Khóa threshold trên validation, không sửa sau khi xem test.
+\item Chạy baseline và proposed trên cùng tập test.
+\item Xuất metrics tự động từ script; không nhập số bằng tay.
+\item Sinh confusion/error breakdown và kiểm tra tổng mẫu.
+\item Kiểm tra WPAR cho phone association.
+\item Kiểm tra report của từng employee khớp CSV interval.
+\item Kiểm tra tenant/evidence permission.
+\item Thay toàn bộ bảng/hình có chữ ``mô phỏng'' nếu đã có kết quả thật.
+\item Lưu artifact kết quả cùng phiên bản source để tái lập.
+\end{enumerate}

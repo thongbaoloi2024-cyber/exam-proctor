@@ -1,0 +1,114 @@
+\chapterheading{3}{KHẢO SÁT VÀ PHÂN TÍCH YÊU CẦU}
+\setcounter{section}{3}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+
+\subsection{Khảo sát các phương pháp ghi nhận thời gian làm việc}
+Các hệ thống chấm công phổ biến có thể chia thành bốn nhóm: thẻ/QR, sinh trắc học tại điểm vào, dữ liệu đăng nhập thiết bị và giám sát bằng camera. Thẻ hoặc QR rẻ và dễ triển khai nhưng chỉ ghi nhận sự kiện tại điểm quét. Sinh trắc học tại cửa giảm khả năng chấm hộ nhưng vẫn chủ yếu đo mốc vào/ra. Dữ liệu đăng nhập máy tính phản ánh hoạt động trên thiết bị song không phù hợp với công việc không liên tục thao tác máy. Camera có thể cung cấp quan sát liên tục nhưng tạo yêu cầu cao hơn về quyền riêng tư, xử lý nhiều người và sai số do góc nhìn.
+
+Vì tên đề tài tập trung vào ``sự hiện diện trong khu vực làm việc'', phương án camera được chọn như nguồn quan sát chính. Tuy nhiên hệ thống không thay thế hoàn toàn thiết bị chấm công. Trong triển khai thực tế, kết quả camera nên được xem như một lớp dữ liệu bổ sung và có thể đối chiếu với lịch làm việc, đăng nhập hoặc dữ liệu kiểm soát cửa.
+
+\begin{table}[H]
+\centering
+\caption{So sánh các phương án ghi nhận thời gian}
+\label{tab:attendance-comparison}
+\begin{tabularx}{\textwidth}{p{3.1cm}X X X}
+\toprule
+\textbf{Phương án} & \textbf{Ưu điểm} & \textbf{Hạn chế} & \textbf{Mức phù hợp đề tài}\\
+\midrule
+Thẻ/QR & Chi phí thấp, đơn giản & Chỉ có mốc quét, có thể quên/chấm hộ & Thấp\\
+Sinh trắc học tại cửa & Xác thực danh tính tốt tại điểm vào & Không biết trạng thái trong khu vực sau đó & Trung bình\\
+Đăng nhập thiết bị & Có timestamp chính xác & Không phản ánh công việc ngoài máy tính & Trung bình\\
+Camera CCTV & Quan sát liên tục, nhiều người & Che khuất, quyền riêng tư, cần tracking & Cao\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Khảo sát hướng theo dõi nhiều người}
+Một thiết kế ngây thơ có thể chạy detector từng frame rồi chọn người gần tâm mỗi ROI. Cách này không duy trì quỹ đạo và dễ đổi người khi hai bounding box giao nhau. SORT giải quyết association bằng Kalman + Hungarian \cite{sort}; Deep SORT thêm đặc trưng appearance \cite{deepsort}; ByteTrack tận dụng cả detection score thấp để giữ track \cite{bytetrack}. Với mục tiêu chạy trực tuyến từ một camera và tận dụng YOLO đã có trong hệ thống cũ, ByteTrack là lựa chọn cân bằng giữa hiệu năng và độ phức tạp.
+
+Đề tài không đặt mục tiêu nghiên cứu một thuật toán MOT mới. Giá trị kỹ thuật nằm ở việc tích hợp tracker vào bài toán thời gian, xây dựng quy tắc ROI/identity, state machine và đánh giá tác động của tracking đến MAE thời gian cuối cùng.
+
+\subsection{Khảo sát phương án xác định nhân viên}
+Có ba phương án chính. Thứ nhất, face recognition ở mọi frame; phương án này trực quan nhưng không ổn định nếu camera xa hoặc nhân viên quay mặt. Thứ hai, gán cứng ROI cho nhân viên và coi mọi người trong ROI là nhân viên đó; phương án này đơn giản nhưng sai khi người khác ngồi nhầm chỗ. Thứ ba, dùng ROI+tracking làm nền và face embedding như xác minh hỗ trợ. Đồ án chọn phương án thứ ba.
+
+Mỗi khu vực làm việc được gán một nhân viên tại một khoảng thời gian hiệu lực. Khi track mới vào vùng, trạng thái identity ban đầu là PROVISIONAL. Nếu có mặt đủ rõ, FaceNet so sánh embedding với hồ sơ nhân viên. Nếu khớp, chuyển VERIFIED; nếu không khớp rõ, MISMATCH; nếu không đủ dữ liệu, giữ UNKNOWN/PROVISIONAL. Chính sách thời gian có thể quy định chỉ VERIFIED được tính đầy đủ hoặc cho phép PROVISIONAL trong vùng cố định nhưng đánh dấu để hậu kiểm.
+
+\subsection{Khảo sát yêu cầu theo dõi điện thoại}
+Một detection điện thoại không đủ kết luận đang sử dụng. Yêu cầu nghiệp vụ được chuyển thành chuỗi điều kiện: điện thoại phải được phát hiện với confidence tối thiểu, gán duy nhất cho một track người, track đang PRESENT, quan hệ không gian với người phù hợp và trạng thái duy trì quá $T_{phone\_enter}$. Khi phone tạm mất do che tay, grace period tránh chia một phiên thành nhiều đoạn ngắn.
+
+Chính sách không trừ toàn bộ thời gian phone. Ví dụ nếu hạn mức một ca là 15 phút và nhân viên dùng 22 phút thì chỉ 7 phút vượt mức bị trừ. Cách này tách rõ model CV khỏi quy định tổ chức: model ước lượng thời gian sử dụng, còn allowance/deduction là policy cấu hình.
+
+\subsection{Tác nhân của hệ thống}
+\begin{table}[H]
+\centering
+\caption{Các tác nhân và trách nhiệm}
+\label{tab:actors}
+\begin{tabularx}{\textwidth}{p{3.5cm}X X}
+\toprule
+\textbf{Tác nhân} & \textbf{Trách nhiệm chính} & \textbf{Dữ liệu truy cập}\\
+\midrule
+System Admin & Quản trị nền tảng, tổ chức, chính sách sàn & Metadata hệ thống, audit; không mặc định xem ảnh nhân viên\\
+Organization Admin/HR & Quản lý nhân viên, camera, work area, ca và policy & Dữ liệu tổ chức, báo cáo, evidence theo quyền\\
+Supervisor & Theo dõi dashboard, xem timeline và xác nhận ngoại lệ & Nhóm/camera được phân công\\
+Camera Client & Nhận frame, chạy CV, gửi telemetry/event & Token camera, cấu hình vùng và policy cần thiết\\
+Employee & Đối tượng được quan sát; có thể được cấp quyền xem dữ liệu cá nhân ở phiên bản mở rộng & Báo cáo cá nhân nếu chính sách cho phép\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu chức năng}
+\subsubsection{Quản lý tổ chức và người dùng}
+Hệ thống phải hỗ trợ tạo tổ chức, thành viên quản trị, phân vai trò và thu hồi quyền. Xác thực người dùng dùng session/cookie an toàn; System Admin có MFA. Tất cả truy vấn nghiệp vụ phải giới hạn theo tenant.
+
+\subsubsection{Quản lý nhân viên}
+Cho phép tạo hồ sơ nhân viên, mã nhân viên, trạng thái hoạt động, lịch làm việc, ảnh/embedding tham chiếu và lịch sử gán khu vực. Hồ sơ sinh trắc học tách quyền truy cập khỏi thông tin hành chính thông thường.
+
+\subsubsection{Quản lý camera và vùng làm việc}
+Quản trị viên đăng ký camera, URL nguồn hoặc camera ID, ảnh tham chiếu, độ phân giải, trạng thái kết nối và polygon ROI. Giao diện cần kiểm tra polygon hợp lệ, không tự cắt và nằm trong khung ảnh. Mỗi assignment có thời điểm hiệu lực để hỗ trợ đổi chỗ ngồi theo ngày.
+
+\subsubsection{Giám sát thời gian thực}
+Dashboard hiển thị trạng thái camera, danh sách nhân viên theo vùng, PRESENT/ABSENT/UNKNOWN, thời gian hiện diện trong ngày, thời gian phone, mức allowance và phần excess. WebSocket cập nhật khi trạng thái thay đổi; không cần gửi video liên tục.
+
+\subsubsection{Theo dõi hiện diện}
+Camera client phải tạo/dóng presence interval chính xác theo transition. Event tối thiểu gồm ENTER\_CANDIDATE, PRESENCE\_CONFIRMED, TEMPORARILY\_LOST, ABSENCE\_CONFIRMED và IDENTITY\_MISMATCH. Event có sequence và timestamp để server phát hiện trùng/lệch thứ tự.
+
+\subsubsection{Theo dõi sử dụng điện thoại}
+Hệ thống phải liên kết phone detection với một track người; khi không chắc chắn không được tự động gán. Phiên phone có start/end, duration, confidence aggregate và evidence tùy chính sách. Tổng thời gian phone trong ca được cộng từ các phiên giao với presence interval.
+
+\subsubsection{Tổng hợp và báo cáo}
+Báo cáo ngày hiển thị gross presence, phone usage, allowance, excess, effective work time, số lần ra/vào, số phiên phone và các ngoại lệ identity. Báo cáo có HTML/PDF, trạng thái job và quyền tải.
+
+\subsection{Yêu cầu phi chức năng}
+\begin{table}[H]
+\centering
+\caption{Yêu cầu phi chức năng}
+\label{tab:nfr}
+\begin{tabularx}{\textwidth}{p{3.5cm}X p{4.5cm}}
+\toprule
+\textbf{Nhóm} & \textbf{Yêu cầu} & \textbf{Cách kiểm chứng}\\
+\midrule
+Hiệu năng & Pipeline đủ nhanh cho luồng camera mục tiêu; FaceNet không chặn vòng lặp chính & Đo ms/frame, FPS, queue lag\\
+Tin cậy & Mất detection ngắn không tạo absence giả; reconnect không nhân đôi event & Unit/integration test, video kịch bản\\
+Khả năng giải thích & Mọi effective time suy ra được từ interval và policy & Đối chiếu report với event log\\
+Bảo mật & RBAC, tenant isolation, HTTPS/WSS, audit, giới hạn evidence & Backend test và kiểm tra cấu hình\\
+Quyền riêng tư & Tối thiểu hóa snapshot, retention, tách quyền face data & Kiểm tra policy và đường dẫn truy cập\\
+Khả năng mở rộng & Có thể thêm camera/ROI mà không thay thuật toán cốt lõi & Test nhiều camera giả lập\\
+Bảo trì & Cấu hình ngưỡng tập trung, module hóa detector/tracker/state & Review source và test\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Ràng buộc và giả định}
+Camera được giả định cố định trong một ca; nếu camera đổi góc, polygon ROI phải hiệu chuẩn lại. Nhân viên chủ yếu làm việc trong khu vực đã gán. Một số trường hợp người đi qua vùng của người khác được xử lý bằng thời gian tối thiểu và identity verification nhưng không thể loại bỏ hoàn toàn. Video có độ phân giải đủ để detector thấy người; face verification chỉ kích hoạt khi khuôn mặt đủ pixel và chất lượng.
+
+Source nền của đề tài trước được tái sử dụng cho FastAPI, SQLAlchemy, WebSocket, auth/RBAC, FaceNet, reporting và cấu trúc perception. Các module liên quan proctoring như eye/mouth/head pose/browser extension không còn thuộc kiến trúc đích và được loại khỏi phạm vi runtime mới.
+
+\subsection{Mô hình use case nghiệp vụ}
+Một luồng điển hình bắt đầu khi Organization Admin tạo nhân viên, đăng ký face reference, thêm camera và vẽ work area. Trước ca, camera client tải cấu hình phiên bản hóa. Trong ca, client phát hiện/tracking, tạo current state và event. Supervisor mở dashboard để xem trạng thái. Cuối ca, reporting worker đọc interval, policy và event để sinh summary. Khi có identity mismatch hoặc phone association không chắc chắn, Supervisor có thể xem evidence và ghi nhận review mà không thay đổi raw event.
+
+\subsection{Tiêu chí nghiệm thu}
+Hệ thống được coi là đạt về chức năng khi có thể chạy từ camera/video, theo dõi đồng thời tối thiểu ba người trong kịch bản thử, lưu interval riêng theo employee, tính đúng phép giao lịch làm việc, cộng phone session đúng owner, áp dụng allowance và tạo report. Về chất lượng mô hình, ngưỡng mục tiêu cuối cùng chỉ được chốt sau thực nghiệm thật; bản báo cáo hiện tại dùng số liệu mô phỏng để xác minh cấu trúc đánh giá chứ không đặt chúng làm bằng chứng nghiệm thu.
+
+\subsection{Kết luận chương}
+Phân tích cho thấy bài toán không nên được thu gọn thành nhận diện khuôn mặt hay chấm công camera. Thành phần cốt lõi là chuyển chuỗi video đa người thành interval có định danh và trạng thái tin cậy, sau đó áp dụng policy một cách minh bạch. Các yêu cầu trên là cơ sở cho kiến trúc chi tiết ở Chương 4.

@@ -1,0 +1,78 @@
+% !TeX program = xelatex
+\documentclass{article}
+\usepackage[fontsize=13pt]{scrextend}
+\usepackage[a4paper,right=2.5cm,left=3.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\setmonofont{Courier New}
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+
+\usepackage{graphicx,float,tikz}
+\usetikzlibrary{calc}
+\usepackage{tabularx,array,booktabs,multirow,longtable}
+\usepackage{amsmath,amssymb}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fvextra}
+\usepackage{hyperref}
+\usepackage{caption}
+\hypersetup{unicode=true,colorlinks=true,linkcolor=black,urlcolor=black,citecolor=black}
+\renewcommand{\baselinestretch}{1.5}
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{1cm}
+\setlength{\emergencystretch}{4em}
+\sloppy
+\setcounter{secnumdepth}{3}
+\titlespacing*{\section}{0pt}{0pt}{24pt}
+\titleformat*{\section}{\fontsize{16pt}{19pt}\selectfont\bfseries\centering}
+\titlespacing*{\subsection}{0pt}{10pt}{3pt}
+\titleformat*{\subsection}{\fontsize{14pt}{17pt}\selectfont\bfseries}
+\titlespacing*{\subsubsection}{0pt}{10pt}{3pt}
+\titleformat*{\subsubsection}{\fontsize{13pt}{16pt}\selectfont\bfseries}
+\renewcommand{\contentsname}{MỤC LỤC}
+\renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}
+\renewcommand{\listtablename}{DANH MỤC BẢNG}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\thefigure}{\arabic{figure}}
+\renewcommand{\thetable}{\arabic{table}}
+\captionsetup{font=normalsize,labelfont=bf,labelsep=space,justification=centering,singlelinecheck=true}
+\setlist[itemize]{leftmargin=1.35cm,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.35cm,itemsep=2pt,topsep=2pt}
+\newcommand{\chapterheading}[2]{%
+  \clearpage
+  \section*{CHƯƠNG #1 #2}%
+  \phantomsection\addcontentsline{toc}{section}{\numberline{}Chương #1 #2}%
+}
+\begin{document}
+\input{Bia}
+\pagenumbering{roman}
+\setcounter{page}{3}
+\input{LoiCamDoan}
+\input{LoiCamOn}
+\input{TomTat}
+\tableofcontents
+\clearpage
+\listoffigures
+\phantomsection\addcontentsline{toc}{section}{\numberline{}DANH MỤC HÌNH VẼ}
+\clearpage
+\listoftables
+\phantomsection\addcontentsline{toc}{section}{\numberline{}DANH MỤC BẢNG}
+\clearpage
+\input{Abbreviations}
+\input{Glossary}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\input{MoDau}
+\input{Chuong1}
+\input{Chuong2}
+\input{Chuong3}
+\input{Chuong4}
+\input{Chuong5}
+\input{Chuong6}
+\input{Chuong7}
+\input{PhuLuc}
+\input{TaiLieuThamKhao}
+\end{document}

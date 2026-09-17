@@ -1,0 +1,70 @@
+\chapterheading{7}{KẾT LUẬN}
+\setcounter{section}{7}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+
+\subsection{Tổng kết đề tài}
+Đồ án đã chuyển bài toán từ giám sát hành vi trong thi cử sang ước lượng thời gian làm việc dựa trên sự hiện diện trong khu vực làm việc bằng thị giác máy tính. Thay đổi này không chỉ là đổi tên miền nghiệp vụ mà yêu cầu tái thiết kế chuỗi Computer Vision: từ mô hình một người trước webcam sang một camera CCTV quan sát nhiều người, từ các tín hiệu mắt/miệng/góc đầu sang person detection, multi-object tracking, ROI association, identity verification và xử lý interval theo thời gian.
+
+Kiến trúc đề xuất dùng YOLOv8 để phát hiện đồng thời người và điện thoại, ByteTrack duy trì track, polygon ROI mô tả khu vực làm việc và FaceNet embedding hỗ trợ xác minh danh tính. Hai máy trạng thái độc lập xử lý hiện diện và sử dụng điện thoại. Bộ tổng hợp thời gian giữ riêng tổng hiện diện, tổng phone usage, allowance, excess và effective work time. Backend FastAPI, WebSocket, RBAC, event/evidence và report được tái sử dụng ở cấp hạ tầng nhưng đổi mô hình dữ liệu cho nhân viên/camera/work area.
+
+\subsection{Kết quả chính đạt được trong thiết kế}
+\subsubsection{Pipeline đa người từ một camera CCTV}
+Khác với hệ thống cũ chọn khuôn mặt chính, thiết kế mới coi detection người là đối tượng nền và duy trì nhiều track song song. Track ID được tách rõ khỏi employee ID. ROI cung cấp ngữ cảnh vị trí và FaceNet chỉ đóng vai trò xác minh khi đủ dữ liệu. Đây là kiến trúc phù hợp hơn với camera văn phòng xa và nhiều người.
+
+\subsubsection{Ước lượng thời gian dựa trên interval}
+Thay vì cộng số frame, hệ thống dùng timestamp và interval. Grace period lọc detection miss nhưng khi đóng/mở interval hệ thống backdate về candidate\_since/last\_seen để giảm bias do ngưỡng temporal. Cách làm cho phép thay FPS mà không đổi ý nghĩa tham số thời gian.
+
+\subsubsection{Theo dõi điện thoại có gán người}
+Điện thoại được phát hiện cùng inference YOLO để tiết kiệm tài nguyên. Phone--person association dùng quan hệ không gian và vùng làm việc; trường hợp mơ hồ được đặt UNKNOWN thay vì ép gán. Phone state machine lọc các detection ngắn. Chính sách allowance tách khỏi model, do đó có thể thay quy định mà không huấn luyện lại detector.
+
+\subsubsection{Khả năng giải thích}
+Thời gian làm việc hiệu lực không được lưu như một con số không nguồn gốc. Hệ thống giữ presence intervals, phone intervals, policy version, camera outage và identity state. Báo cáo có thể giải thích một phép trừ bằng các session cụ thể và cung cấp evidence theo quyền.
+
+\subsubsection{Nền tảng quản trị và bảo vệ dữ liệu}
+Auth, tenant isolation, WebSocket ticket, audit log, evidence permission, report job và retention tạo thành lớp nền tảng. Thiết kế tách raw biometric/evidence khỏi dữ liệu thời lượng thường dùng trên dashboard và nhấn mạnh nguyên tắc tối thiểu hóa dữ liệu phù hợp bối cảnh pháp luật bảo vệ dữ liệu cá nhân hiện hành \cite{vnprivacy}.
+
+\subsection{Về kết quả đánh giá}
+Chương 6 đã xây dựng đầy đủ kế hoạch đánh giá detection, tracking, presence, phone association, duration error và end-to-end. Các bảng số liệu hiện được ghi rõ là mô phỏng. Vì chưa có bộ CCTV ground truth cuối cùng trong phiên bản cập nhật này, không thể trung thực kết luận hệ thống thực đạt một Precision, IDF1 hay MAE cụ thể. Đóng góp của bản báo cáo là cung cấp khung đánh giá và dữ liệu mô phỏng để kiểm tra logic; bước bắt buộc tiếp theo là thay bằng số đo thực nghiệm.
+
+Việc tách rõ số liệu mô phỏng cũng sửa một rủi ro thường gặp của báo cáo hệ thống AI: trình bày các giá trị ``đẹp'' nhưng không có dữ liệu/weight/commit tái lập. Phiên bản cuối trước bảo vệ nên kèm dataset description, script evaluation, config và artifact kết quả.
+
+\subsection{Hạn chế còn tồn tại}
+\subsubsection{Che khuất và ID switch}
+Một camera đơn không thể quan sát xuyên vật cản. ByteTrack giảm phân mảnh trong che khuất ngắn nhưng không đảm bảo identity qua che khuất dài. Nếu track mới xuất hiện trong cùng ROI, hệ thống cần identity verification hoặc review.
+
+\subsubsection{Góc camera và độ phân giải}
+ROI trong ảnh là xấp xỉ không gian. Với góc camera mạnh, bottom-center có sai lệch. Khuôn mặt và điện thoại nhỏ cũng làm giảm khả năng xác minh/phát hiện. Việc chọn vị trí camera là một phần của hệ thống chứ không chỉ vấn đề model.
+
+\subsubsection{Nhận diện danh tính}
+FaceNet phụ thuộc chất lượng khuôn mặt. Thiết kế UNKNOWN giúp tránh kết luận quá mức nhưng làm một số interval cần review. Nếu tổ chức yêu cầu xác định danh tính mạnh, cần thêm camera gần, ReID toàn thân hoặc cơ chế check-in khác.
+
+\subsubsection{Phone-use không đồng nghĩa phone detection}
+Interaction region + temporal state chỉ là xấp xỉ hành vi. Điện thoại đặt gần người hoặc chuyền giữa hai người vẫn khó. Pose/hand-object interaction là hướng cải thiện, nhưng sẽ cần dữ liệu huấn luyện và tính toán lớn hơn.
+
+\subsubsection{Khái niệm thời gian làm việc}
+Presence không phải productivity. Một người có mặt tại bàn không chứng minh đang thực hiện nhiệm vụ. Vì vậy hệ thống chỉ nên cung cấp ``thời gian hiện diện ước lượng'' và ``effective time theo policy'', không dùng độc lập cho đánh giá năng suất hay quyết định kỷ luật.
+
+\subsubsection{Dữ liệu mô phỏng}
+Hạn chế lớn nhất của bản cập nhật là số liệu đánh giá chưa phải dữ liệu thực. Mọi kết luận định lượng phải chờ thực nghiệm thật. Các số mô phỏng chỉ phục vụ thiết kế và kiểm tra biểu mẫu báo cáo.
+
+\subsubsection{Quyền riêng tư và công bằng}
+Camera và face embedding có rủi ro quyền riêng tư. Sai số có thể không đồng đều theo ánh sáng, vị trí bàn, chiều cao, che khuất và đặc điểm khuôn mặt. Cần đánh giá theo nhóm điều kiện kỹ thuật, cung cấp cơ chế khiếu nại/review và hạn chế người được xem bằng chứng.
+
+\subsection{Hướng phát triển}
+\begin{itemize}
+\item Thu thập và gán nhãn dataset CCTV thực, fine-tune detector person/phone cho góc camera mục tiêu.
+\item Bổ sung person ReID để nối track sau che khuất dài hoặc đổi camera.
+\item Hiệu chỉnh homography mặt sàn để ROI association ổn định hơn bottom-center ảnh.
+\item Thử nghiệm pose/hand-object interaction để phân biệt cầm điện thoại và điện thoại đặt trên bàn.
+\item Hỗ trợ nhiều camera có vùng chuyển giao và tránh tính trùng thời gian.
+\item Xây dựng cơ chế edge inference tối ưu ONNX/TensorRT và benchmark trên thiết bị thật.
+\item Hoàn thiện offline event queue, exactly-once/idempotent materialization và observability tập trung.
+\item Bổ sung portal nhân viên để xem dữ liệu cá nhân và gửi yêu cầu review theo chính sách tổ chức.
+\item Đánh giá privacy impact, retention và quy trình vận hành trước khi triển khai thực tế.
+\end{itemize}
+
+\subsection{Kết luận}
+Đề tài mới hình thành một bài toán rõ ràng hơn ở cấp hệ thống: biến video CCTV đa người thành các khoảng hiện diện có danh tính, kết hợp theo dõi điện thoại theo policy và tổng hợp thành đại lượng thời gian có thể giải thích. YOLOv8, ByteTrack và FaceNet là các thành phần nền; phần thiết kế riêng nằm ở cách tổ chức chúng với ROI, association, máy trạng thái, interval aggregation, backend thời gian thực và audit.
+
+Khi số liệu mô phỏng được thay bằng thực nghiệm có ground truth, hệ thống có thể được đánh giá khách quan bằng cả metric thị giác và sai số thời gian. Đây là điều kiện cần trước khi xem xét sử dụng trong thực tế.

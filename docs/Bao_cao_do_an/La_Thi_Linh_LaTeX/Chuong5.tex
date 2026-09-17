@@ -1,0 +1,280 @@
+\chapterheading{5}{CÀI ĐẶT HỆ THỐNG}
+\setcounter{section}{5}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+
+\subsection{Công nghệ sử dụng}
+Hệ thống kế thừa nền tảng Python/FastAPI của mã nguồn ban đầu và tái cấu trúc miền nghiệp vụ. Python được dùng cho camera client, computer vision, backend và worker báo cáo. OpenCV xử lý khung hình và thao tác hình học; Ultralytics YOLOv8 cung cấp detector; ByteTrack được tích hợp qua tracker của Ultralytics hoặc wrapper riêng; facenet-pytorch cung cấp MTCNN và InceptionResnetV1 cho face embedding. FastAPI cung cấp REST/WebSocket, SQLAlchemy 2.0 ánh xạ dữ liệu, PostgreSQL lưu dữ liệu quan hệ và Redis hỗ trợ trạng thái tạm/queue khi triển khai nhiều process.
+
+Hệ thống đóng gói bằng Docker Compose ở phía server. Camera client có thể chạy độc lập trên máy edge có GPU hoặc CPU phù hợp. Việc tách client/server cho phép đặt video gần nguồn camera và chỉ truyền dữ liệu dẫn xuất.
+
+\begin{table}[H]
+\centering
+\caption{Các công nghệ chính}
+\label{tab:tech-stack}
+\begin{tabularx}{\textwidth}{p{3.4cm}p{4.2cm}X}
+\toprule
+\textbf{Thành phần} & \textbf{Công nghệ} & \textbf{Vai trò}\\
+\midrule
+Computer Vision & Python, OpenCV, Ultralytics & Frame, detection, geometry\\
+Detector & YOLOv8n & Person và cell phone\\
+Tracker & ByteTrack & Multi-object tracking\\
+Identity & facenet-pytorch & MTCNN crop + FaceNet embedding\\
+Backend & FastAPI & REST, WebSocket, auth\\
+ORM/DB & SQLAlchemy, PostgreSQL & Dữ liệu quan hệ/current state\\
+Cache/queue & Redis & Fan-out, job/state hỗ trợ\\
+Reporting & Jinja2/HTML/PDF & Báo cáo ngày/nhân viên\\
+Triển khai & Docker Compose & Backend, DB, Redis\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Cấu trúc kho mã nguồn sau khi tái cấu trúc}
+Từ source nền, các gói proctoring được thay bằng các miền mới. Cấu trúc mục tiêu:
+\begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
+project/
+|-- main.py
+|-- config/
+|   |-- vision.yaml
+|   `-- policies.yaml
+|-- src/
+|   |-- perception/
+|   |   |-- pipeline.py
+|   |   |-- yolo_detector.py
+|   |   |-- face_embedder.py
+|   |   `-- perception_result.py
+|   |-- tracking/
+|   |   |-- person_tracker.py
+|   |   |-- tracked_person.py
+|   |   `-- identity_associator.py
+|   |-- workplace/
+|   |   |-- work_area.py
+|   |   |-- roi_manager.py
+|   |   `-- geometry.py
+|   |-- presence/
+|   |   |-- presence_state.py
+|   |   |-- presence_tracker.py
+|   |   `-- work_time_aggregator.py
+|   |-- phone_usage/
+|   |   |-- phone_associator.py
+|   |   |-- phone_usage_state.py
+|   |   `-- phone_usage_tracker.py
+|   |-- client/backend_client.py
+|   `-- reporting/
+|-- backend/
+|   |-- models.py
+|   |-- auth.py, authorization.py
+|   |-- ws_schemas.py, ws_manager.py
+|   |-- routers/
+|   `-- templates/, static/
+|-- tests/, backend/tests/
+`-- docker-compose.yml
+\end{Verbatim}
+
+Cấu trúc này giữ các thành phần hạ tầng đã ổn định như auth, authorization, WebSocket manager, reporting worker và Docker; đồng thời loại bỏ browser extension, head pose, eye/mouth signal và risk fusion vốn chỉ có ý nghĩa với đề tài giám sát thi cũ.
+
+\subsection{Cấu hình tập trung}
+Tệp \texttt{vision.yaml} lưu tham số camera, detector, tracker, ROI, identity và state machine. Ví dụ:
+\begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
+camera:
+  source: rtsp://...
+  inference_size: 640
+  telemetry_interval_sec: 1.0
+
+detector:
+  model: yolov8n.pt
+  person_conf: 0.35
+  phone_conf: 0.50
+  iou: 0.60
+
+tracker:
+  type: bytetrack
+  track_high_thresh: 0.50
+  track_low_thresh: 0.10
+  track_buffer: 30
+
+presence:
+  enter_sec: 2.0
+  gap_sec: 5.0
+  min_valid_ratio: 0.70
+
+phone_usage:
+  enter_sec: 3.0
+  exit_grace_sec: 2.0
+  association_threshold: 0.60
+\end{Verbatim}
+Policy nghiệp vụ như allowance không đặt chung với model threshold để tránh nhầm tham số kỹ thuật và quy định tổ chức. \texttt{policies.yaml} hoặc database lưu allowance theo ca/tổ chức và version.
+
+\subsection{Cài đặt tầng nhận thức}
+\subsubsection{PerceptionResult}
+\texttt{PerceptionResult} chứa timestamp, kích thước frame, danh sách person detection, phone detection, frame reference và timing. Sau bước tracking, một cấu trúc \texttt{SceneState} bổ sung \texttt{tracked\_persons}. Các module sau chỉ đọc các cấu trúc này, không gọi lại YOLO.
+
+\subsubsection{YOLODetector}
+Wrapper detector tải model một lần khi khởi động. Hàm \texttt{process(frame)} lọc class ID tương ứng person/cell phone, trả box theo frame gốc. Với CPU, có thể skip frame theo chu kỳ nhưng tracker cần timestamp thực để dự đoán; với GPU, ưu tiên xử lý liên tục ở FPS vừa phải thay vì 30 FPS bắt buộc.
+
+Pseudo-code:
+\begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
+result = model(frame)
+persons = []
+phones = []
+for box in result.boxes:
+    if box.class == PERSON and box.conf >= person_conf:
+        persons.append(to_detection(box))
+    elif box.class == CELL_PHONE and box.conf >= phone_conf:
+        phones.append(to_detection(box))
+return PerceptionResult(persons, phones, timings)
+\end{Verbatim}
+
+\subsection{Cài đặt ByteTrack}
+\texttt{PersonTracker.update(person\_detections, timestamp)} chuyển detection sang định dạng tracker. Kết quả được map lại thành \texttt{TrackedPerson}. Track record cục bộ giữ \texttt{first\_seen}, \texttt{last\_seen}, \texttt{stable\_frames}, area hiện tại và employee association.
+
+Để tránh rò rỉ track ID giữa phiên, tracker reset khi camera session mới bắt đầu. Khi cấu hình ROI thay đổi giữa phiên, client không hot-swap ngay nếu có interval mở; thay đổi được xếp hàng đến một mốc an toàn hoặc đánh dấu config version mới và đóng interval cũ.
+
+\subsection{Cài đặt ROI manager}
+\texttt{ROIManager} tải polygon chuẩn hóa từ backend. Mỗi frame, manager tính anchor và gọi point-in-polygon. Hàm geometry thuần không phụ thuộc OpenCV UI để dễ unit test.
+
+Một test điển hình tạo polygon hình chữ nhật và kiểm tra điểm trong, ngoài, trên biên. Với điểm trên biên, hệ thống coi là inside có điều kiện và áp dụng history hysteresis. Nếu hai ROI chồng lấn, unit test xác minh score history ưu tiên vùng trước đó.
+
+\subsection{Cài đặt identity associator}
+\subsubsection{Enrollment}
+Quản trị viên chụp nhiều ảnh hoặc tải ảnh tham chiếu theo quy trình được phép. MTCNN tìm face; ảnh crop được resize/chuẩn hóa; InceptionResnetV1 tạo embedding. Các embedding lỗi/face quá nhỏ bị loại. Enrollment lưu số mẫu, timestamp, model version và vector chuẩn hóa.
+
+\subsubsection{Verification scheduler}
+Mỗi track có \texttt{next\_verify\_at}. Scheduler chỉ xếp task khi có face box đủ diện tích và không có task đang chạy. Identity worker có thể chạy thread/process riêng. Kết quả trả về track ID + track generation để tránh áp dụng embedding cũ cho track ID đã tái sử dụng.
+
+\subsection{Cài đặt PresenceStateMachine}
+State machine có API:
+\begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
+update(observation, timestamp) -> list[PresenceTransition]
+\end{Verbatim}
+Observation gồm DETECTED, NOT\_DETECTED, UNKNOWN cùng area/identity. State giữ \texttt{candidate\_since}, \texttt{last\_seen}, \texttt{present\_since}. Khi xác nhận PRESENT, transition payload chứa \texttt{interval\_start=candidate\_since}. Khi xác nhận ABSENT, payload chứa \texttt{interval\_end=last\_seen}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.94\textwidth]{Images/presence_state.png}
+\caption{Luồng cài đặt máy trạng thái hiện diện}
+\label{fig:presence-impl}
+\end{figure}
+
+Các timer dùng timestamp thay vì đếm frame. Vì vậy nếu FPS giảm từ 20 xuống 10, ngưỡng 2 giây vẫn giữ nguyên ý nghĩa.
+
+\subsection{Cài đặt PhoneAssociator}
+Với mỗi phone, hàm tạo candidate persons trong cùng hoặc lân cận ROI. Score distance được chuẩn hóa theo đường chéo person box; containment trả 1 nếu center phone nằm trong interaction region, giảm dần nếu ở gần; ROI score ưu tiên cùng vùng. Sau khi tính tất cả pair, thuật toán chọn assignment một-một tham lam theo score giảm dần hoặc Hungarian nếu số phone lớn. Vì thực tế mỗi frame thường ít phone, phương án tham lam có kiểm soát xung đột đủ đơn giản và dễ kiểm thử.
+
+Một guard quan trọng: nếu phone box nằm cố định trên bàn nhưng xa phần thân người và association score thấp, trạng thái không vào CANDIDATE. Nếu phone detection chập chờn gần người, PhoneUsageStateMachine yêu cầu thời gian tối thiểu trước khi USING.
+
+\subsection{Cài đặt PhoneUsageStateMachine}
+API tương tự presence. Khi USING được xác nhận, session start backdate về thời điểm candidate đầu tiên. Khi GRACE hết, end backdate về last associated. Session dưới \texttt{min\_session\_seconds} có thể bỏ khỏi billing nhưng vẫn lưu debug counter.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.94\textwidth]{Images/phone_state.png}
+\caption{Luồng cài đặt máy trạng thái sử dụng điện thoại}
+\label{fig:phone-impl}
+\end{figure}
+
+\subsection{Cài đặt WorkTimeAggregator}
+Aggregator không đọc frame. Nó chỉ nhận event/interval chuẩn hóa, nhờ đó có thể kiểm thử bằng dữ liệu tổng hợp. Các bước:
+\begin{enumerate}
+\item Lấy schedule windows của employee/ngày.
+\item Chuẩn hóa và merge presence intervals bị chồng lấn.
+\item Cắt interval theo schedule.
+\item Chuẩn hóa phone intervals, giao với presence và schedule.
+\item Tính gross presence, phone usage, allowance, excess và effective.
+\item Tính unobserved duration từ camera outage trong schedule.
+\item Lưu \texttt{DailyWorkSummary} với policy/config version.
+\end{enumerate}
+
+Hàm merge interval dùng điều kiện hai đoạn cách nhau dưới epsilon kỹ thuật chỉ khi chúng thuộc cùng continuity event; không tự động nối mọi khoảng nghỉ ngắn vì điều đó làm sai ground truth.
+
+\subsection{Cài đặt backend và API}
+\subsubsection{Mô hình dữ liệu SQLAlchemy}
+\texttt{backend/models.py} được thay các entity Exam/Candidate bằng Employee, Camera, WorkArea, WorkSchedule, MonitoringSession, PresenceInterval, PhoneUsageInterval và DailyWorkSummary. Các bảng Organization/User/AuditLog/ReportJob có thể tái sử dụng với thay đổi nhỏ.
+
+Unique constraint quan trọng gồm: employee code duy nhất trong organization; work area name duy nhất trong camera; một summary cho employee+date+schedule version; event ID duy nhất để idempotency.
+
+\subsubsection{REST API}
+Các nhóm route dự kiến:
+\begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
+/api/employees
+/api/cameras
+/api/work-areas
+/api/assignments
+/api/schedules
+/api/policies
+/api/presence
+/api/reports
+/api/evidence
+\end{Verbatim}
+Route tạo polygon kiểm tra tọa độ 0--1. Route report chỉ trả dữ liệu trong organization đang active. Route evidence kiểm tra permission riêng.
+
+\subsubsection{WebSocket schema}
+Schema cũ yêu cầu đủ bảy signal proctoring được thay bằng \texttt{CameraTelemetry} và \texttt{MonitoringEvent}. Server kiểm tra camera ID trong token, sequence tăng và số person tối đa để tránh message bất thường. Bounding box được kiểm tra nằm trong biên hợp lệ; employee/area ID phải thuộc organization.
+
+\subsubsection{Dashboard fan-out}
+Connection manager nhóm dashboard theo organization/camera. Khi current state thay đổi, server fan-out bản tóm tắt; snapshot chỉ tải qua REST có quyền, không nhúng base64 vào mọi WebSocket message.
+
+\subsection{Giao diện web}
+\subsubsection{Quản lý nhân viên}
+Trang Employee hiển thị mã, tên, trạng thái, khu vực hiện tại, lịch và trạng thái face enrollment. Không hiển thị raw embedding. Nút enrollment có luồng xác nhận vì đây là dữ liệu sinh trắc học.
+
+\subsubsection{Cấu hình camera và ROI}
+Trang camera tải một ảnh tham chiếu; người dùng click để vẽ polygon. Mỗi polygon có label và employee assignment. Giao diện kiểm tra các điểm nằm trong ảnh, hiển thị chồng lấn và cho phép lưu version mới.
+
+\subsubsection{Dashboard realtime}
+Mỗi employee card hiển thị trạng thái presence, identity, phone state, gross time, phone used/allowed/excess và effective time. Màu không phải kênh duy nhất: trạng thái luôn có text/icon để tăng khả năng đọc.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.93\textwidth]{Images/sim_timeline.png}
+\caption{Mô phỏng timeline hiện diện, sử dụng điện thoại và thời gian hiệu lực}
+\label{fig:timeline-ui}
+\end{figure}
+
+\subsubsection{Trang chi tiết nhân viên}
+Timeline sự kiện có filter presence/phone/identity/camera outage. Mỗi interval hiển thị start, end, duration, source và confidence. Nếu có evidence, người dùng có quyền mới thấy nút mở ảnh. Review được lưu riêng không ghi đè event.
+
+\subsection{Lưu trữ bằng chứng và báo cáo}
+Snapshot không lưu liên tục. Mặc định có thể lưu khi identity mismatch, khi phone excess lần đầu vượt allowance hoặc khi supervisor yêu cầu chụp thủ công. File path do server sinh từ organization/session/event ID, kiểm tra traversal và hash để phát hiện hỏng file.
+
+Report worker nhận \texttt{ReportJob}, tải summary/interval/event, render Jinja2 sang HTML rồi chuyển PDF. Báo cáo cá nhân gồm bảng tổng thời gian, timeline, danh sách phone session và thời gian camera không quan sát được. Báo cáo tổ chức tổng hợp nhiều nhân viên nhưng không mặc định nhúng ảnh.
+
+\subsection{Logging và khả năng quan sát}
+Client ghi pipeline timing, số detection, active tracks, ID switch heuristic, queue size và camera FPS. Backend ghi request ID, event ID, camera session ID, report job. Không ghi token hoặc face embedding vào log. Metric hữu ích gồm \texttt{camera\_last\_seen}, \texttt{pipeline\_latency}, \texttt{ws\_queue\_lag}, số event retry và số frame UNKNOWN.
+
+\subsection{Kiểm thử mã nguồn}
+\subsubsection{Unit test}
+Unit test bao phủ IoU/geometry, point-in-polygon, anchor, state transitions, backdating, interval intersection, allowance/excess, phone assignment, identity margin và idempotency event.
+
+\subsubsection{Integration test}
+Integration test dùng video ngắn hoặc detection giả để chạy detector/tracker/state đến backend TestClient. Kịch bản gồm người vào/ra, che khuất 3 giây, mất 8 giây, hai người đổi vị trí, phone của người A gần người B, camera offline và reconnect.
+
+\subsubsection{Security test}
+Backend test tenant isolation, role, camera token, evidence permission, path traversal, WebSocket ticket/replay, rate limit và CORS/HTTPS policy. Các kiểm thử này kế thừa tư tưởng từ source nền nhưng đổi resource theo miền mới.
+
+\subsection{Triển khai}
+Backend Compose gồm ứng dụng, PostgreSQL, Redis và volume evidence/report. Trong môi trường phát triển có thể dùng SQLite cho test nhưng production schema mục tiêu là PostgreSQL. Camera client được cấu hình URL server và token riêng. Nếu edge GPU không có, có thể giảm inference size/FPS hoặc dùng model nano; các lựa chọn phải được ghi trong metadata kết quả đánh giá.
+
+\begin{table}[H]
+\centering
+\caption{Thành phần triển khai}
+\label{tab:deployment}
+\begin{tabularx}{\textwidth}{p{3.2cm}p{4cm}X}
+\toprule
+\textbf{Node} & \textbf{Thành phần} & \textbf{Dữ liệu chính}\\
+\midrule
+Edge camera & CV client, model, local queue & Frame tạm, track/state, event chờ ACK\\
+Application server & FastAPI, worker & API, WebSocket, report\\
+PostgreSQL & Quan hệ/current state & User, employee, camera, intervals, summary\\
+Redis & Cache/fan-out/job & Dữ liệu tạm thời\\
+Evidence volume & Snapshot/report & File có retention\\
+Browser & Dashboard & Dữ liệu đã phân quyền\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Các lỗi biên cần xử lý}
+Các trường hợp đặc biệt gồm: người ngồi thấp khiến bottom-center nằm ngoài ROI; hai người đứng chung vùng; điện thoại cầm gần ranh giới hai người; track ID reset khi camera reconnect; khuôn mặt nhỏ không đủ embedding; camera timestamp nhảy; schedule thay đổi sau khi summary đã sinh. Mỗi trường hợp cần chính sách rõ: UNKNOWN thay vì đoán, version configuration, khóa summary theo policy version và cho phép recompute có audit.
+
+\subsection{Kết luận chương}
+Cài đặt được tổ chức để pipeline CV không tự mang logic nhân sự. Detector/tracker tạo quan sát; context/state chuyển quan sát thành interval; aggregator áp dụng schedule/policy; backend lưu, phân quyền và trình bày. Sự phân tách này cho phép thay YOLO hoặc tracker mà không phải viết lại cách tính thời gian và giúp Chương 6 đánh giá từng lớp riêng biệt.

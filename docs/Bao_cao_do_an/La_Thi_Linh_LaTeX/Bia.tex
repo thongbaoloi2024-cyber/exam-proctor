@@ -1,0 +1,40 @@
+\newcommand{\makecoverpage}{%
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \draw[line width=0.6pt] ($(current page.north west)+(2.6cm,-2.45cm)$) rectangle ($(current page.south east)+(-2.45cm,2.55cm)$);
+  \draw[line width=0.6pt] ($(current page.north west)+(4.1cm,-2.45cm)$) -- ($(current page.south west)+(4.1cm,2.55cm)$);
+  \node[rotate=270,font=\bfseries\fontsize{14pt}{16pt}\selectfont] at ($(current page.north west)+(3.35cm,-5.0cm)$) {LÃ THỊ LINH};
+  \node[rotate=270,font=\bfseries\fontsize{14pt}{16pt}\selectfont] at ($(current page.south west)+(3.35cm,6.2cm)$) {KHOA HỌC MÁY TÍNH};
+\end{tikzpicture}
+\begin{center}
+\vspace*{0.15cm}
+{\fontsize{16pt}{19pt}\selectfont BỘ GIÁO DỤC VÀ ĐÀO TẠO}\\[-1pt]
+{\bfseries\fontsize{16pt}{19pt}\selectfont ĐẠI HỌC PHENIKAA}
+\vspace{1.05cm}
+
+\includegraphics[width=5.1cm]{Images/phenikaa_logo.png}
+\vspace{0.3cm}
+
+{\bfseries\fontsize{22pt}{26pt}\selectfont ĐỒ ÁN TỐT NGHIỆP}
+\vspace{0.65cm}
+
+{\bfseries\fontsize{16pt}{20pt}\selectfont HỆ THỐNG ƯỚC LƯỢNG THỜI GIAN LÀM VIỆC}\\[0.18cm]
+{\bfseries\fontsize{15pt}{19pt}\selectfont CỦA NHÂN VIÊN DỰA TRÊN SỰ HIỆN DIỆN}\\[0.18cm]
+{\bfseries\fontsize{15pt}{19pt}\selectfont TRONG KHU VỰC LÀM VIỆC BẰNG COMPUTER VISION}
+\vspace{0.9cm}
+
+\begin{minipage}{0.70\textwidth}
+\fontsize{13pt}{18pt}\selectfont\bfseries
+Sinh viên: Lã Thị Linh\\
+Mã số sinh viên: 22014063 \hfill Khóa: 16\\
+Ngành: Khoa học máy tính \hfill Hệ: Đại học chính quy\\
+Giảng viên hướng dẫn: TS. Bùi Huy Toàn
+\end{minipage}
+\vfill
+{\fontsize{13pt}{16pt}\selectfont Hà Nội - Năm 2026}
+\end{center}
+\end{titlepage}%
+}
+\makecoverpage
+\makecoverpage
