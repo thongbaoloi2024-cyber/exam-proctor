@@ -10,7 +10,7 @@ Kiến trúc đề xuất sử dụng YOLOv8 để phát hiện người và đi
 
 \subsection{Kết quả chính đạt được trong thiết kế}
 \subsubsection{Chuỗi xử lý đa người từ một camera CCTV}
-Thiết kế coi quan sát phát hiện người là đối tượng nền và duy trì nhiều quỹ đạo song song. Mã quỹ đạo được tách rõ khỏi mã nhân viên. ROI cung cấp ngữ cảnh vị trí và FaceNet chỉ đóng vai trò xác minh khi đủ dữ liệu. Đây là kiến trúc phù hợp hơn với camera văn phòng xa và nhiều người.
+Thiết kế coi quan sát phát hiện người là đối tượng nền và duy trì nhiều quỹ đạo song song. Mã quỹ đạo được tách rõ khỏi mã nhân viên. ROI cung cấp ngữ cảnh vị trí và FaceNet chỉ đóng vai trò xác minh khi đủ dữ liệu. Lựa chọn này nhằm giảm yêu cầu nhận diện khuôn mặt liên tục trong cảnh nhiều người, nhưng mức độ phù hợp cần được xác nhận trên dữ liệu camera mục tiêu.
 
 \subsubsection{Ước lượng thời gian dựa trên khoảng thời gian}
 Thời lượng được tính từ các mốc thời gian và khoảng hiện diện thay vì số khung hình. Khoảng đệm hạn chế ảnh hưởng của lỗi bỏ sót ngắn. Khi xác nhận trạng thái, đầu và cuối khoảng được truy hồi về mốc bắt đầu ứng viên và mốc quan sát tin cậy cuối cùng. Cách tổ chức này giảm sai lệch do thời gian chờ xác nhận và giữ ý nghĩa tham số khi tốc độ xử lý thay đổi.
@@ -27,7 +27,7 @@ Thiết kế nền tảng kết hợp xác thực, phân quyền theo tổ chứ
 \subsection{Về kết quả đánh giá}
 Chương 6 xác định quy trình đánh giá phát hiện, theo dõi, hiện diện, liên kết điện thoại và sai số thời lượng. Bộ dữ liệu tổng hợp kèm báo cáo cho phép tính lại các chỉ số từ số đếm và bản ghi thời gian. Các bảng, biểu đồ được sinh từ cùng một nguồn dữ liệu nhằm kiểm tra tính nhất quán của phép tính và cách trình bày.
 
-Các kết quả tính toán này chỉ mô tả bộ dữ liệu tổng hợp. Chưa có cơ sở để suy ra độ chính xác, tốc độ xử lý hoặc thứ hạng thuật toán trên camera thực địa. Việc kiểm chứng giả thuyết về hiệu quả của giải pháp cần dựa trên video có nhãn tham chiếu độc lập, cấu hình đã khóa và kết quả chạy có thể tái lập.
+Bộ tính tham chiếu bổ sung đã cho kết quả khớp đáp án ở 13 kịch bản khoảng thời gian hợp lệ và từ chối đúng một kịch bản có thời lượng âm. Phân tích trên cùng dòng thời gian cũng làm rõ tác động riêng của hạn mức tới thời gian hiệu lực. Các kết quả này chỉ mô tả phép tính trên dữ liệu tổng hợp. Chưa có cơ sở để suy ra độ chính xác, tốc độ xử lý hoặc thứ hạng thuật toán trên camera thực địa. Việc kiểm chứng giả thuyết về hiệu quả của giải pháp cần dựa trên video có nhãn tham chiếu độc lập, cấu hình đã khóa và kết quả chạy có thể tái lập.
 
 \subsection{Hạn chế còn tồn tại}
 \subsubsection{Che khuất và lần đổi định danh}
@@ -37,7 +37,7 @@ Một camera đơn không thể quan sát xuyên vật cản. ByteTrack giảm p
 ROI trong ảnh là xấp xỉ không gian. Với góc nhìn camera nghiêng lớn, điểm giữa cạnh đáy hộp bao có sai lệch. Khuôn mặt và điện thoại nhỏ cũng làm giảm khả năng xác minh/phát hiện. Việc chọn vị trí camera là một phần của hệ thống chứ không chỉ vấn đề mô hình.
 
 \subsubsection{Nhận diện danh tính}
-FaceNet phụ thuộc chất lượng khuôn mặt. Thiết kế UNKNOWN giúp tránh kết luận quá mức nhưng làm một số khoảng thời gian cần hậu kiểm. Nếu tổ chức yêu cầu xác định danh tính mạnh, cần thêm camera gần, ReID toàn thân hoặc cơ chế check-in khác.
+FaceNet phụ thuộc chất lượng khuôn mặt. Thiết kế UNKNOWN giúp tránh kết luận quá mức nhưng làm một số khoảng thời gian cần hậu kiểm. Nếu tổ chức yêu cầu xác định danh tính mạnh, cần thêm camera gần, ReID toàn thân hoặc cơ chế xác nhận vào ca khác.
 
 \subsubsection{Hành vi sử dụng điện thoại không đồng nghĩa phát hiện điện thoại}
 Quan hệ không gian và điều kiện thời gian chỉ cung cấp dấu hiệu gián tiếp về hành vi sử dụng điện thoại. Điện thoại đặt gần người hoặc được chuyển giữa hai người vẫn có thể gây nhầm lẫn. Ước lượng tư thế và tương tác tay--vật thể là hướng mở rộng cần được đánh giá bằng dữ liệu phù hợp.
@@ -59,7 +59,7 @@ Camera và vector đặc trưng khuôn mặt có rủi ro quyền riêng tư. Sa
 \item Thử nghiệm ước lượng tư thế và tương tác tay--vật thể để phân biệt cầm điện thoại và điện thoại đặt trên bàn.
 \item Hỗ trợ nhiều camera có vùng chuyển giao và tránh tính trùng thời gian.
 \item Xây dựng cơ chế suy luận tại thiết bị biên tối ưu ONNX/TensorRT và đo kiểm hiệu năng trên thiết bị thật.
-\item Hoàn thiện hàng đợi sự kiện ngoại tuyến, exactly-once/idempotent materialization và khả năng quan sát tập trung.
+\item Hoàn thiện hàng đợi sự kiện ngoại tuyến, xử lý lặp an toàn khi tạo dữ liệu dẫn xuất và khả năng quan sát tập trung.
 \item Bổ sung cổng thông tin nhân viên để xem dữ liệu cá nhân và gửi yêu cầu hậu kiểm theo chính sách tổ chức.
 \item Đánh giá tác động đối với quyền riêng tư, thời hạn lưu trữ và quy trình vận hành trước khi triển khai thực tế.
 \end{itemize}
@@ -71,7 +71,7 @@ Câu hỏi về lọc nhiễu thời gian được trả lời bằng máy trạ
 
 Câu hỏi về sử dụng điện thoại được tiếp cận theo ba tầng: quan sát phát hiện, liên kết người--điện thoại và xác nhận theo thời gian. Trạng thái UNKNOWN cùng biên chênh lệch liên kết nhằm ưu tiên tránh trừ nhầm người. Tuy nhiên, chỉ từ hộp bao vẫn chưa mô tả đầy đủ tương tác tay--vật thể, đây là giới hạn cần được kiểm chứng thực nghiệm.
 
-Câu hỏi về nguồn sai số được phản ánh trong khung đánh giá đa tầng và kế hoạch ablation. F1 phát hiện đối tượng, IDF1, sai số liên kết vùng và danh tính, WPAR và MAE thời lượng được nối với nhau bằng dòng thời gian và phân loại nguyên nhân lỗi. Cách tiếp cận này giúp xác định thành phần cần cải thiện thay vì chỉ nhìn một con số cuối.
+Câu hỏi về nguồn sai số được phản ánh trong khung đánh giá đa tầng và kế hoạch loại bỏ từng thành phần. F1 phát hiện đối tượng, IDF1, sai số liên kết vùng và danh tính, WPAR và MAE thời lượng được nối với nhau bằng dòng thời gian và phân loại nguyên nhân lỗi. Cách tiếp cận này giúp xác định thành phần cần cải thiện thay vì chỉ nhìn một con số cuối.
 
 Câu hỏi về quyền riêng tư được xử lý bằng xử lý tại thiết bị biên, tối thiểu hóa bằng chứng, phân quyền, thời hạn lưu trữ, kiểm toán và phiên bản chính sách. Đây là các biện pháp thiết kế, một triển khai thực tế vẫn cần đánh giá tác động, căn cứ xử lý dữ liệu và quy trình tổ chức phù hợp.
 
@@ -80,9 +80,9 @@ Giá trị chính của hệ thống là cung cấp chuỗi dữ liệu hiện d
 
 Trước triển khai cần hoàn thành ít nhất bốn điều kiện. Thứ nhất, camera phải được khảo sát về góc nhìn, độ phân giải và che khuất. Thứ hai, phải có thực nghiệm trên chính môi trường mục tiêu và ngưỡng chấp nhận được phê duyệt. Thứ ba, tổ chức phải công bố mục đích, quyền truy cập, thời hạn lưu trữ và cơ chế phản hồi. Thứ tư, vận hành phải có giám sát độ bao phủ, xử lý gián đoạn quan sát và quy trình hậu kiểm.
 
-Triển khai nên bắt đầu ở chế độ shadow: hệ thống tạo chỉ số và báo cáo thử nhưng chưa tác động chính sách. Kết quả được so với nguồn hiện có trong một khoảng đủ dài. Chỉ sau khi hiểu sai số theo từng khu vực và hoàn thiện quy trình khiếu nại mới xem xét mở rộng phạm vi sử dụng.
+Triển khai nên bắt đầu ở chế độ quan sát thử: hệ thống tạo chỉ số và báo cáo thử nhưng chưa tác động chính sách. Kết quả được so với nguồn hiện có trong một khoảng đủ dài. Chỉ sau khi hiểu sai số theo từng khu vực và hoàn thiện quy trình khiếu nại mới xem xét mở rộng phạm vi sử dụng.
 
 \subsection{Kết luận}
-Đóng góp của đồ án ở cấp hệ thống là biến video CCTV đa người thành các khoảng hiện diện có danh tính, kết hợp theo dõi điện thoại theo chính sách và tổng hợp thành đại lượng thời gian có thể giải thích. YOLOv8, ByteTrack và FaceNet là các thành phần nền, phần thiết kế riêng nằm ở cách tổ chức chúng với ROI, liên kết, máy trạng thái, tổng hợp khoảng thời gian, backend thời gian thực và kiểm toán.
+Đóng góp của đồ án ở cấp hệ thống là biến video CCTV đa người thành các khoảng hiện diện có danh tính, kết hợp theo dõi điện thoại theo chính sách và tổng hợp thành đại lượng thời gian có thể giải thích. YOLOv8, ByteTrack và FaceNet là các thành phần nền, phần thiết kế riêng nằm ở cách tổ chức chúng với ROI, liên kết, máy trạng thái, tổng hợp khoảng thời gian, máy chủ ứng dụng thời gian thực và kiểm toán.
 
 Khi số liệu mô phỏng được thay bằng thực nghiệm có nhãn tham chiếu, hệ thống có thể được đánh giá khách quan bằng cả chỉ số thị giác và sai số thời gian. Đây là điều kiện cần trước khi xem xét sử dụng trong thực tế.

@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "tex_files": 21,
+  "labels": 55,
+  "bibliography_entries": 28,
+  "unused_bibliography": [],
+  "unique_figures": [
+    "Images/new_architecture.png",
+    "Images/phenikaa_logo.png",
+    "Images/phone_state.png",
+    "Images/presence_state.png",
+    "Images/roi_scene.png",
+    "Images/sim_timeline.png",
+    "Images/synthetic_presence_f1.png",
+    "Images/synthetic_shift_errors.png",
+    "Images/synthetic_time_mae.png"
+  ],
+  "errors": [],
+  "scope": "Source structure, links and provenance only. No TeX compilation or PDF layout check."
+}

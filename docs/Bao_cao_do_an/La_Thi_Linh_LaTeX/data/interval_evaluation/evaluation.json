@@ -1,0 +1,984 @@
+{
+  "kind": "DETERMINISTIC_SYNTHETIC_INTERVAL_FIXTURES",
+  "unit": "second",
+  "interval_convention": "half-open [start,end)",
+  "cases": [
+    {
+      "id": "I01",
+      "label": "Không sử dụng điện thoại",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "phone": [],
+      "expected": [
+        3600,
+        0,
+        0,
+        0,
+        3600
+      ],
+      "result": {
+        "presence_s": 3600,
+        "phone_s": 0,
+        "unobserved_s": 0,
+        "excess_s": 0,
+        "effective_s": 3600,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            0,
+            3600
+          ]
+        ],
+        "valid_phone": []
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I02",
+      "label": "Dưới hạn mức",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "phone": [
+        [
+          100,
+          940
+        ]
+      ],
+      "expected": [
+        3600,
+        840,
+        0,
+        0,
+        3600
+      ],
+      "result": {
+        "presence_s": 3600,
+        "phone_s": 840,
+        "unobserved_s": 0,
+        "excess_s": 0,
+        "effective_s": 3600,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            0,
+            3600
+          ]
+        ],
+        "valid_phone": [
+          [
+            100,
+            940
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I03",
+      "label": "Đúng hạn mức",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "phone": [
+        [
+          100,
+          1000
+        ]
+      ],
+      "expected": [
+        3600,
+        900,
+        0,
+        0,
+        3600
+      ],
+      "result": {
+        "presence_s": 3600,
+        "phone_s": 900,
+        "unobserved_s": 0,
+        "excess_s": 0,
+        "effective_s": 3600,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            0,
+            3600
+          ]
+        ],
+        "valid_phone": [
+          [
+            100,
+            1000
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I04",
+      "label": "Vượt hạn mức 1 giây",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "phone": [
+        [
+          100,
+          1001
+        ]
+      ],
+      "expected": [
+        3600,
+        901,
+        0,
+        1,
+        3599
+      ],
+      "result": {
+        "presence_s": 3600,
+        "phone_s": 901,
+        "unobserved_s": 0,
+        "excess_s": 1,
+        "effective_s": 3599,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            0,
+            3600
+          ]
+        ],
+        "valid_phone": [
+          [
+            100,
+            1001
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I05",
+      "label": "Khoảng chồng lấn và lặp",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          2000
+        ],
+        [
+          1500,
+          3600
+        ],
+        [
+          0,
+          2000
+        ]
+      ],
+      "phone": [
+        [
+          100,
+          700
+        ],
+        [
+          500,
+          1200
+        ],
+        [
+          100,
+          700
+        ]
+      ],
+      "expected": [
+        3600,
+        1100,
+        0,
+        200,
+        3400
+      ],
+      "result": {
+        "presence_s": 3600,
+        "phone_s": 1100,
+        "unobserved_s": 0,
+        "excess_s": 200,
+        "effective_s": 3400,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            0,
+            3600
+          ]
+        ],
+        "valid_phone": [
+          [
+            100,
+            1200
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I06",
+      "label": "Điện thoại ngoài hiện diện",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          600,
+          2400
+        ]
+      ],
+      "phone": [
+        [
+          0,
+          900
+        ],
+        [
+          2300,
+          3000
+        ]
+      ],
+      "expected": [
+        1800,
+        400,
+        0,
+        0,
+        1800
+      ],
+      "result": {
+        "presence_s": 1800,
+        "phone_s": 400,
+        "unobserved_s": 0,
+        "excess_s": 0,
+        "effective_s": 1800,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            600,
+            2400
+          ]
+        ],
+        "valid_phone": [
+          [
+            600,
+            900
+          ],
+          [
+            2300,
+            2400
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I07",
+      "label": "Ca có khoảng nghỉ",
+      "schedule": [
+        [
+          0,
+          1800
+        ],
+        [
+          2400,
+          4200
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          4200
+        ]
+      ],
+      "phone": [
+        [
+          1500,
+          2700
+        ]
+      ],
+      "expected": [
+        3600,
+        600,
+        0,
+        0,
+        3600
+      ],
+      "result": {
+        "presence_s": 3600,
+        "phone_s": 600,
+        "unobserved_s": 0,
+        "excess_s": 0,
+        "effective_s": 3600,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            0,
+            1800
+          ],
+          [
+            2400,
+            4200
+          ]
+        ],
+        "valid_phone": [
+          [
+            1500,
+            1800
+          ],
+          [
+            2400,
+            2700
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I08",
+      "label": "Loại khoảng mất quan sát",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "phone": [
+        [
+          900,
+          2100
+        ]
+      ],
+      "unobserved": [
+        [
+          1200,
+          1800
+        ]
+      ],
+      "expected": [
+        3000,
+        600,
+        600,
+        0,
+        3000
+      ],
+      "result": {
+        "presence_s": 3000,
+        "phone_s": 600,
+        "unobserved_s": 600,
+        "excess_s": 0,
+        "effective_s": 3000,
+        "coverage": 0.8333333333333334,
+        "valid_presence": [
+          [
+            0,
+            1200
+          ],
+          [
+            1800,
+            3600
+          ]
+        ],
+        "valid_phone": [
+          [
+            900,
+            1200
+          ],
+          [
+            1800,
+            2100
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I09",
+      "label": "Mất quan sát chồng lấn",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "phone": [],
+      "unobserved": [
+        [
+          -100,
+          100
+        ],
+        [
+          50,
+          300
+        ],
+        [
+          3500,
+          4000
+        ]
+      ],
+      "expected": [
+        3200,
+        0,
+        400,
+        0,
+        3200
+      ],
+      "result": {
+        "presence_s": 3200,
+        "phone_s": 0,
+        "unobserved_s": 400,
+        "excess_s": 0,
+        "effective_s": 3200,
+        "coverage": 0.8888888888888888,
+        "valid_presence": [
+          [
+            300,
+            3500
+          ]
+        ],
+        "valid_phone": []
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I10",
+      "label": "Ca qua nửa đêm",
+      "schedule": [
+        [
+          82800,
+          90000
+        ]
+      ],
+      "presence": [
+        [
+          84600,
+          88200
+        ]
+      ],
+      "phone": [
+        [
+          85800,
+          87000
+        ]
+      ],
+      "expected": [
+        3600,
+        1200,
+        0,
+        300,
+        3300
+      ],
+      "result": {
+        "presence_s": 3600,
+        "phone_s": 1200,
+        "unobserved_s": 0,
+        "excess_s": 300,
+        "effective_s": 3300,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            84600,
+            88200
+          ]
+        ],
+        "valid_phone": [
+          [
+            85800,
+            87000
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I11",
+      "label": "Tắt điều chỉnh thời gian",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "phone": [
+        [
+          0,
+          1200
+        ]
+      ],
+      "deduction_enabled": false,
+      "expected": [
+        3600,
+        1200,
+        0,
+        300,
+        3600
+      ],
+      "result": {
+        "presence_s": 3600,
+        "phone_s": 1200,
+        "unobserved_s": 0,
+        "excess_s": 300,
+        "effective_s": 3600,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            0,
+            3600
+          ]
+        ],
+        "valid_phone": [
+          [
+            0,
+            1200
+          ]
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I12",
+      "label": "Không có lịch làm việc",
+      "schedule": [],
+      "presence": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "phone": [
+        [
+          0,
+          1200
+        ]
+      ],
+      "expected": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "result": {
+        "presence_s": 0,
+        "phone_s": 0,
+        "unobserved_s": 0,
+        "excess_s": 0,
+        "effective_s": 0,
+        "coverage": null,
+        "valid_presence": [],
+        "valid_phone": []
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I13",
+      "label": "Khoảng độ dài bằng không",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          100,
+          100
+        ],
+        [
+          200,
+          400
+        ]
+      ],
+      "phone": [
+        [
+          200,
+          200
+        ]
+      ],
+      "expected": [
+        200,
+        0,
+        0,
+        0,
+        200
+      ],
+      "result": {
+        "presence_s": 200,
+        "phone_s": 0,
+        "unobserved_s": 0,
+        "excess_s": 0,
+        "effective_s": 200,
+        "coverage": 1.0,
+        "valid_presence": [
+          [
+            200,
+            400
+          ]
+        ],
+        "valid_phone": []
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "I14",
+      "label": "Từ chối thời lượng âm",
+      "schedule": [
+        [
+          0,
+          3600
+        ]
+      ],
+      "presence": [
+        [
+          400,
+          200
+        ]
+      ],
+      "phone": [],
+      "expected_error": "Negative duration",
+      "status": "REJECTED_AS_EXPECTED"
+    }
+  ],
+  "timeline": {
+    "id": "TIMELINE",
+    "schedule": [
+      [
+        28800,
+        43200
+      ],
+      [
+        46800,
+        63000
+      ]
+    ],
+    "presence": [
+      [
+        29100,
+        43200
+      ],
+      [
+        47100,
+        62100
+      ]
+    ],
+    "phone": [
+      [
+        33000,
+        33480
+      ],
+      [
+        38700,
+        39420
+      ],
+      [
+        51000,
+        52200
+      ],
+      [
+        57900,
+        58200
+      ]
+    ],
+    "allowance": 900,
+    "result": {
+      "presence_s": 29100,
+      "phone_s": 2700,
+      "unobserved_s": 0,
+      "excess_s": 1800,
+      "effective_s": 27300,
+      "coverage": 1.0,
+      "valid_presence": [
+        [
+          29100,
+          43200
+        ],
+        [
+          47100,
+          62100
+        ]
+      ],
+      "valid_phone": [
+        [
+          33000,
+          33480
+        ],
+        [
+          38700,
+          39420
+        ],
+        [
+          51000,
+          52200
+        ],
+        [
+          57900,
+          58200
+        ]
+      ]
+    },
+    "excess_intervals": [
+      [
+        39120,
+        39420
+      ],
+      [
+        51000,
+        52200
+      ],
+      [
+        57900,
+        58200
+      ]
+    ]
+  },
+  "sensitivity": [
+    {
+      "allowance_min": 0,
+      "presence_s": 29100,
+      "phone_s": 2700,
+      "unobserved_s": 0,
+      "excess_s": 2700,
+      "effective_s": 26400,
+      "coverage": 1.0,
+      "valid_presence": [
+        [
+          29100,
+          43200
+        ],
+        [
+          47100,
+          62100
+        ]
+      ],
+      "valid_phone": [
+        [
+          33000,
+          33480
+        ],
+        [
+          38700,
+          39420
+        ],
+        [
+          51000,
+          52200
+        ],
+        [
+          57900,
+          58200
+        ]
+      ]
+    },
+    {
+      "allowance_min": 5,
+      "presence_s": 29100,
+      "phone_s": 2700,
+      "unobserved_s": 0,
+      "excess_s": 2400,
+      "effective_s": 26700,
+      "coverage": 1.0,
+      "valid_presence": [
+        [
+          29100,
+          43200
+        ],
+        [
+          47100,
+          62100
+        ]
+      ],
+      "valid_phone": [
+        [
+          33000,
+          33480
+        ],
+        [
+          38700,
+          39420
+        ],
+        [
+          51000,
+          52200
+        ],
+        [
+          57900,
+          58200
+        ]
+      ]
+    },
+    {
+      "allowance_min": 15,
+      "presence_s": 29100,
+      "phone_s": 2700,
+      "unobserved_s": 0,
+      "excess_s": 1800,
+      "effective_s": 27300,
+      "coverage": 1.0,
+      "valid_presence": [
+        [
+          29100,
+          43200
+        ],
+        [
+          47100,
+          62100
+        ]
+      ],
+      "valid_phone": [
+        [
+          33000,
+          33480
+        ],
+        [
+          38700,
+          39420
+        ],
+        [
+          51000,
+          52200
+        ],
+        [
+          57900,
+          58200
+        ]
+      ]
+    },
+    {
+      "allowance_min": 30,
+      "presence_s": 29100,
+      "phone_s": 2700,
+      "unobserved_s": 0,
+      "excess_s": 900,
+      "effective_s": 28200,
+      "coverage": 1.0,
+      "valid_presence": [
+        [
+          29100,
+          43200
+        ],
+        [
+          47100,
+          62100
+        ]
+      ],
+      "valid_phone": [
+        [
+          33000,
+          33480
+        ],
+        [
+          38700,
+          39420
+        ],
+        [
+          51000,
+          52200
+        ],
+        [
+          57900,
+          58200
+        ]
+      ]
+    },
+    {
+      "allowance_min": 45,
+      "presence_s": 29100,
+      "phone_s": 2700,
+      "unobserved_s": 0,
+      "excess_s": 0,
+      "effective_s": 29100,
+      "coverage": 1.0,
+      "valid_presence": [
+        [
+          29100,
+          43200
+        ],
+        [
+          47100,
+          62100
+        ]
+      ],
+      "valid_phone": [
+        [
+          33000,
+          33480
+        ],
+        [
+          38700,
+          39420
+        ],
+        [
+          51000,
+          52200
+        ],
+        [
+          57900,
+          58200
+        ]
+      ]
+    }
+  ]
+}

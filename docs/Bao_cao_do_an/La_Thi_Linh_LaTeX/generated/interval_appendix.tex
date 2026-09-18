@@ -1,0 +1,89 @@
+\clearpage
+\section*{PHỤ LỤC F -- KỊCH BẢN KHOẢNG THỜI GIAN TỔNG HỢP}
+\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC F -- KỊCH BẢN KHOẢNG THỜI GIAN TỔNG HỢP}
+Các mốc dưới đây có đơn vị giây. Mỗi kịch bản mặc định có hạn mức 900 giây và bật điều chỉnh. I11 tắt điều chỉnh. Ký hiệu $S$, $P$, $H$, $U$ lần lượt là lịch làm việc, hiện diện đầu vào, điện thoại đầu vào và khoảng không quan sát được. Tập rỗng ký hiệu $\varnothing$.
+
+\noindent\textbf{I01 -- Không sử dụng điện thoại.} 
+S: $[0,3600)$. 
+P: $[0,3600)$. 
+H: $\varnothing$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I02 -- Dưới hạn mức.} 
+S: $[0,3600)$. 
+P: $[0,3600)$. 
+H: $[100,940)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I03 -- Đúng hạn mức.} 
+S: $[0,3600)$. 
+P: $[0,3600)$. 
+H: $[100,1000)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I04 -- Vượt hạn mức 1 giây.} 
+S: $[0,3600)$. 
+P: $[0,3600)$. 
+H: $[100,1001)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I05 -- Khoảng chồng lấn và lặp.} 
+S: $[0,3600)$. 
+P: $[0,2000), [1500,3600), [0,2000)$. 
+H: $[100,700), [500,1200), [100,700)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I06 -- Điện thoại ngoài hiện diện.} 
+S: $[0,3600)$. 
+P: $[600,2400)$. 
+H: $[0,900), [2300,3000)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I07 -- Ca có khoảng nghỉ.} 
+S: $[0,1800), [2400,4200)$. 
+P: $[0,4200)$. 
+H: $[1500,2700)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I08 -- Loại khoảng mất quan sát.} 
+S: $[0,3600)$. 
+P: $[0,3600)$. 
+H: $[900,2100)$. 
+U: $[1200,1800)$. 
+
+\noindent\textbf{I09 -- Mất quan sát chồng lấn.} 
+S: $[0,3600)$. 
+P: $[0,3600)$. 
+H: $\varnothing$. 
+U: $[-100,100), [50,300), [3500,4000)$. 
+
+\noindent\textbf{I10 -- Ca qua nửa đêm.} 
+S: $[82800,90000)$. 
+P: $[84600,88200)$. 
+H: $[85800,87000)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I11 -- Tắt điều chỉnh thời gian.} 
+S: $[0,3600)$. 
+P: $[0,3600)$. 
+H: $[0,1200)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I12 -- Không có lịch làm việc.} 
+S: $\varnothing$. 
+P: $[0,3600)$. 
+H: $[0,1200)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I13 -- Khoảng độ dài bằng không.} 
+S: $[0,3600)$. 
+P: $[100,100), [200,400)$. 
+H: $[200,200)$. 
+U: $\varnothing$. 
+
+\noindent\textbf{I14 -- Từ chối thời lượng âm.} 
+S: $[0,3600)$. 
+P: $[400,200)$. 
+H: $\varnothing$. 
+U: $\varnothing$. 
+

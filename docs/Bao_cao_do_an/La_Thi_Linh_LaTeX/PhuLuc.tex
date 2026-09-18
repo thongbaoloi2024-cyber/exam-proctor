@@ -8,34 +8,34 @@
 \textbf{Trường} & \textbf{Kiểu} & \textbf{Mô tả}\\
 \midrule\endfirsthead
 camera\_id & UUID & Camera đã được xác thực bằng token camera\\
-phiên\_id & UUID & Phiên giám sát hiện tại\\
-số thứ tự & Integer & Số tăng dần để phát hiện message cũ/lặp\\
-captured\_at & DateTime & Timestamp khung hình tại edge\\
+session\_id & UUID & Phiên giám sát hiện tại\\
+sequence & Integer & Số tăng dần để phát hiện thông điệp cũ/lặp\\
+captured\_at & DateTime & Mốc thời gian khung hình tại thiết bị biên\\
 received\_at & DateTime & Máy chủ tự tạo khi nhận\\
 fps & Float & FPS xử lý gần nhất\\
-chuỗi xử lý\_\allowbreak độ trễ\_\allowbreak ms & Float & Thời gian xử lý khung hình\\
-persons & Array & Danh sách current tracked persons\\
-cấu hình\_version & String & Phiên bản camera/ROI/mô hình cấu hình\\
+pipeline\_\allowbreak latency\_ms & Float & Thời gian xử lý khung hình\\
+persons & Array & Danh sách người đang được theo dõi\\
+config\_version & String & Phiên bản camera/ROI/mô hình cấu hình\\
 \bottomrule
 \end{longtable}
 
 \subsection*{A.2. Đặc tả TrackedPersonTelemetry}
 \begin{longtable}{p{3.3cm}p{2.5cm}p{7.4cm}}
 \toprule
-quỹ đạo\_id & Integer & ID tạm trong camera phiên\\
+track\_id & Integer & ID tạm trong phiên camera\\
 bbox & Float[4] & $x_1,y_1,x_2,y_2$ theo khung hình gốc\\
-quan sát phát hiện\_\allowbreak độ tin cậy & Float & Confidence người gần nhất\\
-vùng\_id & UUID/null & Khu vực làm việc được liên kết\\
-nhân viên\_id & UUID/null & Nhân viên liên kết nếu có\\
-danh tính\_state & Enum & PROVISIONAL/\allowbreak VERIFIED/\allowbreak UNKNOWN/\allowbreak MISMATCH\\
-hiện diện\_state & Enum & ABSENT/\allowbreak CANDIDATE/\allowbreak PRESENT/\allowbreak GRACE/\allowbreak SUSPENDED\\
-điện thoại\_state & Enum & NO\_PHONE/\allowbreak CANDIDATE/\allowbreak USING/\allowbreak GRACE\\
+detection\_\allowbreak độ tin cậy & Float & Độ tin cậy người gần nhất\\
+area\_id & UUID/null & Khu vực làm việc được liên kết\\
+employee\_id & UUID/null & Nhân viên liên kết nếu có\\
+identity\_state & Enum & PROVISIONAL/\allowbreak VERIFIED/\allowbreak UNKNOWN/\allowbreak MISMATCH\\
+presence\_state & Enum & ABSENT/\allowbreak CANDIDATE/\allowbreak PRESENT/\allowbreak GRACE/\allowbreak SUSPENDED\\
+phone\_state & Enum & NO\_PHONE/\allowbreak CANDIDATE/\allowbreak USING/\allowbreak GRACE\\
 last\_seen\_at & DateTime & Mốc quan sát phát hiện gần nhất\\
 \bottomrule
 \end{longtable}
 
 \subsection*{A.3. Đặc tả MonitoringEvent}
-Mỗi sự kiện gồm \texttt{event\_id}, \texttt{camera\_id}, \texttt{session\_id}, \texttt{event\_type}, \texttt{occurred\_at}, \texttt{employee\_id?}, \texttt{area\_id?}, \texttt{track\_id?}, \texttt{payload} và \texttt{evidence\_ref?}. Mã sự kiện do ứng dụng phía máy khách sinh UUID và giữ nguyên khi gửi lại. Máy chủ đặt unique constraint theo organization+mã sự kiện.
+Mỗi sự kiện gồm \texttt{event\_id}, \texttt{camera\_id}, \texttt{session\_id}, \texttt{event\_type}, \texttt{occurred\_at}, \texttt{employee\_id?}, \texttt{area\_id?}, \texttt{track\_id?}, \texttt{payload} và \texttt{evidence\_ref?}. Mã sự kiện do ứng dụng phía máy khách sinh UUID và giữ nguyên khi gửi lại. Máy chủ đặt ràng buộc duy nhất theo tổ chức+mã sự kiện.
 
 \subsection*{A.4. Các loại sự kiện}
 \begin{longtable}{p{4.4cm}p{8.8cm}}
@@ -43,15 +43,15 @@ Mỗi sự kiện gồm \texttt{event\_id}, \texttt{camera\_id}, \texttt{session
 \textbf{Sự kiện} & \textbf{Ý nghĩa}\\
 \midrule\endfirsthead
 CAMERA\_ONLINE & Ứng dụng phía máy khách sẵn sàng xử lý\\
-CAMERA\_OFFLINE & Mất nguồn hoặc heartbeat thời gian chờ\\
+CAMERA\_OFFLINE & Mất nguồn hoặc tín hiệu duy trì kết nối thời gian chờ\\
 PRESENCE\_\allowbreak CANDIDATE & Bắt đầu có ứng viên trong ROI\\
 PRESENCE\_\allowbreak CONFIRMED & Mở khoảng hiện diện\\
-PRESENCE\_LOST & Vào grace\\
+PRESENCE\_LOST & Vào khoảng đệm\\
 ABSENCE\_\allowbreak CONFIRMED & Đóng khoảng hiện diện\\
 IDENTITY\_\allowbreak VERIFIED & Vector đặc trưng khuôn mặt xác minh thành công\\
 IDENTITY\_\allowbreak MISMATCH & Có đủ bằng chứng không khớp\\
-PHONE\_START & Mở thời gian sử dụng điện thoại khoảng thời gian\\
-PHONE\_END & Đóng thời gian sử dụng điện thoại khoảng thời gian\\
+PHONE\_START & Mở thời gian sử dụng khoảng sử dụng điện thoại\\
+PHONE\_END & Đóng thời gian sử dụng khoảng sử dụng điện thoại\\
 PHONE\_\allowbreak EXCESS\_\allowbreak REACHED & Tổng điện thoại lần đầu vượt hạn mức\\
 SUMMARY\_\allowbreak MATERIALIZED & Hoàn thành tổng hợp ngày/ca\\
 \bottomrule
@@ -65,35 +65,35 @@ SUMMARY\_\allowbreak MATERIALIZED & Hoàn thành tổng hợp ngày/ca\\
 \toprule
 \textbf{ID} & \textbf{Kịch bản} & \textbf{Kết quả mong đợi}\\
 \midrule\endfirsthead
-T01 & Point trong đa giác & Gán đúng ROI\\
-T02 & Point ngoài đa giác & Không gán ROI\\
-T03 & Point tại biên & Kết quả nhất quán theo rule boundary\\
-T04 & Hai ROI chồng & Ưu tiên history/điểm liên kết, nhật ký cảnh báo cấu hình\\
+T01 & Điểm trong đa giác & Gán đúng ROI\\
+T02 & Điểm ngoài đa giác & Không gán ROI\\
+T03 & Điểm tại biên & Kết quả nhất quán theo quy tắc xử lý biên\\
+T04 & Hai ROI chồng & Ưu tiên lịch sử và điểm liên kết, nhật ký cảnh báo cấu hình\\
 T05 & Candidate dưới $T_{enter}$ & Không mở khoảng thời gian\\
 T06 & Candidate đủ $T_{enter}$ & Mở khoảng thời gian tại candidate\_since\\
-T07 & Present mất 3 s, gap 5 s & Khoảng thời gian liên tục\\
+T07 & Present mất 3 s, khoảng trống 5 s & Khoảng thời gian liên tục\\
 T08 & Present mất 7 s & Đóng tại last\_seen\\
 T09 & Camera UNKNOWN 3 s & Không coi là absent\\
 T10 & Camera mất kết nối dài & Tăng không quan sát được, sinh CAMERA\_OFFLINE\\
 T11 & Điện thoại 1 khung hình & Không tạo phiên\\
 T12 & Điện thoại đủ 3 s & Mở phiên sử dụng điện thoại truy hồi mốc\\
-T13 & Điện thoại che 1 s & Không đóng phiên nếu grace 2 s\\
-T14 & Điện thoại mất > grace & Đóng ở mốc liên kết cuối cùng\\
+T13 & Điện thoại che 1 s & Không đóng phiên nếu khoảng đệm 2 s\\
+T14 & Điện thoại mất > khoảng đệm & Đóng ở mốc liên kết cuối cùng\\
 T15 & Điện thoại giữa hai người & Liên kết UNKNOWN nếu biên chênh lệch không đủ\\
-T16 & Điện thoại trên bàn xa người & Score thấp, không phiên\\
+T16 & Điện thoại trên bàn xa người & Điểm liên kết thấp, không phiên\\
 T17 & Tổng điện thoại < hạn mức & phần vượt hạn mức=0\\
 T18 & Tổng điện thoại > hạn mức & phần vượt hạn mức=phone-allowance\\
 T19 & Deduction disabled & hiệu lực=hiện diện\\
 T20 & Điện thoại khi absent & Không tính điện thoại cho nhân viên\\
-T21 & Danh tính verified & Trạng thái chuyển VERIFIED\\
+T21 & Danh tính đã xác minh & Trạng thái chuyển VERIFIED\\
 T22 & Danh tính vùng biên chênh lệch & UNKNOWN/PROVISIONAL\\
-T23 & Danh tính không khớp lặp & MISMATCH + hậu kiểm cờ trạng thái\\
+T23 & Danh tính không khớp lặp & MISMATCH + cờ yêu cầu hậu kiểm\\
 T24 & Sự kiện gửi lại & Không nhân đôi khoảng thời gian\\
 T25 & Số thứ tự cũ & Không ghi đè trạng thái hiện tại\\
 T26 & Cô lập dữ liệu giữa các tổ chức & Tổ chức A không truy cập B\\
 T27 & Bằng chứng không quyền & HTTP 403\\
-T28 & Path traversal & Request bị từ chối\\
-T29 & Tác vụ báo cáo lỗi & Trạng thái failed, không có file giả\\
+T28 & Path traversal & Yêu cầu bị từ chối\\
+T29 & Tác vụ báo cáo lỗi & Trạng thái failed, không có tệp giả\\
 T30 & Recompute bản tổng hợp & Cùng khoảng thời gian/chính sách cho cùng kết quả\\
 \bottomrule
 \end{longtable}
@@ -101,34 +101,35 @@ T30 & Recompute bản tổng hợp & Cùng khoảng thời gian/chính sách cho
 \clearpage
 \section*{PHỤ LỤC C -- KỊCH BẢN GÁN NHÃN THỰC NGHIỆM}
 \phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC C -- KỊCH BẢN GÁN NHÃN THỰC NGHIỆM}
-Nhãn tham chiếu nên được lưu dưới dạng CSV/JSON có mốc thời gian thay vì chỉ chỉ số khung hình để hỗ trợ video có FPS biến đổi. Với hiện diện:
+Nhãn tham chiếu nên được lưu dưới dạng CSV/JSON có mốc thời gian thay vì chỉ chỉ số khung hình để hỗ trợ video có FPS biến đổi. Ví dụ dưới đây là bản ghi giả định để minh họa lược đồ, không phải dữ liệu đã thu thập. Hậu tố Z biểu thị UTC. Với hiện diện:
 \begin{Verbatim}[fontsize=\small,breaklines=true,breakanywhere=true]
 employee_id,start_at,end_at,label,annotator
-NV001,2026-09-20T08:02:10.120,2026-09-20T09:15:33.450,PRESENT,A1
+SYN-NV001,2026-09-20T01:02:10.120Z,2026-09-20T02:15:33.450Z,PRESENT,A1
 \end{Verbatim}
-Điện thoại khoảng thời gian tương tự nhưng thêm người sử dụng độ tin cậy của người gán nhãn và tình trạng ``điện thoại on desk''. Theo dõi tập con sử dụng định dạng MOTChallenge hoặc chuyển đổi tương đương để có thể tính IDF1/HOTA bằng công cụ chuẩn.
+Khoảng sử dụng điện thoại tương tự nhưng thêm độ tin cậy về người sử dụng của người gán nhãn và tình trạng ``điện thoại trên bàn''. Theo dõi tập con sử dụng định dạng MOTChallenge hoặc chuyển đổi tương đương để có thể tính IDF1/HOTA bằng công cụ chuẩn.
 
-Khi hai người gán nhãn lệch mốc vào và ra dưới một ngưỡng nhỏ, có thể lấy trung vị mốc thời gian, nếu bất đồng về người sử dụng hoặc có/không sử dụng điện thoại thì bắt buộc adjudication. Báo cáo thực nghiệm phải ghi số lượng bất đồng và cách xử lý, tránh chỉ nêu ``gán nhãn thủ công'' mà không có kiểm soát chất lượng.
+Khi hai người gán nhãn lệch mốc vào và ra dưới một ngưỡng nhỏ, có thể lấy trung vị mốc thời gian, nếu bất đồng về người sử dụng hoặc có/không sử dụng điện thoại thì bắt buộc phân xử nhãn. Báo cáo thực nghiệm phải ghi số lượng bất đồng và cách xử lý, tránh chỉ nêu ``gán nhãn thủ công'' mà không có kiểm soát chất lượng.
 
 \clearpage
 \section*{PHỤ LỤC D -- CHECKLIST TRƯỚC KHI NGHIỆM THU}
 \phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC D -- CHECKLIST TRƯỚC KHI NGHIỆM THU}
 \begin{enumerate}
-\item Khóa mã phiên bản chương trình, trọng số mô hình và file cấu hình dùng cho kiểm tra.
+\item Khóa mã phiên bản chương trình, trọng số mô hình và tệp cấu hình dùng cho kiểm tra.
 \item Ghi phần cứng, hệ điều hành, phiên bản CUDA/PyTorch/Ultralytics.
 \item Ghi camera, độ phân giải, FPS, vị trí và ảnh sơ đồ ROI.
-\item Kiểm tra đồng hồ camera/edge/máy chủ.
-\item Chạy kiểm thử đơn vị aggregator để xác minh phép tính thời gian độc lập CV.
-\item Chạy tập con kiểm tra trước để xác minh gán nhãn parser.
+\item Kiểm tra đồng hồ camera/thiết bị biên/máy chủ.
+\item Chạy kiểm thử đơn vị bộ tổng hợp để xác minh phép tính thời gian độc lập CV.
+\item Chạy tập con kiểm tra trước để xác minh bộ đọc tệp nhãn.
 \item Khóa ngưỡng trên xác thực, không sửa sau khi xem kiểm tra.
 \item Chạy phương pháp cơ sở và phương pháp đề xuất trên cùng tập kiểm tra.
 \item Xuất các chỉ số tự động từ script, không nhập số bằng tay.
 \item Sinh confusion/error breakdown và kiểm tra tổng mẫu.
 \item Kiểm tra WPAR cho liên kết điện thoại.
 \item Kiểm tra báo cáo của từng nhân viên khớp CSV khoảng thời gian.
-\item Kiểm tra tenant/quyền truy cập bằng chứng.
-\item Thay toàn bộ bảng/hình có chữ ``mô phỏng'' nếu đã có kết quả thật.
-\item Lưu tệp kết quả kết quả cùng phiên bản mã nguồn để tái lập.
+\item Kiểm tra tổ chức/quyền truy cập bằng chứng.
+\item Tạo mục kết quả thực đo riêng khi có đầy đủ dữ liệu nguồn. Giữ nhãn và nguồn gốc của bảng, hình tổng hợp nếu tiếp tục sử dụng, không đổi nhãn mô phỏng thành thực nghiệm.
+\item Lưu tệp kết quả cùng phiên bản mã nguồn để tái lập.
 \end{enumerate}
 
 \input{generated/synthetic_appendix}
+\input{generated/interval_appendix}

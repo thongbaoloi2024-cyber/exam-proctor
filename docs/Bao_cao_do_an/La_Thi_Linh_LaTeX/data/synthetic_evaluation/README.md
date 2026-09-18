@@ -1,5 +1,7 @@
 # Dữ liệu tổng hợp phục vụ kiểm tra báo cáo
 
+Bộ bổ sung ngày 18/09/2026 tại `../interval_evaluation/` kiểm tra phép tính trên các khoảng thời gian cụ thể. Hai bộ có phạm vi khác nhau, không gộp thành số mẫu của một thực nghiệm CCTV. Đợt sửa 18/09 chỉ chạy chương trình sinh dữ liệu, không chạy các lệnh XeLaTeX trong hướng dẫn biên dịch bên dưới.
+
 **Đây không phải dữ liệu thực nghiệm CCTV.** Không có video được xử lý, mô hình YOLO/ByteTrack/FaceNet được chạy, hoặc người tham gia được quan sát để tạo bộ dữ liệu này. Các phân phối chưa được hiệu chỉnh theo dữ liệu thực địa.
 
 ## Tái tạo

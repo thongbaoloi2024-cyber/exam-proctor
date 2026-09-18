@@ -1,5 +1,15 @@
 # La_Thi_Linh - LaTeX
 
+## Bản rà soát ngày 18/09/2026
+
+Nội dung hiện tại là báo cáo bảy chương về ước lượng thời gian hiện diện từ camera. Xem [bản ghi chỉnh sửa](REVISION_20260918.md) và [đối chiếu tài liệu tham khảo](KIEM_CHUNG_TAI_LIEU.md).
+
+Theo yêu cầu trong đợt chỉnh sửa này, không gọi lệnh biên dịch hoặc kiểm tra bố cục PDF. Môi trường đã phát sinh thay đổi ở `main.pdf` trong lúc sửa nguồn, nhưng bản đó chưa được kiểm tra. Dữ liệu đánh giá là dữ liệu tổng hợp có ghi rõ nguồn gốc. Có thể tái tạo dữ liệu và hình bằng `python make_figures.py`, kiểm tra nguồn bằng `python check_report_sources.py`. Cả hai lệnh đều không tạo PDF.
+
+## Ghi chép chuyển đổi ban đầu
+
+Các số lượng hình, bảng và tài liệu dưới đây mô tả lần chuyển đổi ban đầu, không phải thống kê của bản rà soát hiện tại.
+
 Dự án được chuyển từ `La_Thi_Linh.pdf` theo cấu trúc của form `Nguyen_Huu_Sang.zip`.
 
 - Biên dịch bằng **XeLaTeX** (`xelatex main.tex`, chạy 2-3 lần để cập nhật mục lục/danh mục).

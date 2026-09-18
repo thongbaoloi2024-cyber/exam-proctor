@@ -1,0 +1,8 @@
+{
+  "generator": "generate_interval_evaluation.py",
+  "generator_sha256": "8c7daac39df1092ea92b080d920083980db1d3cb45b30321b8fa71fabd24d1eb",
+  "data_sha256": "05c75730ebed49207528a0594478a671551ecdbe785c2a9fd0d39f7131f633bc",
+  "cases": 14,
+  "validation": "13 exact expected results; 1 expected rejection",
+  "scope": "Reference interval arithmetic only; no detector, tracker or production FSM executed."
+}
