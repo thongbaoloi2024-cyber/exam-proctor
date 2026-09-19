@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "tex_files": 22,
+  "labels": 51,
+  "bibliography_entries": 28,
+  "unused_bibliography": [],
+  "unique_figures": [
+    "Images/new_architecture.pdf",
+    "Images/phenikaa_logo.png",
+    "Images/phone_state.pdf",
+    "Images/presence_state.pdf",
+    "Images/roi_scene.pdf",
+    "Images/sim_timeline.pdf",
+    "Images/synthetic_presence_f1.pdf",
+    "Images/synthetic_shift_errors.pdf",
+    "Images/synthetic_time_mae.pdf"
+  ],
+  "errors": [],
+  "scope": "Source structure, links, provenance and independent metric recalculation. No PDF layout check."
+}

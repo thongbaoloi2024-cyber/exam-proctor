@@ -1,0 +1,14 @@
+{
+  "executed_at_utc": "2026-09-19T05:27:52.928353+00:00",
+  "python": "3.12.3",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "seed": 20260919,
+  "hashes": {
+    "evaluate_interval_arithmetic.py": "e39f433e53cc5516fa3507c0b82accc5d3088e3afbafcf9ec38c3199106154fa",
+    "interval_arithmetic.py": "19e3fa475957c376291b710044bbcd2b2dec756f531cd87c8b4eca0f52178d8a",
+    "data/interval_evaluation/evaluation.json": "823ea34bf1aafe8455dc1953c54e3112a367a6451c761b0ed58fc039c0fc18c6",
+    "computational_evaluation/evaluation.json": "7cf1d7fc6bfecb893649c8724538f0c9072dbb7196a5eb2cca4b081efd9822bd"
+  },
+  "scope": "Reference interval module only. No video, detector, tracker or production FSM.",
+  "oracle": "Independent integer-second bit masks; exact for integer endpoints only."
+}

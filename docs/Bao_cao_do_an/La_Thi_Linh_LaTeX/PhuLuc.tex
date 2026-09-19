@@ -24,7 +24,7 @@ config\_version & String & Phiên bản camera/ROI/mô hình cấu hình\\
 \toprule
 track\_id & Integer & ID tạm trong phiên camera\\
 bbox & Float[4] & $x_1,y_1,x_2,y_2$ theo khung hình gốc\\
-detection\_\allowbreak độ tin cậy & Float & Độ tin cậy người gần nhất\\
+detection\_\allowbreak confidence & Float & Độ tin cậy người gần nhất\\
 area\_id & UUID/null & Khu vực làm việc được liên kết\\
 employee\_id & UUID/null & Nhân viên liên kết nếu có\\
 identity\_state & Enum & PROVISIONAL/\allowbreak VERIFIED/\allowbreak UNKNOWN/\allowbreak MISMATCH\\
@@ -35,7 +35,7 @@ last\_seen\_at & DateTime & Mốc quan sát phát hiện gần nhất\\
 \end{longtable}
 
 \subsection*{A.3. Đặc tả MonitoringEvent}
-Mỗi sự kiện gồm \texttt{event\_id}, \texttt{camera\_id}, \texttt{session\_id}, \texttt{event\_type}, \texttt{occurred\_at}, \texttt{employee\_id?}, \texttt{area\_id?}, \texttt{track\_id?}, \texttt{payload} và \texttt{evidence\_ref?}. Mã sự kiện do ứng dụng phía máy khách sinh UUID và giữ nguyên khi gửi lại. Máy chủ đặt ràng buộc duy nhất theo tổ chức+mã sự kiện.
+Mỗi sự kiện gồm \texttt{sequence}, \texttt{event\_id}, \texttt{camera\_id}, \texttt{session\_id}, \texttt{event\_type}, \texttt{occurred\_at}, \texttt{employee\_id?}, \texttt{area\_id?}, \texttt{track\_id?}, \texttt{payload} và \texttt{evidence\_ref?}. Mã sự kiện do ứng dụng phía máy khách sinh UUID và giữ nguyên khi gửi lại. Máy chủ đặt ràng buộc duy nhất theo tổ chức+mã sự kiện.
 
 \subsection*{A.4. Các loại sự kiện}
 \begin{longtable}{p{4.4cm}p{8.8cm}}
@@ -43,23 +43,24 @@ Mỗi sự kiện gồm \texttt{event\_id}, \texttt{camera\_id}, \texttt{session
 \textbf{Sự kiện} & \textbf{Ý nghĩa}\\
 \midrule\endfirsthead
 CAMERA\_ONLINE & Ứng dụng phía máy khách sẵn sàng xử lý\\
-CAMERA\_OFFLINE & Mất nguồn hoặc tín hiệu duy trì kết nối thời gian chờ\\
+CAMERA\_OFFLINE & Trạng thái nguồn hoặc kết nối không khả dụng, kèm mã nguyên nhân\\
 PRESENCE\_\allowbreak CANDIDATE & Bắt đầu có ứng viên trong ROI\\
 PRESENCE\_\allowbreak CONFIRMED & Mở khoảng hiện diện\\
 PRESENCE\_LOST & Vào khoảng đệm\\
 ABSENCE\_\allowbreak CONFIRMED & Đóng khoảng hiện diện\\
 IDENTITY\_\allowbreak VERIFIED & Vector đặc trưng khuôn mặt xác minh thành công\\
 IDENTITY\_\allowbreak MISMATCH & Có đủ bằng chứng không khớp\\
-PHONE\_START & Mở thời gian sử dụng khoảng sử dụng điện thoại\\
-PHONE\_END & Đóng thời gian sử dụng khoảng sử dụng điện thoại\\
+PHONE\_START & Mở phiên sử dụng điện thoại\\
+PHONE\_END & Đóng phiên sử dụng điện thoại\\
 PHONE\_\allowbreak EXCESS\_\allowbreak REACHED & Tổng điện thoại lần đầu vượt hạn mức\\
 SUMMARY\_\allowbreak MATERIALIZED & Hoàn thành tổng hợp ngày/ca\\
 \bottomrule
 \end{longtable}
 
 \clearpage
-\section*{PHỤ LỤC B -- DANH SÁCH CA KIỂM THỬ}
-\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC B -- DANH SÁCH CA KIỂM THỬ}
+\section*{PHỤ LỤC B -- DANH SÁCH CA KIỂM THỬ ĐỀ XUẤT}
+\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC B -- DANH SÁCH CA KIỂM THỬ ĐỀ XUẤT}
+Danh sách này là đặc tả kiểm thử cho hệ thống tích hợp, chưa phải bảng kết quả đã chạy. Kết quả thực thi bộ tính tham chiếu được công bố riêng trong Chương 6 và Phụ lục F.
 
 \begin{longtable}{p{1.1cm}p{4.6cm}p{7.5cm}}
 \toprule
@@ -83,7 +84,7 @@ T15 & Điện thoại giữa hai người & Liên kết UNKNOWN nếu biên chê
 T16 & Điện thoại trên bàn xa người & Điểm liên kết thấp, không phiên\\
 T17 & Tổng điện thoại < hạn mức & phần vượt hạn mức=0\\
 T18 & Tổng điện thoại > hạn mức & phần vượt hạn mức=phone-allowance\\
-T19 & Deduction disabled & hiệu lực=hiện diện\\
+T19 & Tắt điều chỉnh & Thời gian hiệu lực bằng hiện diện\\
 T20 & Điện thoại khi absent & Không tính điện thoại cho nhân viên\\
 T21 & Danh tính đã xác minh & Trạng thái chuyển VERIFIED\\
 T22 & Danh tính vùng biên chênh lệch & UNKNOWN/PROVISIONAL\\
@@ -94,7 +95,7 @@ T26 & Cô lập dữ liệu giữa các tổ chức & Tổ chức A không truy 
 T27 & Bằng chứng không quyền & HTTP 403\\
 T28 & Path traversal & Yêu cầu bị từ chối\\
 T29 & Tác vụ báo cáo lỗi & Trạng thái failed, không có tệp giả\\
-T30 & Recompute bản tổng hợp & Cùng khoảng thời gian/chính sách cho cùng kết quả\\
+T30 & Tính lại bản tổng hợp & Cùng khoảng thời gian/chính sách cho cùng kết quả\\
 \bottomrule
 \end{longtable}
 
@@ -111,8 +112,8 @@ Khoảng sử dụng điện thoại tương tự nhưng thêm độ tin cậy v
 Khi hai người gán nhãn lệch mốc vào và ra dưới một ngưỡng nhỏ, có thể lấy trung vị mốc thời gian, nếu bất đồng về người sử dụng hoặc có/không sử dụng điện thoại thì bắt buộc phân xử nhãn. Báo cáo thực nghiệm phải ghi số lượng bất đồng và cách xử lý, tránh chỉ nêu ``gán nhãn thủ công'' mà không có kiểm soát chất lượng.
 
 \clearpage
-\section*{PHỤ LỤC D -- CHECKLIST TRƯỚC KHI NGHIỆM THU}
-\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC D -- CHECKLIST TRƯỚC KHI NGHIỆM THU}
+\section*{PHỤ LỤC D -- ĐIỀU KIỆN KIỂM TRA TRƯỚC NGHIỆM THU}
+\phantomsection\addcontentsline{toc}{section}{\numberline{}PHỤ LỤC D -- ĐIỀU KIỆN KIỂM TRA TRƯỚC NGHIỆM THU}
 \begin{enumerate}
 \item Khóa mã phiên bản chương trình, trọng số mô hình và tệp cấu hình dùng cho kiểm tra.
 \item Ghi phần cứng, hệ điều hành, phiên bản CUDA/PyTorch/Ultralytics.
@@ -120,10 +121,10 @@ Khi hai người gán nhãn lệch mốc vào và ra dưới một ngưỡng nh�
 \item Kiểm tra đồng hồ camera/thiết bị biên/máy chủ.
 \item Chạy kiểm thử đơn vị bộ tổng hợp để xác minh phép tính thời gian độc lập CV.
 \item Chạy tập con kiểm tra trước để xác minh bộ đọc tệp nhãn.
-\item Khóa ngưỡng trên xác thực, không sửa sau khi xem kiểm tra.
+\item Khóa ngưỡng trên tập xác thực trước khi chạy tập kiểm tra.
 \item Chạy phương pháp cơ sở và phương pháp đề xuất trên cùng tập kiểm tra.
 \item Xuất các chỉ số tự động từ script, không nhập số bằng tay.
-\item Sinh confusion/error breakdown và kiểm tra tổng mẫu.
+\item Sinh ma trận nhầm lẫn, phân nhóm sai số và kiểm tra tổng số mẫu.
 \item Kiểm tra WPAR cho liên kết điện thoại.
 \item Kiểm tra báo cáo của từng nhân viên khớp CSV khoảng thời gian.
 \item Kiểm tra tổ chức/quyền truy cập bằng chứng.

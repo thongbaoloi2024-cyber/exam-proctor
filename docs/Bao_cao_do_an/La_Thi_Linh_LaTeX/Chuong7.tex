@@ -3,86 +3,39 @@
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 
-\subsection{Tổng kết đề tài}
-Đồ án nghiên cứu bài toán chuyển video từ một camera CCTV cố định thành các khoảng hiện diện của nhiều nhân viên trong khu vực làm việc. Giải pháp kết hợp phát hiện đối tượng, theo dõi đa đối tượng, liên kết vùng và xác minh danh tính nhằm xây dựng dữ liệu thời gian có thể giải thích và truy vết.
+\subsection{Kết quả đạt được}
+Đồ án nghiên cứu bài toán chuyển quan sát từ một camera CCTV cố định thành các khoảng hiện diện của nhiều nhân viên trong khu vực làm việc. Thời gian hiệu lực được xác định từ hiện diện hợp lệ và chính sách điện thoại, không được diễn giải là năng suất hoặc chất lượng công việc.
 
-Kiến trúc đề xuất sử dụng YOLOv8 để phát hiện người và điện thoại, ByteTrack để duy trì quỹ đạo, vùng quan tâm đa giác để mô tả vị trí làm việc và FaceNet để hỗ trợ xác minh danh tính. Hai máy trạng thái xử lý hiện diện và sử dụng điện thoại. Bộ tổng hợp giữ riêng thời gian hiện diện, thời gian điện thoại, hạn mức, phần vượt hạn mức và thời gian hiệu lực. Các thành phần quản trị, truyền dữ liệu và báo cáo được tổ chức quanh các thực thể nhân viên, camera và khu vực làm việc.
+Về thiết kế, đồ án xây dựng chuỗi xử lý gồm YOLOv8, ByteTrack, ROI, xác minh danh tính hỗ trợ và hai máy trạng thái theo thời gian. Mã quỹ đạo được tách khỏi mã nhân viên để hạn chế việc đổi quỹ đạo làm chuyển thời lượng giữa các cá nhân. Các trạng thái chưa xác định được giữ lại cho hậu kiểm. Thời điểm mở và đóng khoảng được truy hồi về quan sát phù hợp, còn gián đoạn nguồn được ghi riêng với vắng mặt.
 
-\subsection{Kết quả chính đạt được trong thiết kế}
-\subsubsection{Chuỗi xử lý đa người từ một camera CCTV}
-Thiết kế coi quan sát phát hiện người là đối tượng nền và duy trì nhiều quỹ đạo song song. Mã quỹ đạo được tách rõ khỏi mã nhân viên. ROI cung cấp ngữ cảnh vị trí và FaceNet chỉ đóng vai trò xác minh khi đủ dữ liệu. Lựa chọn này nhằm giảm yêu cầu nhận diện khuôn mặt liên tục trong cảnh nhiều người, nhưng mức độ phù hợp cần được xác nhận trên dữ liệu camera mục tiêu.
+Về mô hình dữ liệu, đồ án xác định quan hệ giữa nhân viên, khu vực, lịch làm việc, phiên camera, sự kiện và chính sách. Kiến trúc thiết bị biên và máy chủ hỗ trợ lưu sự kiện, xử lý gửi lại, tổng hợp theo ca và truy nguyên báo cáo. Hạn mức được áp dụng riêng từng ca, trong khi báo cáo ngày cộng kết quả đã tính. Các biện pháp phân quyền, giảm lượng ảnh lưu và kiểm toán được đưa vào thiết kế theo yêu cầu bảo vệ dữ liệu \cite{vnprivacy}.
 
-\subsubsection{Ước lượng thời gian dựa trên khoảng thời gian}
-Thời lượng được tính từ các mốc thời gian và khoảng hiện diện thay vì số khung hình. Khoảng đệm hạn chế ảnh hưởng của lỗi bỏ sót ngắn. Khi xác nhận trạng thái, đầu và cuối khoảng được truy hồi về mốc bắt đầu ứng viên và mốc quan sát tin cậy cuối cùng. Cách tổ chức này giảm sai lệch do thời gian chờ xác nhận và giữ ý nghĩa tham số khi tốc độ xử lý thay đổi.
+Về kiểm chứng, báo cáo kèm mô-đun tính khoảng thời gian và chương trình đánh giá có thể chạy lại. Bộ 24 kịch bản xác định cho kết quả đúng ở 20 đầu vào hợp lệ và từ chối bốn đầu vào sai. Thực nghiệm với 2.000 trường hợp ngẫu nhiên không ghi nhận chênh lệch giữa bộ tính khoảng và bộ đối chiếu biểu diễn theo từng giây. Các phép đảo thứ tự, nhân đôi, dịch mốc và chia khoảng bảo toàn kết quả. Đây là kết quả kiểm thử bộ tính tham chiếu trên dữ liệu tổng hợp.
 
-\subsubsection{Theo dõi điện thoại có gán người}
-Điện thoại được phát hiện cùng suy luận YOLO để tiết kiệm tài nguyên. Liên kết người--điện thoại dùng quan hệ không gian và vùng làm việc, trường hợp mơ hồ được đặt UNKNOWN thay vì ép gán. Máy trạng thái điện thoại lọc các quan sát phát hiện ngắn. Chính sách hạn mức tách khỏi mô hình, do đó có thể thay quy định mà không huấn luyện lại bộ phát hiện.
+Bộ số liệu có sẵn gồm số đếm phân loại, 12 phiên điện thoại và 30 ca được chuẩn hóa cách tính và nguồn gốc. Các bảng và biểu đồ cùng lấy dữ liệu từ tệp nguồn. Việc kiểm tra này bảo đảm các chỉ số trình bày có thể tính lại, đồng thời làm rõ rằng độ lớn sai số tổng hợp phụ thuộc giả định sinh nhiễu.
 
-\subsubsection{Khả năng giải thích}
-Thời gian làm việc hiệu lực không được lưu như một con số không nguồn gốc. Hệ thống giữ các khoảng hiện diện, các khoảng sử dụng điện thoại, phiên bản chính sách, gián đoạn camera và trạng thái danh tính. Báo cáo có thể giải thích một phép trừ bằng các phiên cụ thể và cung cấp bằng chứng theo quyền.
+\subsection{Đối chiếu mục tiêu nghiên cứu}
+Quan hệ người--quỹ đạo--nhân viên được giải quyết ở mức thiết kế bằng liên kết ROI và xác minh danh tính có điều kiện. Cơ chế lọc nhiễu được đặc tả bằng máy trạng thái, khoảng đệm và truy hồi mốc. Tuy nhiên, chưa có phép đo trên video để định lượng mức giảm đổi định danh hoặc sai số biên do các cơ chế này mang lại.
 
-\subsubsection{Nền tảng quản trị và bảo vệ dữ liệu}
-Thiết kế nền tảng kết hợp xác thực, phân quyền theo tổ chức, vé kết nối WebSocket, nhật ký kiểm toán, kiểm soát truy cập bằng chứng và tác vụ báo cáo. Dữ liệu sinh trắc học và hình ảnh được tách khỏi dữ liệu thời lượng phục vụ bảng điều khiển. Thời hạn lưu trữ và quyền truy cập được xác định theo từng nhóm dữ liệu \cite{vnprivacy}.
+Yêu cầu tổng hợp thời gian đã được cụ thể hóa bằng đại số khoảng và kiểm chứng trên bộ tính tham chiếu. Việc hợp nhất trước khi lấy độ dài tránh cộng trùng, phép loại khoảng mất quan sát tách thiếu dữ liệu khỏi vắng mặt, còn cờ điều chỉnh cho phép giữ riêng số liệu quan sát và chính sách. Kết quả này đáp ứng mục tiêu kiểm tra phép tính, chưa thay thế kiểm thử toàn bộ luồng từ camera đến báo cáo.
 
-\subsection{Về kết quả đánh giá}
-Chương 6 xác định quy trình đánh giá phát hiện, theo dõi, hiện diện, liên kết điện thoại và sai số thời lượng. Bộ dữ liệu tổng hợp kèm báo cáo cho phép tính lại các chỉ số từ số đếm và bản ghi thời gian. Các bảng, biểu đồ được sinh từ cùng một nguồn dữ liệu nhằm kiểm tra tính nhất quán của phép tính và cách trình bày.
+Yêu cầu giải thích và truy vết được thể hiện trong thiết kế lưu sự kiện, phiên bản cấu hình và chính sách. Câu hỏi về đóng góp của từng thành phần thị giác vào sai số cuối cùng vẫn cần các thí nghiệm loại bỏ thành phần trên cùng dữ liệu có nhãn tham chiếu.
 
-Bộ tính tham chiếu bổ sung đã cho kết quả khớp đáp án ở 13 kịch bản khoảng thời gian hợp lệ và từ chối đúng một kịch bản có thời lượng âm. Phân tích trên cùng dòng thời gian cũng làm rõ tác động riêng của hạn mức tới thời gian hiệu lực. Các kết quả này chỉ mô tả phép tính trên dữ liệu tổng hợp. Chưa có cơ sở để suy ra độ chính xác, tốc độ xử lý hoặc thứ hạng thuật toán trên camera thực địa. Việc kiểm chứng giả thuyết về hiệu quả của giải pháp cần dựa trên video có nhãn tham chiếu độc lập, cấu hình đã khóa và kết quả chạy có thể tái lập.
+\subsection{Hạn chế}
+\subsubsection{Phạm vi bằng chứng thực nghiệm}
+Đầu vào đánh giá hiện tại là dữ liệu tổng hợp. Các ca ngẫu nhiên mở rộng tình huống kiểm tra phần mềm nhưng chưa được hiệu chỉnh theo một văn phòng cụ thể. Chưa có cơ sở để báo cáo độ chính xác của YOLOv8, ByteTrack, FaceNet, FPS hoặc mức sai số triển khai từ các bộ dữ liệu này. Bộ tính được chạy độc lập, chưa chứng minh dịch vụ tích hợp và máy trạng thái thực thi đúng đặc tả.
 
-\subsection{Hạn chế còn tồn tại}
-\subsubsection{Che khuất và lần đổi định danh}
-Một camera đơn không thể quan sát xuyên vật cản. ByteTrack giảm phân mảnh trong che khuất ngắn nhưng không đảm bảo danh tính qua che khuất dài. Nếu quỹ đạo mới xuất hiện trong cùng ROI, hệ thống cần xác minh danh tính hoặc hậu kiểm.
+\subsubsection{Giới hạn quan sát từ một camera}
+Che khuất dài, người ngồi sau bàn, khuôn mặt nhỏ và điện thoại có kích thước ảnh thấp có thể làm mất hoặc sai liên kết. Điểm giữa cạnh đáy hộp bao không luôn nằm trên mặt sàn, nên phép biến đổi homography không tự khắc phục được sai lệch của điểm neo. Phát hiện điện thoại và quan hệ không gian với người cũng chỉ là dấu hiệu gián tiếp của hành vi sử dụng.
 
-\subsubsection{Góc camera và độ phân giải}
-ROI trong ảnh là xấp xỉ không gian. Với góc nhìn camera nghiêng lớn, điểm giữa cạnh đáy hộp bao có sai lệch. Khuôn mặt và điện thoại nhỏ cũng làm giảm khả năng xác minh/phát hiện. Việc chọn vị trí camera là một phần của hệ thống chứ không chỉ vấn đề mô hình.
-
-\subsubsection{Nhận diện danh tính}
-FaceNet phụ thuộc chất lượng khuôn mặt. Thiết kế UNKNOWN giúp tránh kết luận quá mức nhưng làm một số khoảng thời gian cần hậu kiểm. Nếu tổ chức yêu cầu xác định danh tính mạnh, cần thêm camera gần, ReID toàn thân hoặc cơ chế xác nhận vào ca khác.
-
-\subsubsection{Hành vi sử dụng điện thoại không đồng nghĩa phát hiện điện thoại}
-Quan hệ không gian và điều kiện thời gian chỉ cung cấp dấu hiệu gián tiếp về hành vi sử dụng điện thoại. Điện thoại đặt gần người hoặc được chuyển giữa hai người vẫn có thể gây nhầm lẫn. Ước lượng tư thế và tương tác tay--vật thể là hướng mở rộng cần được đánh giá bằng dữ liệu phù hợp.
-
-\subsubsection{Khái niệm thời gian làm việc}
-Sự hiện diện không đồng nghĩa với năng suất lao động. Một người có mặt tại bàn không chứng minh đang thực hiện nhiệm vụ. Vì vậy hệ thống chỉ nên cung cấp ``thời gian hiện diện ước lượng'' và ``thời gian hiệu lực theo chính sách'', không dùng độc lập cho đánh giá năng suất hay quyết định kỷ luật.
-
-\subsubsection{Dữ liệu mô phỏng}
-Hạn chế chính là chưa có kết quả đo trên bộ video thực địa có nhãn tham chiếu. Dữ liệu tổng hợp hỗ trợ kiểm tra công thức và phân tích độ nhạy theo giả định, nhưng chưa thể dùng để xác nhận chất lượng mô hình hoặc mức sai số khi triển khai.
-
-\subsubsection{Quyền riêng tư và công bằng}
-Camera và vector đặc trưng khuôn mặt có rủi ro quyền riêng tư. Sai số có thể không đồng đều theo ánh sáng, vị trí bàn, chiều cao, che khuất và đặc điểm khuôn mặt. Cần đánh giá theo nhóm điều kiện kỹ thuật, cung cấp cơ chế khiếu nại/hậu kiểm và hạn chế người được xem bằng chứng.
+\subsubsection{Giới hạn diễn giải và vận hành}
+Thời gian hiện diện không phản ánh đầy đủ công việc ngoài khu vực được quan sát. Chính sách khấu trừ điện thoại là lựa chọn nghiệp vụ có thể bật hoặc tắt, không phải kết luận khách quan về năng suất. Việc triển khai cần đánh giá độ bao phủ, sai số theo điều kiện camera, quyền truy cập và quy trình hậu kiểm trước khi sử dụng dữ liệu trong quản trị.
 
 \subsection{Hướng phát triển}
-\begin{itemize}
-\item Thu thập và gán nhãn bộ dữ liệu CCTV thực, tinh chỉnh bộ phát hiện người/điện thoại cho góc camera mục tiêu.
-\item Bổ sung tái định danh người để nối quỹ đạo sau che khuất dài hoặc đổi camera.
-\item Hiệu chỉnh homography mặt sàn để liên kết vùng ROI ổn định hơn điểm giữa cạnh đáy hộp bao ảnh.
-\item Thử nghiệm ước lượng tư thế và tương tác tay--vật thể để phân biệt cầm điện thoại và điện thoại đặt trên bàn.
-\item Hỗ trợ nhiều camera có vùng chuyển giao và tránh tính trùng thời gian.
-\item Xây dựng cơ chế suy luận tại thiết bị biên tối ưu ONNX/TensorRT và đo kiểm hiệu năng trên thiết bị thật.
-\item Hoàn thiện hàng đợi sự kiện ngoại tuyến, xử lý lặp an toàn khi tạo dữ liệu dẫn xuất và khả năng quan sát tập trung.
-\item Bổ sung cổng thông tin nhân viên để xem dữ liệu cá nhân và gửi yêu cầu hậu kiểm theo chính sách tổ chức.
-\item Đánh giá tác động đối với quyền riêng tư, thời hạn lưu trữ và quy trình vận hành trước khi triển khai thực tế.
-\end{itemize}
+Ưu tiên tiếp theo là thu thập một bộ video thí điểm có nhãn tham chiếu độc lập, khóa cấu hình và chạy các phương pháp cơ sở cùng phương pháp đề xuất. Dữ liệu cần bao phủ người ngồi, che khuất, giao nhau, đổi vị trí, điện thoại trên bàn và gián đoạn nguồn. Kết quả được dùng để hiệu chỉnh giả định sai số, thay cho việc chọn phân phối nhiễu chỉ theo mục đích minh họa.
 
-\subsection{Đối chiếu với câu hỏi nghiên cứu}
-Câu hỏi về liên kết người--quỹ đạo--nhân viên được giải quyết ở mức thiết kế bằng cách tách mã quỹ đạo khỏi mã nhân viên, sử dụng ROI làm ngữ cảnh và FaceNet làm tín hiệu xác minh. Thiết kế này không loại bỏ hoàn toàn hiện tượng đổi định danh nhưng làm bất định được biểu diễn và hậu kiểm thay vì che giấu trong một ID duy nhất.
+Ở cấp phần mềm, cần tích hợp bộ tính với máy trạng thái và kho sự kiện, kiểm thử mất ACK, đảo thứ tự, khởi động lại và nhiều ca trong ngày. Mỗi lần chạy phải lưu đầu vào, cấu hình, phiên bản mã nguồn và kết quả để đối chiếu báo cáo với sự kiện gốc.
 
-Câu hỏi về lọc nhiễu thời gian được trả lời bằng máy trạng thái hiện diện, khoảng đệm và truy hồi mốc thời gian. Phân tích lý thuyết cho thấy dùng ngưỡng theo giây phù hợp hơn theo khung hình, còn truy hồi mốc thời gian giảm sai lệch có hệ thống do thời gian chờ xác nhận. Mức tham số tối ưu vẫn phải được chốt bằng xác thực trên video thật.
+Ở cấp thị giác, các hướng mở rộng gồm tinh chỉnh bộ phát hiện cho camera mục tiêu, sử dụng tư thế và tương tác tay--vật thể để nhận biết điện thoại, và bổ sung tái định danh khi cần nối quỹ đạo sau che khuất dài. Việc tối ưu thiết bị biên hoặc mở rộng nhiều camera được thực hiện sau khi xác định được sai số và nút thắt trên cấu hình cơ sở.
 
-Câu hỏi về sử dụng điện thoại được tiếp cận theo ba tầng: quan sát phát hiện, liên kết người--điện thoại và xác nhận theo thời gian. Trạng thái UNKNOWN cùng biên chênh lệch liên kết nhằm ưu tiên tránh trừ nhầm người. Tuy nhiên, chỉ từ hộp bao vẫn chưa mô tả đầy đủ tương tác tay--vật thể, đây là giới hạn cần được kiểm chứng thực nghiệm.
-
-Câu hỏi về nguồn sai số được phản ánh trong khung đánh giá đa tầng và kế hoạch loại bỏ từng thành phần. F1 phát hiện đối tượng, IDF1, sai số liên kết vùng và danh tính, WPAR và MAE thời lượng được nối với nhau bằng dòng thời gian và phân loại nguyên nhân lỗi. Cách tiếp cận này giúp xác định thành phần cần cải thiện thay vì chỉ nhìn một con số cuối.
-
-Câu hỏi về quyền riêng tư được xử lý bằng xử lý tại thiết bị biên, tối thiểu hóa bằng chứng, phân quyền, thời hạn lưu trữ, kiểm toán và phiên bản chính sách. Đây là các biện pháp thiết kế, một triển khai thực tế vẫn cần đánh giá tác động, căn cứ xử lý dữ liệu và quy trình tổ chức phù hợp.
-
-\subsection{Giá trị ứng dụng và điều kiện triển khai}
-Giá trị chính của hệ thống là cung cấp chuỗi dữ liệu hiện diện có cấu trúc từ camera sẵn có, hỗ trợ phát hiện khoảng cần đối chiếu và tạo báo cáo giải thích được. Hệ thống phù hợp hơn với môi trường camera cố định, vùng làm việc tương đối rõ và có quy trình hậu kiểm. Nó không phù hợp để suy luận năng suất hoặc tự động đưa ra quyết định kỷ luật.
-
-Trước triển khai cần hoàn thành ít nhất bốn điều kiện. Thứ nhất, camera phải được khảo sát về góc nhìn, độ phân giải và che khuất. Thứ hai, phải có thực nghiệm trên chính môi trường mục tiêu và ngưỡng chấp nhận được phê duyệt. Thứ ba, tổ chức phải công bố mục đích, quyền truy cập, thời hạn lưu trữ và cơ chế phản hồi. Thứ tư, vận hành phải có giám sát độ bao phủ, xử lý gián đoạn quan sát và quy trình hậu kiểm.
-
-Triển khai nên bắt đầu ở chế độ quan sát thử: hệ thống tạo chỉ số và báo cáo thử nhưng chưa tác động chính sách. Kết quả được so với nguồn hiện có trong một khoảng đủ dài. Chỉ sau khi hiểu sai số theo từng khu vực và hoàn thiện quy trình khiếu nại mới xem xét mở rộng phạm vi sử dụng.
-
-\subsection{Kết luận}
-Đóng góp của đồ án ở cấp hệ thống là biến video CCTV đa người thành các khoảng hiện diện có danh tính, kết hợp theo dõi điện thoại theo chính sách và tổng hợp thành đại lượng thời gian có thể giải thích. YOLOv8, ByteTrack và FaceNet là các thành phần nền, phần thiết kế riêng nằm ở cách tổ chức chúng với ROI, liên kết, máy trạng thái, tổng hợp khoảng thời gian, máy chủ ứng dụng thời gian thực và kiểm toán.
-
-Khi số liệu mô phỏng được thay bằng thực nghiệm có nhãn tham chiếu, hệ thống có thể được đánh giá khách quan bằng cả chỉ số thị giác và sai số thời gian. Đây là điều kiện cần trước khi xem xét sử dụng trong thực tế.
+Kết quả của đồ án tạo cơ sở thiết kế và bộ kiểm chứng phép tính cho bài toán ước lượng thời gian hiện diện. Mức độ phù hợp khi vận hành cần tiếp tục được xác nhận bằng video có nhãn và kiểm thử hệ thống tích hợp.

@@ -16,7 +16,7 @@ Trong đồ án này, cụm từ \textit{thời gian làm việc} được đị
 
 \subsection{Mục tiêu nghiên cứu}
 \subsubsection{Mục tiêu tổng quát}
-Mục tiêu tổng quát là xây dựng một hệ thống thị giác máy tính có khả năng quan sát đồng thời nhiều nhân viên từ một camera CCTV cố định, xác định trạng thái hiện diện của từng nhân viên trong khu vực làm việc, theo dõi thời lượng sử dụng điện thoại, ước lượng thời gian làm việc theo chính sách và cung cấp dữ liệu gần thời gian thực cho hệ thống quản trị, hậu kiểm và báo cáo.
+Mục tiêu tổng quát là đề xuất kiến trúc và phương pháp xử lý cho một hệ thống thị giác máy tính có khả năng quan sát đồng thời nhiều nhân viên từ một camera CCTV cố định, xác định trạng thái hiện diện của từng nhân viên trong khu vực làm việc, theo dõi thời lượng sử dụng điện thoại, ước lượng thời gian làm việc theo chính sách và cung cấp dữ liệu gần thời gian thực cho hệ thống quản trị, hậu kiểm và báo cáo.
 
 \subsubsection{Mục tiêu cụ thể}
 Đồ án đặt ra các mục tiêu cụ thể sau:
@@ -26,9 +26,9 @@ Mục tiêu tổng quát là xây dựng một hệ thống thị giác máy tí
 \item Cho phép cấu hình một hoặc nhiều vùng làm việc dạng đa giác trên ảnh camera, gán vùng với nhân viên hoặc vị trí công việc và xác định quan hệ người--vùng bằng điểm neo ở đáy hộp bao.
 \item Tận dụng vector đặc trưng khuôn mặt để hỗ trợ xác minh rằng quỹ đạo trong vùng phù hợp với nhân viên được gán, nhưng không phụ thuộc vào nhận diện khuôn mặt ở mọi khung hình.
 \item Thiết kế máy trạng thái hiện diện gồm các trạng thái trung gian để lọc bỏ lỗi bỏ sót phát hiện ngắn, đồng thời ước lượng mốc bắt đầu và kết thúc khoảng hiện diện.
-\item Thiết kế máy trạng thái sử dụng điện thoại và thuật toán liên kết người--điện thoại nhằm tránh gán một điện thoại cho nhiều nhân viên hoặc coi điện thoại đặt trên bàn là đang sử dụng.
+\item Thiết kế máy trạng thái sử dụng điện thoại và thuật toán liên kết người--điện thoại nhằm hạn chế gán nhầm người sử dụng. Điện thoại đặt trên bàn được xác định là trường hợp đối chứng âm cần kiểm tra riêng.
 \item Xây dựng bộ tổng hợp thời gian tạo các \textit{khoảng hiện diện}, tính tổng hiện diện, tổng thời gian điện thoại, phần vượt mức cho phép và thời gian làm việc hiệu lực.
-\item Xây dựng máy chủ ứng dụng FastAPI, WebSocket, cơ sở dữ liệu quan hệ, kho bằng chứng, phân quyền và bảng điều khiển theo dõi theo thời gian thực.
+\item Thiết kế máy chủ ứng dụng sử dụng FastAPI, WebSocket, cơ sở dữ liệu quan hệ, kho bằng chứng, phân quyền và bảng điều khiển giám sát.
 \item Thiết kế quy trình đánh giá gồm chỉ số phát hiện đối tượng, theo dõi, F1 hiện diện, F1 sử dụng điện thoại, sai số gán điện thoại, MAE/MAPE thời gian và hiệu năng xử lý.
 \item Thiết kế hệ thống theo nguyên tắc tối thiểu hóa dữ liệu, truy vết được và có chính sách lưu trữ phù hợp với yêu cầu bảo vệ dữ liệu cá nhân.
 \end{itemize}
@@ -62,7 +62,7 @@ Các nội dung sau được đặt ngoài phạm vi của phiên bản đồ á
 \item Xác định chính xác người đang cầm điện thoại trong mọi trường hợp tay và điện thoại bị che hoàn toàn.
 \item Chống giả mạo sinh trắc học chuyên dụng hoặc nhận diện deepfake.
 \item Tự động áp dụng chế tài nhân sự dựa trên kết quả mô hình.
-\item Khẳng định độ chính xác triển khai thực tế khi chưa thay số liệu mô phỏng bằng dữ liệu CCTV có nhãn tham chiếu.
+\item Đánh giá độ chính xác và hiệu năng của chuỗi xử lý CCTV hoàn chỉnh trên dữ liệu thực địa.
 \end{itemize}
 
 \subsection{Bài toán ước lượng thời gian làm việc}
@@ -71,52 +71,47 @@ Tại thời điểm $t$, xét tập quan sát phát hiện người $D_t=\{d_t^
  p(q)=\left(\frac{x_1+x_2}{2},y_2\right),
  \label{eq:anchor}
 \end{equation}
-trong đó $(x_1,y_1,x_2,y_2)$ là hộp bao. Quỹ đạo là ứng viên của vùng nếu $p(q)\in A_e$. Việc dùng điểm đáy thay cho tâm hộp giúp xấp xỉ tốt hơn vị trí người trên mặt phẳng sàn khi hộp bao cao và giao nhau.
+trong đó $(x_1,y_1,x_2,y_2)$ là hộp bao. Quỹ đạo là ứng viên của vùng nếu $p(q)\in A_e$. Điểm neo này được dùng như một quy ước liên kết trong ảnh. Nó chỉ gần điểm tiếp xúc sàn khi chân người được quan sát đầy đủ, nên cần kiểm tra riêng đối với người ngồi hoặc bị bàn che.
 
-Sau khi liên kết không gian, máy trạng thái biến chuỗi quan sát nhị phân thành các khoảng hiện diện $I_e=\{[s_k,e_k]\}$. Gọi $W_0$ là hợp các cửa sổ lịch làm việc và $U$ là hợp các khoảng không quan sát được. Miền tính toán là $W=W_0\setminus U$. Tổng thời gian hiện diện trong miền này là:
+Sau khi liên kết không gian, máy trạng thái biến chuỗi quan sát nhị phân thành các khoảng hiện diện $I_e=\{[s_k,e_k)\}$. Gọi $W_0$ là hợp các cửa sổ lịch làm việc và $U$ là hợp các khoảng không quan sát được. Miền tính toán là $W=W_0\setminus U$. Tổng thời gian hiện diện trong miền này là:
 \begin{equation}
- T_{presence}(e)=\sum_k |[s_k,e_k]\cap W|.
+ T_{presence}(e)=\left|\left(\bigcup_k [s_k,e_k)\right)\cap W\right|.
  \label{eq:presence}
 \end{equation}
 Tương tự, các phiên sử dụng điện thoại đã xác nhận tạo thành tập $P_e$. Tổng thời gian sử dụng điện thoại chỉ được tính trên phần giao với khoảng hiện diện và lịch làm việc:
 \begin{equation}
- T_{phone}(e)=\left|\left(\bigcup_j P_j\right)\cap\left(\bigcup_k [s_k,e_k]\right)\cap W\right|.
+ T_{phone}(e)=\left|\left(\bigcup_{P_j\in P_e} P_j\right)\cap\left(\bigcup_k [s_k,e_k)\right)\cap W\right|.
  \label{eq:phone}
 \end{equation}
-Với hạn mức $T_{allow}$, phần vượt mức là:
+Với hạn mức hữu hạn $T_{allow}\geq0$ áp dụng cho một ca, phần vượt mức là:
 \begin{equation}
  T_{excess}(e)=\max(0,T_{phone}(e)-T_{allow}).
  \label{eq:excess}
 \end{equation}
-Thời gian làm việc hiệu lực được định nghĩa:
+Gọi $d\in\{0,1\}$ là cờ bật điều chỉnh thời gian. Thời gian làm việc hiệu lực được định nghĩa:
 \begin{equation}
- T_{effective}(e)=\max(0,T_{presence}(e)-T_{excess}(e)).
+ T_{effective}(e)=T_{presence}(e)-d\,T_{excess}(e).
  \label{eq:effective}
 \end{equation}
-Các khoảng hiện diện phải được hợp nhất trước khi cộng để tránh tính trùng. Cách tách bốn đại lượng ở trên giúp bảo toàn dữ liệu gốc và cho phép giải thích đầy đủ mọi điều chỉnh.
+Các khoảng được biểu diễn nửa kín và hợp nhất trước khi tính để tránh cộng trùng. Do $0\leq T_{phone}\leq T_{presence}$ và $T_{allow}\geq0$, thời gian hiệu lực luôn nằm trong $[0,T_{presence}]$. Khi $d=0$, hệ thống vẫn ghi nhận phần vượt nhưng không khấu trừ. Với nhiều ca, hạn mức được áp dụng riêng cho từng ca trước khi cộng thành báo cáo ngày.
 
 \subsection{Định hướng giải pháp}
 Giải pháp được tổ chức theo năm lớp trách nhiệm. Lớp thu nhận nhận khung hình từ CCTV và chuẩn hóa kích thước. Lớp nhận thức chạy YOLOv8 một lần để tạo quan sát phát hiện người và điện thoại. Lớp theo dõi dùng ByteTrack duy trì quỹ đạo người. Lớp ngữ cảnh thực hiện liên kết vùng ROI, liên kết danh tính và người--điện thoại. Lớp thời gian cập nhật máy trạng thái hiện diện/điện thoại, sinh sự kiện và tổng hợp thời lượng. Sự kiện và trạng thái được gửi lên máy chủ qua WebSocket. Máy chủ lưu dữ liệu, tạo các khoảng thời gian và tổng hợp theo lịch cùng phiên bản chính sách. Kết quả tổng hợp tại máy chủ là bản chính thức, còn các giá trị hiển thị tạm tại thiết bị biên chỉ phục vụ theo dõi. Ảnh bằng chứng được lưu riêng theo quyền truy cập và thời hạn lưu trữ.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.96\textwidth]{Images/new_architecture.png}
-\caption{Kiến trúc tổng thể của hệ thống đề xuất}
-\label{fig:overall-architecture}
-\end{figure}
+Kiến trúc và các luồng dữ liệu được trình bày tại Hình~\ref{fig:architecture-ch4}.
 
 Kiến trúc này duy trì nguyên tắc ``một lần nhận thức, nhiều bộ xử lý sử dụng chung kết quả''. YOLO không được chạy riêng cho người và điện thoại, thay vào đó một kết quả suy luận được tách theo lớp. Xác minh khuôn mặt cũng không chạy mọi khung hình mà chỉ kích hoạt theo sự kiện: quỹ đạo mới, danh tính chưa đủ chắc chắn hoặc đến chu kỳ kiểm tra. Điều này giúp giảm tải và giảm phụ thuộc vào chất lượng khuôn mặt liên tục.
 
 \subsection{Các đóng góp chính}
-Các đóng góp của đồ án ở mức thiết kế và xây dựng phương pháp đánh giá gồm:
+Các đóng góp trong phạm vi báo cáo gồm thiết kế hệ thống và kiểm chứng bộ tính thời gian:
 \begin{enumerate}
 \item Kiến trúc camera đa người kết hợp bộ phát hiện, bộ theo dõi và đa giác ROI để chuyển video thành chuỗi hiện diện theo từng nhân viên.
 \item Cơ chế liên kết định danh theo hai tầng: vị trí/ROI là tín hiệu duy trì chính, vector đặc trưng khuôn mặt là tín hiệu xác minh khi đủ chất lượng, trạng thái không chắc chắn được biểu diễn tường minh thay vì ép nhãn.
 \item Máy trạng thái hiện diện có khoảng đệm, cho phép hấp thụ lỗi bỏ sót phát hiện ngắn nhưng vẫn truy hồi thời điểm quan sát bắt đầu và kết thúc để hạn chế sai số thời gian có hệ thống.
 \item Cơ chế liên kết người--điện thoại và máy trạng thái sử dụng điện thoại, chỉ tính phiên sử dụng khi quan sát phát hiện liên quan đúng quỹ đạo và duy trì đủ lâu.
 \item Mô hình tổng hợp thời gian tách tổng thời gian hiện diện, thời gian sử dụng điện thoại, hạn mức, phần vượt hạn mức và thời gian làm việc hiệu lực để bảo đảm khả năng giải thích.
-\item Nền tảng máy chủ ứng dụng nhiều tổ chức với WebSocket, RBAC, kho lưu trữ bằng chứng, tác vụ báo cáo và nhật ký kiểm toán, cho phép giám sát nhiều nhân viên trong cùng camera mà không cần truyền toàn bộ video đến bảng điều khiển.
-\item Khung đánh giá đa tầng kết nối chất lượng phát hiện đối tượng/theo dõi với sai số cuối cùng theo đơn vị thời gian, thay vì chỉ báo cáo Accuracy/F1 ở cấp khung hình.
+\item Thiết kế nền tảng quản trị nhiều tổ chức với WebSocket, RBAC, kho bằng chứng và nhật ký kiểm toán.
+\item Bộ tính khoảng thời gian tham chiếu và bộ kiểm thử tái lập, gồm 24 kịch bản xác định và 2.000 trường hợp ngẫu nhiên đối chiếu bằng biểu diễn độc lập. Quy trình đánh giá thị giác được xây dựng riêng để khảo sát sai số đầu vào.
 \end{enumerate}
 
 \subsection{Câu hỏi nghiên cứu}
@@ -133,7 +128,7 @@ Các đóng góp của đồ án ở mức thiết kế và xây dựng phương
 Câu hỏi thứ nhất được trả lời thông qua chuỗi liên kết \textit{phát hiện--quỹ đạo--ROI--danh tính}. Câu hỏi thứ hai được khảo sát bằng máy trạng thái, khoảng đệm và cơ chế truy hồi mốc thời gian. Câu hỏi thứ ba dẫn đến thuật toán liên kết người--điện thoại bảo thủ và trạng thái UNKNOWN. Câu hỏi thứ tư yêu cầu đánh giá theo nhiều tầng thay vì chỉ báo cáo một chỉ số độ chính xác. Câu hỏi cuối cùng được phản ánh trong thiết kế kho sự kiện, thời hạn lưu trữ, RBAC và nhật ký kiểm toán.
 
 \subsection{Phương pháp nghiên cứu và quy trình thực hiện}
-Đồ án áp dụng phương pháp nghiên cứu tài liệu, phân tích yêu cầu và thiết kế hệ thống, kết hợp kiểm tra phép tính trên dữ liệu tổng hợp. Thực nghiệm trên video CCTV có nhãn tham chiếu được xác định là bước đánh giá tiếp theo. Trước hết, bài toán nghiệp vụ được phân rã thành các đại lượng có thể quan sát và tính toán: quan sát phát hiện, quỹ đạo, vùng làm việc, trạng thái định danh, khoảng hiện diện và khoảng sử dụng điện thoại. Tiếp theo, các thành phần được mô hình hóa độc lập, xác định đầu vào, đầu ra và bất biến cần duy trì. Quy trình tích hợp và đánh giá được đề xuất từ cấp thành phần đến cấp kết quả thời gian. Trong phạm vi báo cáo, các phép tính được thực hiện trên dữ liệu tổng hợp và các khoảng thời gian kiểm tra có đáp án xác định.
+Đồ án áp dụng phương pháp nghiên cứu tài liệu, phân tích yêu cầu và thiết kế hệ thống, kết hợp thực nghiệm tính toán trên đầu vào tổng hợp. Thực nghiệm trên video CCTV có nhãn tham chiếu được xác định là bước đánh giá tiếp theo. Trước hết, bài toán nghiệp vụ được phân rã thành các đại lượng có thể quan sát và tính toán: quan sát phát hiện, quỹ đạo, vùng làm việc, trạng thái định danh, khoảng hiện diện và khoảng sử dụng điện thoại. Tiếp theo, các thành phần được mô hình hóa độc lập, xác định đầu vào, đầu ra và bất biến cần duy trì. Quy trình tích hợp và đánh giá được đề xuất từ cấp thành phần đến cấp kết quả thời gian. Trong phạm vi báo cáo, các phép tính được thực hiện trên dữ liệu tổng hợp và các khoảng thời gian kiểm tra có đáp án xác định.
 
 Quy trình thực hiện gồm sáu giai đoạn:
 \begin{enumerate}
@@ -141,11 +136,11 @@ Quy trình thực hiện gồm sáu giai đoạn:
 \item \textbf{Xây dựng mô hình khái niệm:} định nghĩa rõ mã quỹ đạo, mã nhân viên, khu vực làm việc, khoảng hiện diện, khoảng sử dụng điện thoại, gián đoạn camera và phiên bản chính sách.
 \item \textbf{Thiết kế thuật toán:} lựa chọn bộ phát hiện, bộ theo dõi, phép kiểm tra hình học, cơ chế danh tính và các máy trạng thái theo thời gian.
 \item \textbf{Thiết kế nền tảng:} xây dựng giao thức telemetry/sự kiện, mô hình lưu trữ, phân quyền, hàng đợi khi mất mạng và luồng sinh báo cáo.
-\item \textbf{Kiểm thử có kiểm soát:} sử dụng quan sát phát hiện giả lập, video kịch bản và dữ liệu mô phỏng để kiểm chứng công thức, chuyển trạng thái và cách tính chỉ số.
+\item \textbf{Kiểm thử có kiểm soát:} thực thi bộ tính khoảng thời gian trên đầu vào tổng hợp, đối chiếu đáp án và các bất biến. Kiểm thử máy trạng thái từ chuỗi quan sát được xác định là bước tích hợp tiếp theo.
 \item \textbf{Thực nghiệm chính thức:} thu thập video có nhãn tham chiếu, khóa cấu hình trên xác thực, chạy tập kiểm tra độc lập và phân tích sai số. Giai đoạn này là điều kiện bắt buộc trước khi đưa ra kết luận định lượng về môi trường thực.
 \end{enumerate}
 
-Trong toàn bộ quy trình, đồ án ưu tiên khả năng tái lập. Một kết quả đánh giá chỉ có ý nghĩa khi đi kèm phiên bản mã nguồn, trọng số mô hình, cấu hình ngưỡng, mô tả camera và phiên bản dữ liệu. Các bảng mô phỏng trong Chương 6 vì vậy được xem là công cụ kiểm tra logic, không thay thế thực nghiệm.
+Trong toàn bộ quy trình, đồ án ưu tiên khả năng tái lập. Một kết quả đánh giá chỉ có ý nghĩa khi đi kèm phiên bản mã nguồn, trọng số mô hình, cấu hình ngưỡng, mô tả camera và phiên bản dữ liệu. Chương 6 công bố đầu vào và kết quả thực thi của bộ tính tham chiếu. Các bảng số đếm và nhiễu tổng hợp được dùng để minh họa chỉ số, tách khỏi kết quả kiểm thử phần mềm.
 
 \subsection{Tiêu chí đánh giá thành công}
 Thành công của hệ thống được xem xét trên bốn lớp. Ở lớp thị giác, bộ phát hiện và bộ theo dõi cần tạo quan sát đủ ổn định cho nhiều người. Ở lớp ngữ cảnh, hệ thống phải gán quỹ đạo vào vùng và xử lý trường hợp mơ hồ mà không ép kết luận. Ở lớp thời gian, khoảng thời gian phải phản ánh hợp lý thời điểm vào/ra và không bị phân mảnh bởi nhiễu ngắn. Ở lớp nền tảng, dữ liệu phải được truyền, lưu, phân quyền và giải thích nhất quán.
@@ -169,7 +164,7 @@ Nền tảng & Kết quả có tin cậy, truy vết và bảo vệ được kh�
 Các lớp có quan hệ nhân quả nhưng không đồng nhất. Bộ phát hiện có F1 cao chưa chắc tạo thời gian chính xác nếu các lỗi tập trung tại biên vào/ra. Bộ theo dõi có ít lần đổi định danh vẫn có thể gán sai nhân viên nếu phân công vùng cấu hình sai. Ngược lại, một số lỗi bỏ sót phát hiện ngắn có thể được máy trạng thái hấp thụ và gần như không ảnh hưởng đến tổng thời gian. Do đó đồ án tránh dùng một chỉ số duy nhất để đại diện toàn bộ hệ thống.
 
 \subsection{Rủi ro nghiên cứu và biện pháp kiểm soát}
-Rủi ro thứ nhất là thiếu dữ liệu CCTV có nhãn tham chiếu. Biện pháp kiểm soát là tách rõ dữ liệu mô phỏng và dữ liệu thực, mọi kết luận thực tế phải chờ tập kiểm tra độc lập. Rủi ro thứ hai là nhầm lẫn giữa hiện diện và năng suất. Báo cáo sử dụng thuật ngữ ``thời gian hiện diện ước lượng'' và không suy luận chất lượng công việc từ video.
+Rủi ro thứ nhất là thiếu dữ liệu CCTV có nhãn tham chiếu. Biện pháp kiểm soát là công bố nguồn gốc dữ liệu và giới hạn kết luận theo thành phần đã được thực thi. Rủi ro thứ hai là nhầm lẫn giữa hiện diện và năng suất. Báo cáo sử dụng thuật ngữ ``thời gian hiện diện ước lượng'' và không suy luận chất lượng công việc từ video.
 
 Rủi ro thứ ba là sai số không đồng đều giữa các vị trí camera. Một bàn ở xa có thể có phát hiện điện thoại kém hơn bàn gần, người bị che khuất nhiều có thể chịu vắng mặt giả cao hơn. Khi đánh giá chính thức, kết quả cần được phân nhóm theo vùng, ánh sáng, mức che khuất và kích thước đối tượng thay vì chỉ báo cáo trung bình toàn bộ.
 
@@ -178,4 +173,4 @@ Rủi ro thứ tư liên quan đến quyền riêng tư. Hệ thống giảm r�
 Rủi ro cuối cùng là tự động hóa quá mức. Khi danh tính hoặc người sử dụng điện thoại không chắc chắn, trạng thái phải là UNKNOWN và chuyển sang hậu kiểm, hệ thống không được biến độ tin cậy thấp thành một quyết định nhân sự chắc chắn. Nguyên tắc này xuyên suốt từ thiết kế thuật toán đến giao diện báo cáo.
 
 \subsection{Bố cục báo cáo}
-Chương 2 trình bày cơ sở lý thuyết về phát hiện đối tượng, YOLOv8, theo dõi dựa trên phát hiện đối tượng, ByteTrack, ROI, FaceNet, xử lý thời gian, phát hiện sử dụng điện thoại và các chỉ số đánh giá. Chương 3 khảo sát phương án chấm công và phân tích yêu cầu. Chương 4 mô tả thiết kế hệ thống, máy trạng thái, mô hình dữ liệu và luồng thời gian. Chương 5 trình bày cài đặt dự kiến từ mã nguồn nền hiện có. Chương 6 xây dựng quy trình kiểm thử và minh họa bằng dữ liệu mô phỏng có ghi nhãn rõ. Chương 7 tổng kết kết quả thiết kế, hạn chế và hướng phát triển.
+Chương 2 trình bày cơ sở lý thuyết về phát hiện đối tượng, YOLOv8, theo dõi dựa trên phát hiện đối tượng, ByteTrack, ROI, FaceNet, xử lý thời gian, phát hiện sử dụng điện thoại và các chỉ số đánh giá. Chương 3 khảo sát phương án chấm công và phân tích yêu cầu. Chương 4 mô tả thiết kế hệ thống, máy trạng thái, mô hình dữ liệu và luồng thời gian. Chương 5 trình bày phương án cài đặt và bộ tính tham chiếu. Chương 6 báo cáo thực nghiệm tính toán trên đầu vào tổng hợp, phân tích số liệu và đề xuất quy trình đánh giá video. Chương 7 tổng kết kết quả, hạn chế và hướng phát triển.

@@ -1,4 +1,5 @@
 % !TeX program = xelatex
+\RequirePackage{fix-cm}
 \documentclass{article}
 \usepackage[fontsize=13pt]{scrextend}
 \usepackage[a4paper,right=2.5cm,left=3.5cm,top=2.5cm,bottom=2.5cm]{geometry}
@@ -16,6 +17,7 @@
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{fvextra}
+\fvset{baselinestretch=1.0,breakanywhere=true}
 \usepackage{hyperref}
 \usepackage{caption}
 \hypersetup{unicode=true,colorlinks=true,linkcolor=black,urlcolor=black,citecolor=black}
@@ -23,6 +25,7 @@
 \setlength{\parskip}{6pt}
 \setlength{\parindent}{1cm}
 \setlength{\emergencystretch}{4em}
+\raggedbottom
 \sloppy
 \setcounter{secnumdepth}{3}
 \titlespacing*{\section}{0pt}{0pt}{24pt}
@@ -34,8 +37,18 @@
 \renewcommand{\contentsname}{MỤC LỤC}
 \renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}
 \renewcommand{\listtablename}{DANH MỤC BẢNG}
+\renewcommand{\refname}{TÀI LIỆU THAM KHẢO}
 \renewcommand{\figurename}{Hình}
 \renewcommand{\tablename}{Bảng}
+\gappto\captionsvietnamese{%
+  \renewcommand{\contentsname}{MỤC LỤC}%
+  \renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}%
+  \renewcommand{\listtablename}{DANH MỤC BẢNG}%
+  \renewcommand{\refname}{TÀI LIỆU THAM KHẢO}%
+}
+\newcommand{\reporttablelinespread}{1.15}
+\AtBeginEnvironment{table}{\par\renewcommand{\baselinestretch}{\reporttablelinespread}\small}
+\AtBeginEnvironment{longtable}{\par\renewcommand{\baselinestretch}{\reporttablelinespread}\small}
 \renewcommand{\thefigure}{\arabic{figure}}
 \renewcommand{\thetable}{\arabic{table}}
 \captionsetup{font=normalsize,labelfont=bf,labelsep=space,justification=centering,singlelinecheck=true}

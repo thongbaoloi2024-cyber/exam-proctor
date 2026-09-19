@@ -4,7 +4,7 @@
 \setcounter{subsubsection}{0}
 
 \subsection{Khảo sát các phương pháp ghi nhận thời gian làm việc}
-Trong phạm vi phân tích chức năng của đồ án, các phương án ghi nhận thời gian được chia thành bốn nhóm: thẻ/QR, sinh trắc học tại điểm vào, dữ liệu đăng nhập thiết bị và giám sát bằng camera. Thẻ hoặc QR có cấu trúc triển khai tương đối đơn giản nhưng chỉ ghi nhận sự kiện tại điểm quét. Sinh trắc học tại cửa giảm khả năng chấm hộ nhưng vẫn chủ yếu đo mốc vào/ra. Dữ liệu đăng nhập máy tính phản ánh hoạt động trên thiết bị song không phù hợp với công việc không liên tục thao tác máy. Camera có thể cung cấp quan sát liên tục nhưng tạo yêu cầu cao hơn về quyền riêng tư, xử lý nhiều người và sai số do góc nhìn.
+Trong phạm vi phân tích chức năng của đồ án, các phương án ghi nhận thời gian được chia thành bốn nhóm: thẻ/QR, sinh trắc học tại điểm vào, dữ liệu đăng nhập thiết bị và giám sát bằng camera. Thẻ hoặc QR có cấu trúc triển khai tương đối đơn giản nhưng chỉ ghi nhận sự kiện tại điểm quét. Sinh trắc học tại cửa bổ sung bước xác minh người chấm công nhưng vẫn chủ yếu đo mốc vào/ra. Dữ liệu đăng nhập máy tính phản ánh hoạt động trên thiết bị song không phù hợp với công việc không liên tục thao tác máy. Camera có thể cung cấp quan sát liên tục nhưng tạo yêu cầu cao hơn về quyền riêng tư, xử lý nhiều người và sai số do góc nhìn.
 
 Bảng đối chiếu thể hiện nhận định phân tích của tác giả theo chức năng cần có, không phải kết quả khảo sát người dùng hay đo chi phí thị trường. Vì đề tài tập trung vào ``sự hiện diện trong khu vực làm việc'', phương án camera được chọn như nguồn quan sát chính. Tuy nhiên hệ thống không thay thế hoàn toàn thiết bị chấm công. Trong triển khai thực tế, kết quả camera nên được xem như một lớp dữ liệu bổ sung và có thể đối chiếu với lịch làm việc, đăng nhập hoặc dữ liệu kiểm soát cửa.
 
@@ -71,7 +71,7 @@ Quản trị viên đăng ký camera, URL nguồn hoặc mã camera, ảnh tham 
 Bảng điều khiển hiển thị trạng thái camera, danh sách nhân viên theo vùng, PRESENT/ABSENT/UNKNOWN, thời gian hiện diện trong ngày, thời gian điện thoại, mức hạn mức và phần vượt hạn mức. WebSocket cập nhật khi trạng thái thay đổi, không cần gửi video liên tục.
 
 \subsubsection{Theo dõi hiện diện}
-Ứng dụng camera phải mở và đóng khoảng hiện diện chính xác theo chuyển trạng thái. Sự kiện tối thiểu gồm ENTER\_CANDIDATE, PRESENCE\_CONFIRMED, TEMPORARILY\_LOST, ABSENCE\_CONFIRMED và IDENTITY\_MISMATCH. Sự kiện có số thứ tự và mốc thời gian để máy chủ phát hiện trùng/lệch thứ tự.
+Ứng dụng camera phải mở và đóng khoảng hiện diện chính xác theo chuyển trạng thái. Sự kiện tối thiểu gồm PRESENCE\_CANDIDATE, PRESENCE\_CONFIRMED, PRESENCE\_LOST, ABSENCE\_CONFIRMED và IDENTITY\_MISMATCH. Sự kiện có số thứ tự và mốc thời gian để máy chủ phát hiện trùng/lệch thứ tự.
 
 \subsubsection{Theo dõi sử dụng điện thoại}
 Hệ thống phải liên kết phát hiện điện thoại với một quỹ đạo người, khi không chắc chắn không được tự động gán. Phiên điện thoại có start/end, thời lượng, độ tin cậy tổng hợp và bằng chứng tùy chính sách. Tổng thời gian điện thoại trong ca được cộng từ các phiên giao với khoảng hiện diện.
@@ -108,7 +108,7 @@ Phương án cài đặt xem xét tái sử dụng hạ tầng FastAPI, SQLAlche
 Một luồng điển hình bắt đầu khi quản trị viên tổ chức tạo nhân viên, đăng ký mẫu khuôn mặt tham chiếu, thêm camera và vẽ khu vực làm việc. Trước ca, ứng dụng camera tải cấu hình phiên bản hóa. Trong ca, ứng dụng phía máy khách phát hiện/theo dõi, tạo trạng thái hiện tại và sự kiện. Người giám sát mở bảng điều khiển để xem trạng thái. Cuối ca, tiến trình nền sinh báo cáo đọc khoảng thời gian, chính sách và sự kiện để sinh bản tổng hợp. Khi có danh tính không khớp hoặc liên kết điện thoại không chắc chắn, người giám sát có thể xem bằng chứng và ghi nhận hậu kiểm mà không thay đổi sự kiện gốc.
 
 \subsection{Tiêu chí nghiệm thu}
-Hệ thống được coi là đạt về chức năng khi có thể chạy từ camera/video, theo dõi đồng thời tối thiểu ba người trong kịch bản thử, lưu khoảng thời gian riêng theo nhân viên, tính đúng phép giao lịch làm việc, cộng phiên sử dụng điện thoại đúng người sử dụng, áp dụng hạn mức và tạo báo cáo. Về chất lượng mô hình, ngưỡng nghiệm thu phải được xác định trước khi đánh giá trên tập kiểm tra độc lập, bản báo cáo hiện tại dùng số liệu mô phỏng để xác minh cấu trúc đánh giá chứ không đặt chúng làm bằng chứng nghiệm thu.
+Hệ thống được coi là đạt về chức năng khi có thể chạy từ camera/video, theo dõi đồng thời tối thiểu ba người trong kịch bản thử, lưu khoảng thời gian riêng theo nhân viên, tính đúng phép giao lịch làm việc, cộng phiên sử dụng điện thoại đúng người sử dụng, áp dụng hạn mức và tạo báo cáo. Về chất lượng mô hình, ngưỡng nghiệm thu phải được xác định trước khi đánh giá trên tập kiểm tra độc lập, kết quả kiểm thử bộ tính tham chiếu ở Chương 6 chỉ đáp ứng phần kiểm tra số học, chưa phải bằng chứng nghiệm thu chuỗi xử lý CCTV.
 
 \subsection{Đặc tả các use case chính}
 \subsubsection{UC01 -- Cấu hình camera và vùng làm việc}
@@ -119,15 +119,15 @@ Tiền điều kiện là người dùng có quyền quản lý camera trong đ�
 \subsubsection{UC02 -- Ghi nhận một phiên hiện diện}
 Ứng dụng camera nhận khung hình, tạo quỹ đạo và xác định điểm neo nằm trong ROI. Khi quan sát duy trì đủ thời gian, trạng thái chuyển từ CANDIDATE sang PRESENT và phát sự kiện. Trong thời gian PRESENT, lỗi bỏ sót phát hiện ngắn đưa trạng thái sang GRACE nhưng khoảng thời gian chưa đóng. Nếu người xuất hiện lại trước thời gian chờ, trạng thái quay về PRESENT, nếu không, khoảng thời gian đóng tại thời điểm quan sát tin cậy cuối cùng.
 
-Hậu điều kiện là máy chủ có sự kiện idempotent, khoảng thời gian không âm và trạng thái hiện tại nhất quán. Nếu danh tính chưa đủ chắc chắn, khoảng thời gian được đánh dấu PROVISIONAL hoặc NEEDS\_REVIEW theo chính sách, hệ thống không tự gán một nhân viên khác chỉ vì quỹ đạo gần ROI.
+Hậu điều kiện là máy chủ có cơ chế xử lý sự kiện lặp an toàn, khoảng thời gian không âm và trạng thái hiện tại nhất quán. Nếu danh tính chưa đủ chắc chắn, khoảng thời gian được đánh dấu PROVISIONAL hoặc NEEDS\_REVIEW theo chính sách, hệ thống không tự gán một nhân viên khác chỉ vì quỹ đạo gần ROI.
 
 \subsubsection{UC03 -- Ghi nhận sử dụng điện thoại}
-Khi bộ phát hiện trả hộp bao điện thoại, mô-đun liên kết tạo danh sách quỹ đạo ứng viên. Nếu đúng một ứng viên vượt ngưỡng và quỹ đạo đang PRESENT, trạng thái điện thoại của quỹ đạo được cập nhật. Quan sát phải duy trì qua ngưỡng vào trước khi mở phiên. Khi điện thoại mất tạm thời, khoảng đệm tránh phân mảnh, khi hết khoảng đệm, phiên đóng ở \texttt{last\_positive}.
+Khi bộ phát hiện trả hộp bao điện thoại, mô-đun liên kết tạo danh sách quỹ đạo ứng viên. Nếu ứng viên tốt nhất vượt ngưỡng, có biên chênh lệch đủ lớn so với ứng viên thứ hai và quỹ đạo đang PRESENT, trạng thái điện thoại của quỹ đạo được cập nhật. Quan sát phải duy trì qua ngưỡng vào trước khi mở phiên. Khi điện thoại mất tạm thời, khoảng đệm tránh phân mảnh, khi hết khoảng đệm, phiên đóng ở \texttt{last\_positive}.
 
 Nếu hai người có điểm liên kết gần nhau, người sử dụng là UNKNOWN và không tạo điều chỉnh thời gian cá nhân. Nếu điện thoại nằm trên bàn ngoài vùng tương tác, hệ thống chỉ ghi thống kê phát hiện. Nếu tổng điện thoại trong ca vượt hạn mức, bản tổng hợp tính phần vượt hạn mức nhưng vẫn giữ riêng từng phiên để hậu kiểm.
 
 \subsubsection{UC04 -- Xem bảng điều khiển và báo cáo}
-Người giám sát mở bảng điều khiển trong phạm vi camera được phân công. REST cung cấp bản chụp trạng thái hiện tại ban đầu, WebSocket chỉ gửi phần cập nhật sau thời điểm kết nối. Khi mất WebSocket, ứng dụng phía máy khách kết nối lại và tải lại ảnh chụp để tránh bỏ sự kiện. Báo cáo cuối ca hiển thị tổng thời gian hiện diện, thời gian không quan sát được, thời gian sử dụng điện thoại, hạn mức, phần vượt hạn mức, thời gian hiệu lực và cờ cần hậu kiểm.
+Người giám sát mở bảng điều khiển trong phạm vi camera được phân công. REST cung cấp bản chụp trạng thái hiện tại ban đầu, WebSocket chỉ gửi phần cập nhật sau thời điểm kết nối. Khi mất WebSocket, ứng dụng phía máy khách kết nối lại và tải lại bản chụp trạng thái để đồng bộ dữ liệu. Báo cáo cuối ca hiển thị tổng thời gian hiện diện, thời gian không quan sát được, thời gian sử dụng điện thoại, hạn mức, phần vượt hạn mức, thời gian hiệu lực và cờ cần hậu kiểm.
 
 Quyền xem thời lượng không mặc nhiên bao gồm quyền xem ảnh chụp. Khi người dùng mở bằng chứng, máy chủ kiểm tra quyền truy cập riêng, tạo bản ghi kiểm toán và trả URL có thời hạn ngắn. Báo cáo đã phát hành giữ phiên bản chính sách để không thay đổi âm thầm khi quản trị viên sửa chính sách sau đó.
 
@@ -166,9 +166,9 @@ Ma trận truy vết nối yêu cầu với thành phần thiết kế và kiể
 FR-PRES & ROI, FSM hiện diện & PresenceEvent, khoảng thời gian & Vào/ra, che khuất, biên ROI\\
 FR-ID & IdentityAssociator & IdentityState & Đúng người, không khớp danh tính, ảnh kém\\
 FR-PHONE & PhoneAssociator, FSM điện thoại & PhoneSession & Trên bàn, cầm ngắn, người sử dụng mơ hồ\\
-FR-AGG & WorkTime Bộ tổng hợp & DailySummary & Giao ca, hạn mức, qua nửa đêm\\
-FR-RT & WebSocket gateway & Trạng thái phần cập nhật & Reconnect, slow bên nhận dữ liệu\\
-NFR-SEC & Auth, RBAC, bằng chứng & Bản ghi kiểm toán & Cô lập dữ liệu giữa các tổ chức, phát lại, traversal\\
+FR-AGG & Bộ tổng hợp thời gian & DailySummary & Giao ca, hạn mức, qua nửa đêm\\
+FR-RT & WebSocket gateway & Bản cập nhật trạng thái & Kết nối lại, bên nhận xử lý chậm\\
+NFR-SEC & Auth, RBAC, bằng chứng & Bản ghi kiểm toán & Cô lập dữ liệu giữa các tổ chức, phát lại, truy cập vượt thư mục\\
 NFR-REL & Hàng đợi ngoại tuyến/materializer & ACK, cursor & Mất mạng, gửi trùng, đảo thứ tự\\
 \bottomrule
 \end{tabularx}
@@ -177,7 +177,7 @@ NFR-REL & Hàng đợi ngoại tuyến/materializer & ACK, cursor & Mất mạng
 \subsection{Phân tích dữ liệu vào và dữ liệu ra}
 Dữ liệu đầu vào gồm bốn nhóm. Nhóm cấu hình chứa camera, ROI, phân công, lịch làm việc và chính sách. Nhóm quan sát chứa khung hình và mốc thời gian. Nhóm danh tính chứa mẫu tham chiếu và siêu dữ liệu chất lượng. Nhóm điều khiển chứa lệnh start/stop, reload cấu hình và yêu cầu ảnh chụp. Mỗi nhóm có vòng đời và mức nhạy cảm khác nhau, không nên gom vào một cấu trúc hoặc một quyền truy cập chung.
 
-Dữ liệu ra cũng được chia theo thời hạn sử dụng. Trạng thái hiện tại có vòng đời ngắn và phục vụ bảng điều khiển. Sự kiện là dữ liệu bất biến phục vụ tái dựng. Khoảng thời gian là dữ liệu đã materialize phục vụ tính toán. Bản tổng hợp là kết quả theo chính sách. Bằng chứng là dữ liệu nhạy cảm, chỉ tồn tại khi có lý do lưu. Việc phân tầng giúp thời hạn lưu trữ xóa bằng chứng sớm mà không làm mất bản tổng hợp cần cho báo cáo.
+Dữ liệu ra cũng được chia theo thời hạn sử dụng. Trạng thái hiện tại có vòng đời ngắn và phục vụ bảng điều khiển. Sự kiện là dữ liệu bất biến phục vụ tái dựng. Khoảng thời gian là dữ liệu được dựng từ sự kiện để phục vụ tính toán. Bản tổng hợp là kết quả theo chính sách. Bằng chứng là dữ liệu nhạy cảm, chỉ tồn tại khi có lý do lưu. Việc phân tầng cho phép xóa bằng chứng theo thời hạn mà không làm mất bản tổng hợp cần cho báo cáo.
 
 Mọi mốc thời gian trao đổi qua API dùng UTC kèm thông tin múi giờ ở tầng hiển thị. Thời lượng dùng đồng hồ đơn điệu tại ứng dụng phía máy khách trong một phiên, đồng hồ thời gian thực dùng để đặt sự kiện lên lịch. Khi máy chủ nhận sự kiện, nó giữ cả \texttt{occurred\_at} do ứng dụng phía máy khách cung cấp và \texttt{received\_at} của máy chủ để đo trễ và phát hiện đồng hồ bất thường.
 
@@ -186,10 +186,10 @@ Giao diện cấu hình ROI phải hiển thị khung hình tham chiếu đúng 
 
 Các con số thời gian cần hiển thị cùng nguồn gốc. Khi thời gian hiệu lực khác tổng thời gian hiện diện, người dùng có thể mở phần giải thích để xem hạn mức và các phiên sử dụng điện thoại. Khi có thời gian không quan sát được, báo cáo phải cảnh báo thay vì trình bày kết quả như bao phủ toàn bộ ca.
 
-Về vận hành, hệ thống cần kiểm tra tình trạng hoạt động cho cơ sở dữ liệu, Redis, tiến trình xử lý nền và camera tín hiệu duy trì kết nối. Cảnh báo được phát khi thời gian lưu trong hàng đợi vượt ngưỡng, camera mất kết nối, dung lượng bằng chứng gần đầy hoặc tác vụ báo cáo thất bại nhiều lần. Tài liệu hướng dẫn vận hành tối thiểu mô tả cách thu hồi mã xác thực camera, xoay khóa, phục hồi cơ sở dữ liệu và xử lý cấu hình ROI sai.
+Về vận hành, hệ thống cần kiểm tra tình trạng hoạt động cho cơ sở dữ liệu, Redis, tiến trình xử lý nền và tín hiệu duy trì kết nối của camera. Cảnh báo được phát khi thời gian lưu trong hàng đợi vượt ngưỡng, camera mất kết nối, dung lượng bằng chứng gần đầy hoặc tác vụ báo cáo thất bại nhiều lần. Tài liệu hướng dẫn vận hành tối thiểu mô tả cách thu hồi mã xác thực camera, xoay khóa, phục hồi cơ sở dữ liệu và xử lý cấu hình ROI sai.
 
 \subsection{Ưu tiên yêu cầu theo giai đoạn}
-Giai đoạn tối thiểu khả dụng ưu tiên một camera, nhiều ROI, khoảng hiện diện, bản tổng hợp và bảng điều khiển trạng thái. Giai đoạn tiếp theo bổ sung xác minh danh tính, liên kết điện thoại, bằng chứng có kiểm soát và báo cáo. Các khả năng đa camera, tái định danh người xuyên camera, ước lượng tư thế và tương tác bàn tay và tự động tối ưu ngưỡng thuộc giai đoạn mở rộng.
+Giai đoạn tối thiểu khả dụng ưu tiên một camera, nhiều ROI, khoảng hiện diện, bản tổng hợp và bảng điều khiển trạng thái. Giai đoạn tiếp theo bổ sung xác minh danh tính, liên kết điện thoại, bằng chứng có kiểm soát và báo cáo. Các khả năng đa camera, tái định danh người xuyên camera, ước lượng tư thế, nhận biết tương tác bàn tay và tự động tối ưu ngưỡng thuộc giai đoạn mở rộng.
 
 Cách phân giai đoạn hạn chế rủi ro tích hợp. Hiện diện có thể được kiểm chứng độc lập trước khi thêm chính sách sử dụng điện thoại. Danh tính có thể chạy ở chế độ quan sát để đo độ bao phủ trước khi ảnh hưởng đến khoảng thời gian. Mỗi tính năng nhạy cảm cần cờ bật hoặc tắt chức năng và khả năng quay lại chế độ chỉ ghi nhật ký nếu phát hiện sai số cao.
 

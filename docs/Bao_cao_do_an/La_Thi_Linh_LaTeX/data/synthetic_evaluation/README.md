@@ -1,6 +1,6 @@
 # Dữ liệu tổng hợp phục vụ kiểm tra báo cáo
 
-Bộ bổ sung ngày 18/09/2026 tại `../interval_evaluation/` kiểm tra phép tính trên các khoảng thời gian cụ thể. Hai bộ có phạm vi khác nhau, không gộp thành số mẫu của một thực nghiệm CCTV. Đợt sửa 18/09 chỉ chạy chương trình sinh dữ liệu, không chạy các lệnh XeLaTeX trong hướng dẫn biên dịch bên dưới.
+Bộ `../interval_evaluation/` kiểm tra phép tính trên 24 kịch bản cố định; bộ `../../computational_evaluation/` đánh giá bộ tính với 2.000 đầu vào sinh ngẫu nhiên và bộ tính đối chiếu độc lập. Các bộ có phạm vi khác nhau, không gộp thành số mẫu của một thực nghiệm CCTV. Đợt rà soát ngày 19/09/2026 đã biên dịch và kiểm tra PDF.
 
 **Đây không phải dữ liệu thực nghiệm CCTV.** Không có video được xử lý, mô hình YOLO/ByteTrack/FaceNet được chạy, hoặc người tham gia được quan sát để tạo bộ dữ liệu này. Các phân phối chưa được hiệu chỉnh theo dữ liệu thực địa.
 
@@ -22,7 +22,7 @@ Chương trình cần Python và Matplotlib. Hạt giống cố định là `202
 - `manifest.json`: giả định, số mẫu, hạt giống, mã SHA-256 và phạm vi sử dụng.
 - `../../generated/synthetic_results.tex`: nội dung và bảng của Chương 6.
 - `../../generated/synthetic_appendix.tex`: toàn bộ 30 ca ở mức S1 trong Phụ lục E.
-- `../../Images/synthetic_*.png`: ba biểu đồ được báo cáo sử dụng.
+- `../../Images/synthetic_*.pdf`: ba biểu đồ vector được báo cáo sử dụng; có bản PNG để xem trước.
 
 Các trường hậu tố `_s` có đơn vị giây. Chỉ số Precision, Recall, F1, FPR, WPAR và coverage là tỉ lệ từ 0 đến 1. `mape_percent` có đơn vị phần trăm. Sai số có dấu bằng ước lượng trừ tham chiếu.
 

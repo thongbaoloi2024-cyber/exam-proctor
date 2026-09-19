@@ -3,7 +3,7 @@
   "seed": 20260917,
   "calibrated_to_field_data": false,
   "generator": "generate_synthetic_evaluation.py",
-  "generator_sha256": "5dc02e04387765bb689c7556774c53e43e8315f2334e9ae2d8e38afe5ea3803e",
+  "generator_sha256": "eafd255839219288b21ee751663d7d58ea64d58a3e01e1898e4ac3ea1f9e1a3f",
   "data_sha256": "48fe1fd2d245f29dc6e4055c211d7a386e4a3a9be1dad8e76485b0fc015f0035",
   "counts": {
     "person_reference_objects": 10000,

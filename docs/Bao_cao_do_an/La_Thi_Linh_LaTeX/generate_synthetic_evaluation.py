@@ -8,6 +8,7 @@ import hashlib
 import json
 import random
 import statistics
+from decimal import Decimal, ROUND_HALF_UP
 import math
 import matplotlib
 matplotlib.use('Agg')
@@ -163,7 +164,7 @@ manifest=dict(data_kind=data['data_kind'],seed=SEED,calibrated_to_field_data=Fal
 (OUT/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
 def dec(v,d=3):
-    return '--' if v is None else f'{v:.{d}f}'.replace('.',',')
+    return '--' if v is None else str(Decimal(str(v)).quantize(Decimal(1).scaleb(-d), rounding=ROUND_HALF_UP)).replace('.', ',')
 
 def table(caption,label,headers,rows,spec):
     return '\n'.join([r'\begin{table}[H]',r'\centering',r'\small',
@@ -173,15 +174,16 @@ def table(caption,label,headers,rows,spec):
 
 def figure(name,caption,label):
     return '\n'.join([r'\begin{figure}[H]',r'\centering',
-        r'\includegraphics[width=0.88\textwidth]{Images/'+name+'}',r'\caption{'+caption+'}',
+        r'\includegraphics[width=0.88\textwidth]{Images/'+str(Path(name).with_suffix('.pdf'))+'}',r'\caption{'+caption+'}',
         r'\label{'+label+'}',r'\end{figure}',''])
 
 text=r'''% Generated from data/synthetic_evaluation/evaluation.json. Do not edit numbers manually.
-\subsection{Nguồn gốc và cấu trúc dữ liệu tổng hợp}
+\subsection{Phân tích chỉ số trên bộ số liệu tổng hợp}
+\subsubsection{Nguồn gốc và cấu trúc dữ liệu}
 \label{sec:synthetic-origin}
 Bộ dữ liệu trong phần này được tạo bằng chương trình với hạt giống ngẫu nhiên cố định 20260917. Dữ liệu gồm số đếm phân loại và các bản ghi thời lượng, không phải video đã chạy qua mô hình thị giác máy tính. Các tham số được chọn để bao phủ ca làm có độ dài khác nhau, trường hợp dưới và trên hạn mức điện thoại, khoảng mất quan sát và một số sai số lớn. Đây là các giả định thiết kế chưa được hiệu chỉnh theo dữ liệu thực địa.
 
-Chương trình đã thực hiện việc sinh dữ liệu, kiểm tra ràng buộc và tính các chỉ số. Kết quả dưới đây vì vậy là \textbf{kết quả tính toán trên dữ liệu tổng hợp}, không phải kết quả thực nghiệm CCTV. Các mã SYN-P và SYN-C chỉ nhận diện bản ghi tổng hợp, không đại diện người tham gia thực tế.
+Các bảng dưới đây được tính lại từ cùng tệp dữ liệu nguồn. Mã SYN-P và SYN-C nhận diện bản ghi tổng hợp. Các giá trị hiển thị được làm tròn đến số chữ số đã công bố, với trường hợp đúng nửa đơn vị làm tròn lên về độ lớn. Chỉ số tổng hợp được tính từ dữ liệu chưa làm tròn.
 
 Năm khối dữ liệu độc lập gồm số đếm phát hiện người, số đếm hiện diện, số đếm sử dụng điện thoại, 12 phiên điện thoại và 30 ca. Không ghép các khối này thành một tập quan sát chung hoặc suy ra quan hệ nhân quả giữa chúng. Ba mức S1, S2 và S3 biểu diễn mức nhiễu tăng dần, không đại diện ba thuật toán đã được chạy.
 
@@ -208,24 +210,24 @@ Mức nhiễu S1/S2/S3 & Nhân cùng sai lệch cơ sở lần lượt với 1, 
 
 Thời lượng được làm tròn đến giây và giới hạn trong miền hợp lệ. Thời gian điện thoại không vượt thời gian hiện diện, thời gian hiện diện không vượt thời gian có quan sát. Các ràng buộc này bảo đảm tính nhất quán số học, nhưng không xác nhận rằng phân phối nhiễu phản ánh một camera hoặc một mô hình cụ thể.
 
-\subsection{Kiểm tra chỉ số phát hiện người bằng số đếm tổng hợp}
+\subsubsection{Kiểm tra chỉ số phát hiện người bằng số đếm tổng hợp}
 Đơn vị tham chiếu là một đối tượng người tại một thời điểm quan sát, không phải một khung hình. Bảng sử dụng 10.000 đối tượng tham chiếu. TP, FP và FN là số đếm được khai báo trong bộ tổng hợp để kiểm tra công thức Precision, Recall và F1. Tổng hợp được tính từ tổng số đếm, không lấy trung bình các tỉ lệ theo số khung hình.
 '''
 rows=[[r['condition'],r['tp'],r['fp'],r['fn'],dec(r['precision']),dec(r['recall']),dec(r['f1'])] for r in person]
 rows.append(['Tổng',person_total['tp'],person_total['fp'],person_total['fn'],dec(person_total['precision']),dec(person_total['recall']),dec(person_total['f1'])])
 text+=table('Chỉ số phát hiện người từ số đếm tổng hợp','tab:syn-person',['Điều kiện','TP','FP','FN','P','R','F1'],rows,'lrrrrrr')
-text+=r'''Số bỏ sót tăng theo nhóm che khuất là một giả định của bộ dữ liệu. Bảng này minh họa cách báo cáo kết quả theo điều kiện, không chứng minh bộ phát hiện đạt các giá trị tương ứng ngoài thực tế. Khi đánh giá trên video, cần bổ sung ngưỡng IoU, ngưỡng độ tin cậy và quy tắc ghép một-một giữa hộp dự đoán với nhãn tham chiếu.
+text+=r'''Tên điều kiện và số đếm được khai báo để minh họa cách phân nhóm. Chỉ số ở hàng tổng được tính theo tổng TP, FP, FN, nhờ đó tránh sai lệch do lấy trung bình không trọng số giữa các nhóm có quy mô khác nhau.
 
-\subsection{Kiểm tra chỉ số hiện diện trên cùng tập tham chiếu}
+\subsubsection{Kiểm tra chỉ số hiện diện trên cùng tập tham chiếu}
 Mỗi kịch bản có 36.000 mẫu người--giây, trong đó 27.000 mẫu hiện diện và 9.000 mẫu vắng mặt. Khoảng mất quan sát không nằm trong tập phân loại này. Vì mỗi mẫu có độ dài một giây, FN chính là số giây vắng mặt giả và FP chính là số giây hiện diện giả.
 '''
 text+=table('Chỉ số hiện diện trên ba kịch bản nhiễu tổng hợp','tab:syn-presence',
             ['Mức','TP','FP (s)','FN (s)','TN','P','R','F1'],
             [[r['scenario'],r['tp'],r['fp'],r['fn'],r['tn'],dec(r['precision']),dec(r['recall']),dec(r['f1'])] for r in presence],'lrrrrrrr')
 text+=figure('synthetic_presence_f1.png','F1 hiện diện tính từ số đếm tổng hợp','fig:synthetic-presence')
-text+=r'''Ba hàng có cùng mẫu dương và mẫu âm, nên thay đổi Recall có thể đối chiếu trực tiếp với FN. Chênh lệch F1 xuất phát từ mức nhiễu đã đặt, không phải bằng chứng về mức cải thiện của ByteTrack hoặc máy trạng thái. Việc so sánh các thuật toán phải được thực hiện trên cùng video theo quy trình ở phần phương pháp so sánh.
+text+=r'''Ba hàng có cùng số mẫu dương và âm, nên thay đổi Recall có thể đối chiếu trực tiếp với số giây vắng mặt giả. F1 giảm khi tăng các số đếm lỗi theo giả định. S1, S2 và S3 không tương ứng với các cấu hình thuật toán trong quy trình đánh giá video.
 
-\subsection{Kiểm tra chỉ số sử dụng và liên kết điện thoại}
+\subsubsection{Kiểm tra chỉ số sử dụng và liên kết điện thoại}
 Mỗi điều kiện có 3.000 mẫu người--giây. Bốn điều kiện đầu có 1.000 mẫu sử dụng và 2.000 mẫu không sử dụng. Điều kiện chỉ đặt điện thoại trên bàn có toàn bộ 3.000 mẫu âm, do đó Recall và F1 không được báo cáo. Tỉ lệ dương tính giả được tính theo $FPR=FP/(FP+TN)$.
 '''
 text+=table('Phân loại sử dụng điện thoại từ số đếm tổng hợp','tab:syn-phone',
@@ -236,14 +238,14 @@ text+=r'''WPAR sử dụng đơn vị sự kiện đã được gán người, k
 text+=table('Sai gán người trên các sự kiện điện thoại tổng hợp','tab:syn-owner',
             ['Điều kiện','Đã gán','Gán sai','WPAR'],
             [[r['condition'],r['assigned_events'],r['wrong_owner_events'],dec(r['wpar'])] for r in phone],'lrrr')
-text+=r'''\subsection{Sai số thời lượng của 12 phiên điện thoại tổng hợp}
+text+=r'''\subsubsection{Sai số thời lượng của 12 phiên điện thoại tổng hợp}
 Thời lượng tham chiếu của 12 phiên được khai báo trong dữ liệu nguồn. Sai lệch được lấy từ phân phối chuẩn có trung bình $-2$ giây và độ lệch chuẩn $6+0{,}035T$ giây, với $T$ là thời lượng tham chiếu. Các giả định này tạo cả sai số tăng và giảm thời lượng, chưa mô tả sai số đo được của mô hình.
 '''
 text+=table('Toàn bộ 12 phiên điện thoại tổng hợp, đơn vị giây','tab:syn-phone-duration',
             ['Mã phiên','Tham chiếu','Ước lượng tổng hợp','Sai số có dấu'],
             [[r['session_id'],r['reference_s'],r['synthetic_estimate_s'],f"{r['error_s']:+d}"] for r in sessions],'lrrr')
 text+=f"MAE tính trên toàn bộ 12 phiên là {dec(phone_duration['mae_s'],2)} giây/phiên, trung vị sai số tuyệt đối là {dec(phone_duration['median_ae_s'],2)} giây và sai số tuyệt đối lớn nhất là {dec(phone_duration['max_ae_s'],0)} giây. Các giá trị này có thể tính lại trực tiếp từ bảng, không suy ra từ một tập mẫu chưa công bố.\n\n"
-text+=r'''\subsection{Sai số thời gian hiệu lực trên 30 ca tổng hợp}
+text+=r'''\subsubsection{Sai số thời gian hiệu lực trên 30 ca tổng hợp}
 Mỗi ca có thời lượng hiện diện và điện thoại tham chiếu. Sau khi bổ sung nhiễu, chương trình tính lại phần vượt hạn mức và thời gian hiệu lực cho từng mức S1, S2, S3 bằng cùng công thức ở Chương 1. Sai số được tính trên thời gian hiệu lực của cùng một ca. Khoảng mất quan sát được báo riêng, không tự động cộng vào hiện diện hoặc diễn giải là vắng mặt.
 '''
 text+=table('Sai số thời gian hiệu lực trên 30 ca tổng hợp','tab:syn-worktime',
@@ -253,17 +255,10 @@ text+=r'''P95 sử dụng nội suy tuyến tính tại vị trí $(N-1)\times0{
 '''
 text+=figure('synthetic_time_mae.png','MAE thời gian hiệu lực theo mức nhiễu tổng hợp','fig:synthetic-mae')
 text+=figure('synthetic_shift_errors.png','Sai số có dấu của 30 ca tổng hợp ở mức S1','fig:synthetic-errors')
-text+=r'''Phụ lục E công bố đủ 30 ca ở mức S1. Tệp dữ liệu nguồn lưu cả ba mức nhiễu cùng thời gian điện thoại trước và sau nhiễu. Mẫu không sử dụng điện thoại, mẫu đúng hạn mức và mẫu vừa vượt hạn mức giúp kiểm tra tính liên tục của phép điều chỉnh thời gian. Tuy nhiên, đây là kiểm tra số học trên tổng thời lượng, chưa kiểm chứng thuật toán xử lý khoảng thời gian hoặc chất lượng nhận biết hành vi.
+text+=r'''Phụ lục E công bố đủ 30 ca ở mức S1. Tệp dữ liệu nguồn lưu cả ba mức nhiễu cùng thời gian điện thoại trước và sau nhiễu. Mẫu không sử dụng điện thoại, mẫu đúng hạn mức và mẫu vừa vượt hạn mức giúp kiểm tra tính liên tục của phép điều chỉnh thời gian. Khối dữ liệu này chỉ chứa tổng thời lượng, không có mốc phiên để phân tích sai số biên. Kiểm thử phép xử lý khoảng được trình bày riêng tại mục~\ref{sec:interval-evaluation}.
 
-\subsection{Phạm vi chưa có kết quả đo}
-Các chỉ số IDF1, HOTA và số lần đổi định danh yêu cầu quỹ đạo dự đoán cùng nhãn theo thời gian. Do bộ dữ liệu tổng hợp hiện tại không có quỹ đạo, chương này không gán giá trị số cho các chỉ số theo dõi. Tương tự, ảnh hưởng của khoảng đệm và sai số mốc vào/ra chỉ có thể đo khi chạy máy trạng thái trên chuỗi quan sát có thời điểm cụ thể.
-
-Hiệu năng phải được đo trên thiết bị xác định với phiên bản mô hình, thư viện và cấu hình đầu vào được lưu lại. Không thể suy ra tốc độ CCTV từ số đếm phân loại hoặc thời lượng tổng hợp. Với một chuỗi xử lý tuần tự, tổng thời gian trung bình bằng tổng trung bình của các thành phần, nhưng phân vị P95 của tổng không bằng tổng các phân vị P95. Độ trễ đầu-cuối còn bao gồm giải mã video, hàng đợi, truyền dữ liệu và hiển thị. Quy trình đo các thành phần này được trình bày ở phần đánh giá hiệu năng.
-
-\subsection{Tái lập và giới hạn diễn giải}
-Tệp \texttt{data/synthetic\_evaluation/evaluation.json} lưu toàn bộ số đếm, thời lượng và chỉ số. Tệp \texttt{manifest.json} ghi hạt giống, giả định, số mẫu và mã SHA-256 của dữ liệu cùng chương trình sinh. Chạy \texttt{python generate\_synthetic\_evaluation.py} tại thư mục báo cáo để tạo lại dữ liệu, bảng LaTeX và biểu đồ.
-
-Bộ dữ liệu đáp ứng các ràng buộc số học đã khai báo và hỗ trợ kiểm tra cách tính chỉ số. Để đánh giá mức sát với thực tế, cần ước lượng lại phân phối sai số từ video có nhãn tham chiếu và kiểm tra trên tập độc lập. Khi chưa có dữ liệu đó, không thể xác định các mức S1, S2 hoặc S3 tương ứng với chất lượng của hệ thống ngoài thực địa.
+\subsubsection{Lưu trữ và tái tạo số liệu}
+Tệp \path{data/synthetic_evaluation/evaluation.json} lưu toàn bộ số đếm, thời lượng và chỉ số. Bản kê đi kèm công bố hạt giống, giả định, quy mô và mã SHA-256. Bộ dữ liệu giữ nguyên 12 phiên và 30 ca đã có, các giá trị không được thay đổi để tạo mức sai số thuận lợi hơn. Chạy \texttt{python generate\_synthetic\_evaluation.py} để tạo lại các bảng và hình.
 
 '''
 (TEX/'synthetic_results.tex').write_text(text,encoding='utf-8')
@@ -275,6 +270,7 @@ Bảng dưới đây công bố 30 ca tổng hợp ở mức S1. Các cột đ�
 
 \begingroup
 \small
+\renewcommand{\arraystretch}{0.9}
 \setlength{\tabcolsep}{4pt}
 \begin{longtable}{lrrrrrrr}
 \caption{Toàn bộ 30 ca tổng hợp ở mức nhiễu S1}\label{tab:synthetic-all-shifts}\\
@@ -294,7 +290,12 @@ appendix+=r'\end{longtable}'+'\n'+r'\endgroup'+'\n'
 plt.rcParams.update({'font.family':'DejaVu Sans','font.size':11,'axes.spines.top':False,'axes.spines.right':False})
 def save(fig,name):
     fig.tight_layout()
-    fig.savefig(IMG/name,dpi=180,bbox_inches='tight')
+    # Replace complete images so a failed write cannot leave a partial asset.
+    for extension in ('.png', '.pdf'):
+        target = (IMG/name).with_suffix(extension)
+        pending = target.with_name(target.stem + '.writing' + extension)
+        fig.savefig(pending,dpi=220,bbox_inches='tight')
+        pending.replace(target)
     plt.close(fig)
 
 fig,ax=plt.subplots(figsize=(8,3.8))
@@ -313,7 +314,7 @@ bars=ax.bar(list(levels),values,color=['#386b8c','#738fa2','#aab7bf'],width=.55)
 ax.set_ylim(0,max(values)*1.2)
 ax.set_ylabel('MAE (giây/ca)')
 ax.set_xlabel('Mức nhiễu tổng hợp')
-ax.set_title('30 ca tổng hợp, không phải kết quả chạy mô hình')
+ax.set_title('Sai số thời lượng trên 30 ca tổng hợp')
 ax.bar_label(bars,labels=[dec(x,2) for x in values],padding=4)
 save(fig,'synthetic_time_mae.png')
 
@@ -324,7 +325,7 @@ ax.axhline(0,color='black',linewidth=.7)
 ax.set_xticks([1,5,10,15,20,25,30])
 ax.set_xlabel('Chỉ số ca tổng hợp')
 ax.set_ylabel('Sai số có dấu (giây)')
-ax.set_title('Biến thiên sai số được tạo ở mức nhiễu S1')
+ax.set_title('Sai số từng ca tổng hợp ở mức S1')
 save(fig,'synthetic_shift_errors.png')
 
 print(json.dumps(dict(validation='PASS',phone_duration=phone_duration,shift_metrics=shift_metrics,

@@ -1,5 +1,7 @@
 # Ghi nhận rà soát nội dung
 
+Bản rà soát mới nhất ngày 19/09/2026 nằm tại [REVISION_20260919.md](REVISION_20260919.md): đã chỉnh nội dung, chạy thực nghiệm tính toán, biên dịch và kiểm tra bố cục PDF. Các ghi chép dưới đây phản ánh những đợt trước.
+
 Đợt sửa tiếp theo ngày 18/09/2026 được ghi riêng tại [REVISION_20260918.md](REVISION_20260918.md), có dữ liệu kiểm tra khoảng thời gian, năm hình vẽ lại và đối chiếu 28 tài liệu tham khảo. Theo yêu cầu, tôi không gọi lệnh biên dịch hoặc kiểm tra bố cục PDF. Trong lúc sửa nguồn, main.pdf và nhật ký XeTeX được cập nhật bởi một tiến trình ngoài các lệnh đã chạy trong phiên này, có thể do môi trường tự biên dịch. Bản PDF được giữ nguyên, chưa xác minh mức đồng bộ hoặc bố cục. Nội dung bên dưới là lịch sử đợt rà soát trước đó.
 
 Đã chỉnh sửa trên bản thảo đang có, bảo toàn bản trước khi sửa tại `tmp/editorial_backup_20260917/`. Thư mục sao lưu này có cả PDF và các chương trước đợt rà soát.

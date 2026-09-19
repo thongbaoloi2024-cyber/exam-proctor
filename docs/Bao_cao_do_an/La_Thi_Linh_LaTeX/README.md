@@ -1,10 +1,25 @@
 # La_Thi_Linh - LaTeX
 
-## Bản rà soát ngày 18/09/2026
+## Bản rà soát ngày 19/09/2026
 
-Nội dung hiện tại là báo cáo bảy chương về ước lượng thời gian hiện diện từ camera. Xem [bản ghi chỉnh sửa](REVISION_20260918.md) và [đối chiếu tài liệu tham khảo](KIEM_CHUNG_TAI_LIEU.md).
+Nội dung hiện tại là báo cáo bảy chương về ước lượng thời gian hiện diện từ camera. Xem [bản ghi chỉnh sửa mới nhất](REVISION_20260919.md) và [đối chiếu tài liệu tham khảo](KIEM_CHUNG_TAI_LIEU.md).
 
-Theo yêu cầu trong đợt chỉnh sửa này, không gọi lệnh biên dịch hoặc kiểm tra bố cục PDF. Môi trường đã phát sinh thay đổi ở `main.pdf` trong lúc sửa nguồn, nhưng bản đó chưa được kiểm tra. Dữ liệu đánh giá là dữ liệu tổng hợp có ghi rõ nguồn gốc. Có thể tái tạo dữ liệu và hình bằng `python make_figures.py`, kiểm tra nguồn bằng `python check_report_sources.py`. Cả hai lệnh đều không tạo PDF.
+Đã chỉnh văn phong, công thức, thuật ngữ, hình và bảng; biên dịch bằng XeLaTeX và kiểm tra bố cục PDF. Bản nộp nằm tại `output/pdf/Bao_cao_La_Thi_Linh.pdf`; `main.pdf` là bản biên dịch tại thư mục nguồn.
+
+Chương 6 trình bày kết quả thực thi bộ tính khoảng thời gian tham chiếu: 24 kịch bản cố định, 2.000 đầu vào sinh ngẫu nhiên đối chiếu với bộ tính độc lập, 8.000 phép kiểm tra tính bất biến và 2.000 phép kiểm tra tính đơn điệu. Đây là thực nghiệm tính toán trên đầu vào tổng hợp, chưa phải đánh giá hệ thống CCTV trên video thực tế. Các số liệu 12 phiên và 30 ca tổng hợp cũ được giữ nguyên, tính lại chỉ số và ghi rõ nguồn gốc.
+
+Tái tạo dữ liệu, kết quả và hình (cần Python, Matplotlib):
+
+```powershell
+python make_figures.py
+python check_report_sources.py
+xelatex -interaction=nonstopmode -halt-on-error main.tex
+xelatex -interaction=nonstopmode -halt-on-error main.tex
+```
+
+Chạy XeLaTeX tại thư mục chứa `main.tex` để các tệp mục lục và tham chiếu đồng bộ. `make_figures.py` tạo cả hình PDF vector, nhưng không biên dịch báo cáo. Thông tin đầu vào, phạm vi, hạt giống và mã kiểm tra nằm trong các thư mục `data/interval_evaluation/`, `data/synthetic_evaluation/` và `computational_evaluation/`.
+
+Bản nguồn trước khi sửa được giữ tại `tmp/revision_20260919_before/`. Ghi chép đợt trước vẫn có tại [REVISION_20260918.md](REVISION_20260918.md).
 
 ## Ghi chép chuyển đổi ban đầu
 
